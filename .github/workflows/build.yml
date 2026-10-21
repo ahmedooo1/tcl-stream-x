@@ -87,6 +87,16 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # The runner image no longer ships the audio library the emulator binary links against
+      # (diagnosed: "libpulse.so.0: cannot open shared object file"), and its disk is ~96 % full.
+      - name: Emulator host libraries and disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /usr/local/lib/node_modules /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends libpulse0 libnss3 libxcomposite1 libxcursor1 libxi6 libxtst6 libgl1 libxdamage1 libxkbfile1 >/dev/null
+          "$ANDROID_HOME/emulator/emulator" -version | head -1
+          echo "::notice::emulator check: $("$ANDROID_HOME/emulator/emulator" -accel-check 2>&1 | tr '\n' ' ') | disk free: $(df -h / | tail -1 | awk '{print $4}')"
+
       - name: Instrumented tests on an Android TV emulator (real streams, D-pad tour, 50k import)
         id: emu1
         continue-on-error: true
