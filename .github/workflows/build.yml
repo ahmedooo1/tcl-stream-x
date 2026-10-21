@@ -70,6 +70,14 @@ jobs:
           fi
           cp app/build/outputs/apk/debug/app-debug.apk TCLStreamX-debug.apk
 
+      - name: Publish APK early (tests results are attached later to the same release)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat catalog/REPORT.md > EARLY.md
+          gh release create "build-${BUILD_NUMBER}" TCLStreamX-debug.apk catalog/REPORT.md \
+            --title "TCL Stream X build ${BUILD_NUMBER}" --notes-file EARLY.md --prerelease
+
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -99,11 +107,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           shopt -s nullglob
-          files=(TCLStreamX-debug.apk RESULTS.md catalog/REPORT.md catalog/SOURCES_REPORT.md app/src/main/assets/catalog.json ci-out/*.json ci-out/*.png ci-out/*.txt)
-          gh release create "build-${BUILD_NUMBER}" "${files[@]}" \
-            --title "TCL Stream X build ${BUILD_NUMBER}" \
-            --notes-file RESULTS.md \
-            --prerelease
+          files=(RESULTS.md catalog/SOURCES_REPORT.md app/src/main/assets/catalog.json ci-out/*.json ci-out/*.png ci-out/*.txt)
+          gh release upload "build-${BUILD_NUMBER}" "${files[@]}" --clobber
+          gh release edit "build-${BUILD_NUMBER}" --notes-file RESULTS.md
 
       - name: Fail if tests failed
         if: always()
