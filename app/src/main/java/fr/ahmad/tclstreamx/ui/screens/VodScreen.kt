@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -747,6 +748,24 @@ private fun FeaturedHome(
     val tileWidth = if (compact) 150.dp else 200.dp
     val offerHero: (Pick) -> Unit = { if (hero == null) hero = it }
 
+    // The featured title does not wait for its row to scroll into view: first title of the user's
+    // first category, else a free channel, else the most watched public-domain title.
+    LaunchedEffect(shelf, region, playlistSections.firstOrNull()?.group, freeChannels.isNotEmpty()) {
+        if (hero != null) return@LaunchedEffect
+        val first = playlistSections.firstOrNull()
+        val fromSource = first?.let { c.db.channels().firstOfLineup(0, it.group, 0, it.kind, region, 12).firstOrNull { ch -> ch.logo != null } }
+        val pick: Pick? = fromSource?.let { Pick.Channel(it) }
+            ?: freeChannels.firstOrNull { it.logo != null }?.let { Pick.Channel(it) }
+            ?: try {
+                c.vod.archiveShelf(shelf, 1, null, genres.first()).firstOrNull { !it.description.isNullOrBlank() }?.let { Pick.Archive(it) }
+            } catch (e: IOException) {
+                null
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        if (hero == null && pick != null) hero = pick
+    }
+
     fun open(p: Pick) {
         when (p) {
             is Pick.Channel -> if (XtreamRepository.isSeries(p.ch.url)) {
@@ -773,7 +792,8 @@ private fun FeaturedHome(
             contentPadding = PaddingValues(bottom = 48.dp),
             verticalArrangement = Arrangement.spacedBy(if (compact) 18.dp else 24.dp),
         ) {
-            item(key = "hero") { Hero(hero, compact) { hero?.let(::open) } }
+            hero?.let { h -> item(key = "hero") { Hero(h, compact) { open(h) } } }
+            if (hero == null) item(key = "top") { Spacer(Modifier.height(8.dp)) }
             if (resume.isNotEmpty() && shelf != VodShelf.ANIMATION) {
                 item(key = "resume") {
                     ShelfRow(stringResource(R.string.home_continue), null) {

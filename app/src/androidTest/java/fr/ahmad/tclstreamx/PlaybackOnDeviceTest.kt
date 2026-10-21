@@ -87,6 +87,8 @@ class PlaybackOnDeviceTest {
             })
         }
         CiReport.write("playback-report.json", report.toString())
+        // Test plays must not show up in "continue watching" on the screenshots that follow.
+        kotlinx.coroutines.runBlocking { targets.forEach { app.container.db.vodProgress().delete(it.item.key) } }
 
         val channelResults = results.filter { it.first.group.startsWith("channel:") }
         val channelPass = channelResults.count { it.second.ready && it.second.advancedMs >= MIN_ADVANCE_MS }

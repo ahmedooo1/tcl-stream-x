@@ -149,6 +149,7 @@ class XtreamOnDeviceTest {
             } + "],\"vodSkipped\":${mp4 == null},\"panelStreamRequests\":$stats,\"redirectTargets\":{\"live\":\"${hls}\",\"vod\":\"${mp4 ?: ""}\"}}",
         )
         app.container.importer.delete(id)
+        targets.forEach { (_, item) -> app.container.db.vodProgress().delete(item.key) }
         assertTrue("stream requests reached the panel with the decrypted login: $stats", stats >= targets.size)
         assertTrue("account playback: $results", results.all { it.second.first })
     }
