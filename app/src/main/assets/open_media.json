@@ -1,33 +1,121 @@
 {
-  "_doc": "Openly licensed films hosted by their publishers or by Google/Apple sample buckets. Every URL is probed by CI (tools/probe_sources.py) before release.",
-  "films": [
-    {"key": "open:bbb", "title": "Big Buck Bunny", "year": 2008, "license": "CC BY 3.0, Blender Foundation", "kind": "animation",
-     "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-     "poster": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg"},
-    {"key": "open:sintel", "title": "Sintel", "year": 2010, "license": "CC BY 3.0, Blender Foundation", "kind": "animation",
-     "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-     "poster": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg"},
-    {"key": "open:elephants", "title": "Elephants Dream", "year": 2006, "license": "CC BY 2.5, Blender Foundation", "kind": "animation",
-     "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-     "poster": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg"},
-    {"key": "open:tears", "title": "Tears of Steel", "year": 2012, "license": "CC BY 3.0, Blender Foundation", "kind": "film",
-     "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-     "poster": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/TearsOfSteel.jpg"},
-    {"key": "open:tears-dash", "title": "Tears of Steel (DASH, 4 qualités)", "year": 2012, "license": "CC BY 3.0, Blender Foundation", "kind": "demo",
-     "url": "https://storage.googleapis.com/wvmedia/clear/h264/tears/tears.mpd",
-     "poster": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/TearsOfSteel.jpg"},
-    {"key": "open:bipbop", "title": "Apple HLS (pistes audio et sous-titres)", "year": 2017, "license": "Apple developer sample stream", "kind": "demo",
-     "url": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8",
-     "poster": null}
-  ],
-  "services": [
-    {"name": "arte.tv", "query": "arte", "lang": "fr"},
-    {"name": "france.tv", "query": "france.tv", "lang": "fr"},
-    {"name": "Pluto TV", "query": "Pluto TV", "lang": "fr"},
-    {"name": "Rakuten TV", "query": "Rakuten TV", "lang": "fr"},
-    {"name": "ADN (Animation Digital Network)", "query": "ADN Animation Digital Network", "lang": "fr"},
-    {"name": "AWAAN", "query": "AWAAN", "lang": "ar"},
-    {"name": "ADtv", "query": "ADtv", "lang": "ar"},
-    {"name": "YouTube", "query": "YouTube", "lang": "all"}
-  ]
+ "_doc": "Openly licensed films. For films with 'candidates', tools/probe_sources.py writes the first reachable URL into 'url' at build time; the app only plays 'url'.",
+ "films": [
+  {
+   "key": "open:bbb",
+   "title": "Big Buck Bunny",
+   "year": 2008,
+   "license": "CC BY 3.0, Blender Foundation",
+   "kind": "animation",
+   "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+   "poster": null,
+   "candidates": [
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "https://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_720p_h264.mov",
+    "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4"
+   ]
+  },
+  {
+   "key": "open:sintel",
+   "title": "Sintel",
+   "year": 2010,
+   "license": "CC BY 3.0, Blender Foundation",
+   "kind": "animation",
+   "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+   "poster": null,
+   "candidates": [
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+    "https://download.blender.org/durian/movies/Sintel.2010.720p.mkv",
+    "https://archive.org/download/Sintel/sintel-2048-surround.mp4"
+   ]
+  },
+  {
+   "key": "open:elephants",
+   "title": "Elephants Dream",
+   "year": 2006,
+   "license": "CC BY 2.5, Blender Foundation",
+   "kind": "animation",
+   "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+   "poster": null,
+   "candidates": [
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    "https://archive.org/download/ElephantsDream/ed_hd.mp4",
+    "https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4"
+   ]
+  },
+  {
+   "key": "open:tears",
+   "title": "Tears of Steel",
+   "year": 2012,
+   "license": "CC BY 3.0, Blender Foundation",
+   "kind": "film",
+   "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+   "poster": null,
+   "candidates": [
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+    "https://download.blender.org/mango/download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
+    "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4"
+   ]
+  },
+  {
+   "key": "open:tears-dash",
+   "title": "Tears of Steel (DASH, 4 qualités)",
+   "year": 2012,
+   "license": "CC BY 3.0, Blender Foundation",
+   "kind": "demo",
+   "url": "https://storage.googleapis.com/wvmedia/clear/h264/tears/tears.mpd",
+   "poster": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/TearsOfSteel.jpg"
+  },
+  {
+   "key": "open:bipbop",
+   "title": "Apple HLS (pistes audio et sous-titres)",
+   "year": 2017,
+   "license": "Apple developer sample stream",
+   "kind": "demo",
+   "url": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8",
+   "poster": null
+  }
+ ],
+ "services": [
+  {
+   "name": "arte.tv",
+   "query": "arte",
+   "lang": "fr"
+  },
+  {
+   "name": "france.tv",
+   "query": "france.tv",
+   "lang": "fr"
+  },
+  {
+   "name": "Pluto TV",
+   "query": "Pluto TV",
+   "lang": "fr"
+  },
+  {
+   "name": "Rakuten TV",
+   "query": "Rakuten TV",
+   "lang": "fr"
+  },
+  {
+   "name": "ADN (Animation Digital Network)",
+   "query": "ADN Animation Digital Network",
+   "lang": "fr"
+  },
+  {
+   "name": "AWAAN",
+   "query": "AWAAN",
+   "lang": "ar"
+  },
+  {
+   "name": "ADtv",
+   "query": "ADtv",
+   "lang": "ar"
+  },
+  {
+   "name": "YouTube",
+   "query": "YouTube",
+   "lang": "all"
+  }
+ ]
 }

@@ -90,6 +90,7 @@ jobs:
           api-level: 30
           target: android-tv
           arch: x86
+          profile: tv_1080p
           disable-animations: true
           emulator-boot-timeout: 900
           script: bash tools/ci_emulator_tests.sh

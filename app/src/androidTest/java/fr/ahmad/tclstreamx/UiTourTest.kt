@@ -1,5 +1,6 @@
 package fr.ahmad.tclstreamx
 
+import android.os.SystemClock
 import android.view.KeyEvent
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -17,9 +18,13 @@ import org.junit.runner.RunWith
 class UiTourTest {
     private val inst = InstrumentationRegistry.getInstrumentation()
 
+    /** Injects remote keys through UiAutomation, like the TV's input service would. */
     private fun key(code: Int, times: Int = 1, waitMs: Long = 600) {
+        val ui = inst.uiAutomation
         repeat(times) {
-            inst.sendKeyDownUpSync(code)
+            val now = SystemClock.uptimeMillis()
+            ui.injectInputEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, code, 0), true)
+            ui.injectInputEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, code, 0), true)
             Thread.sleep(waitMs)
         }
     }

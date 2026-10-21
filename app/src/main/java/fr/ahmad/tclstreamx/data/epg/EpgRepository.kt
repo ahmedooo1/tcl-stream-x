@@ -29,7 +29,7 @@ class EpgRepository(private val db: AppDatabase, private val http: OkHttpClient)
 
     /** Downloads every guide (user setting first, then playlist headers) and replaces the stored programmes. */
     suspend fun refresh(userEpgUrl: String?): EpgState = withContext(Dispatchers.IO) {
-        val urls = (listOfNotNull(userEpgUrl?.trim()?.takeIf { it.isNotEmpty() }) +
+        val urls = (listOf(userEpgUrl?.trim()?.takeIf { it.isNotEmpty() } ?: DEFAULT_GUIDE) +
             db.playlists().all().mapNotNull { it.epgUrl })
             .filter { M3uParser.isSupportedScheme(it) }
             .distinct()
@@ -96,6 +96,13 @@ class EpgRepository(private val db: AppDatabase, private val http: OkHttpClient)
 
     companion object {
         private const val BATCH = 1000
+
+        /**
+         * Free community XMLTV guide (xmltvfr.fr). Checked from CI: it covers the French built-in
+         * channels and several international ones (France 24, DW, BFM, Arte...). Replaced by the
+         * user's own guide when one is set in the settings.
+         */
+        const val DEFAULT_GUIDE = "https://xmltvfr.fr/xmltv/xmltv.xml.gz"
         private const val PAST_WINDOW_MS = 3 * 3600_000L
         private const val FUTURE_WINDOW_MS = 36 * 3600_000L
     }

@@ -52,13 +52,21 @@ def main() -> int:
     media = json.load(open("app/src/main/assets/open_media.json", encoding="utf-8"))
     lines.append("\n## Open media\n\n| Title | HTTP | Bytes read | Note |\n|---|---|---|---|")
     for f in media["films"]:
-        code, body = get(f["url"], limit=256 * 1024, headers={"Range": "bytes=0-262143"})
+        for cand in f.get("candidates", [f["url"]]):
+            code, body = get(cand, limit=256 * 1024, headers={"Range": "bytes=0-262143"})
+            if code in (200, 206) and body:
+                f["url"] = cand
+                break
+        f["ok"] = code in (200, 206) and bool(body)
         note = ""
         if f["url"].endswith(".m3u8") and body:
             note = f"{body.count(b'#EXT-X-STREAM-INF')} variants, subtitles: {b'TYPE=SUBTITLES' in body}"
         if f["url"].endswith(".mpd") and body:
             note = f"{len(re.findall(rb'<Representation', body))} representations, DRM: {b'ContentProtection' in body}"
-        lines.append(f"| {f['title']} | {code} | {len(body)} | {note} |")
+        lines.append(f"| {f['title']} | {code} | {len(body)} | {f['url']} {note} |")
+    # The app only lists films whose URL answered from CI.
+    media["films"] = [f for f in media["films"] if f.pop("ok")]
+    json.dump(media, open("app/src/main/assets/open_media.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
     guide = json.load(open("app/src/main/assets/sports_destinations.json", encoding="utf-8"))
     today = time.strftime("%Y%m%d")
@@ -75,6 +83,10 @@ def main() -> int:
                 events = "invalid JSON"
         lines.append(f"| {lg['id']} | {code} | {events} |")
 
+    lines.append("\n### ESPN request variants (diagnostics)\n")
+    for q in [f"?dates={today}", f"?dates={today}-{end}", "", f"?dates={today}&limit=100"]:
+        code, body = get(f"https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard{q}", limit=400)
+        lines.append(f"- `{q or '(none)'}` -> {code} {body[:120]!r}")
     lines.append("\n## Internet Archive shelves\n\n| Shelf | HTTP | numFound |\n|---|---|---|")
     for name, q in [("movies", "collection:(feature_films) AND mediatype:(movies)"),
                     ("series", "collection:(classic_tv) AND mediatype:(movies)"),
