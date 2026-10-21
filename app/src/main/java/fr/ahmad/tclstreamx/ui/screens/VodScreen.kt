@@ -61,6 +61,7 @@ import fr.ahmad.tclstreamx.data.vod.VodFile
 import fr.ahmad.tclstreamx.data.vod.VodItem
 import fr.ahmad.tclstreamx.data.vod.VodRepository
 import fr.ahmad.tclstreamx.data.vod.VodShelf
+import fr.ahmad.tclstreamx.data.xtream.XtreamRepository
 import fr.ahmad.tclstreamx.player.Lineup
 import fr.ahmad.tclstreamx.player.PlayItem
 import fr.ahmad.tclstreamx.player.PlaybackController
@@ -72,6 +73,7 @@ import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
 import fr.ahmad.tclstreamx.ui.theme.Palette
 import fr.ahmad.tclstreamx.ui.theme.isCompactWidth
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.IOException
 
@@ -98,16 +100,20 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
     val type = LocalTallyType.current
     val compact = isCompactWidth()
 
-    val groupsFlow = remember(shelf) {
+    var region by remember(shelf) { mutableStateOf<String?>(null) }
+    val regions by remember(shelf) {
+        c.db.channels().observeRegions(0, if (shelf == VodShelf.SERIES) ContentKind.SERIES else ContentKind.MOVIE)
+    }.collectAsState(initial = emptyList())
+    val groupsFlow = remember(shelf, region) {
         val dao = c.db.channels()
         when (shelf) {
-            VodShelf.MOVIES -> combine(dao.observeGroups(0, ContentKind.MOVIE), dao.observeGroups(0, ContentKind.SERIES)) { m, _ ->
+            VodShelf.MOVIES -> dao.observeGroups(0, ContentKind.MOVIE, region).map { m ->
                 m.map { VodSection.Playlist(it.groupTitle, ContentKind.MOVIE, it.count) }
             }
-            VodShelf.SERIES -> combine(dao.observeGroups(0, ContentKind.SERIES), dao.observeGroups(0, ContentKind.MOVIE)) { s, _ ->
+            VodShelf.SERIES -> dao.observeGroups(0, ContentKind.SERIES, region).map { s ->
                 s.map { VodSection.Playlist(it.groupTitle, ContentKind.SERIES, it.count) }
             }
-            VodShelf.ANIMATION -> combine(dao.observeGroups(0, ContentKind.MOVIE), dao.observeGroups(0, ContentKind.SERIES)) { m, s ->
+            VodShelf.ANIMATION -> combine(dao.observeGroups(0, ContentKind.MOVIE, region), dao.observeGroups(0, ContentKind.SERIES, region)) { m, s ->
                 fun pick(list: List<GroupCount>, kind: Int) = list
                     .filter { g -> ANIMATION_WORDS.any { it in g.groupTitle.lowercase() } }
                     .map { VodSection.Playlist(it.groupTitle, kind, it.count) }
@@ -120,10 +126,11 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
     val hasOpenFilms = shelf != VodShelf.SERIES
     var selected by remember(shelf) { mutableStateOf<VodSection>(archiveSections.first()) }
     var userPicked by remember(shelf) { mutableStateOf(false) }
-    // The user's own playlists come first as soon as they exist.
-    LaunchedEffect(playlistSections.isNotEmpty()) {
-        if (!userPicked && playlistSections.isNotEmpty()) selected = playlistSections.first()
+    // The user's own playlists come first as soon as they exist, and after a change of country or language.
+    LaunchedEffect(playlistSections.isNotEmpty(), region) {
+        if ((!userPicked || region != null) && playlistSections.isNotEmpty() && selected !in playlistSections) selected = playlistSections.first()
     }
+    val pickRegion: (String?) -> Unit = { region = it }
     val sections: List<VodSection> = playlistSections + archiveSections +
         (if (hasOpenFilms) listOf(VodSection.OpenFilms, VodSection.Services) else emptyList())
 
@@ -150,7 +157,8 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
                     }
                 }
             }
-            SectionContent(selected, shelf, navigator, playback, Modifier.weight(1f))
+            RegionStrip(regions, region, pickRegion, Modifier.padding(bottom = 8.dp))
+            SectionContent(selected, shelf, region, navigator, playback, Modifier.weight(1f))
         }
     } else {
         Row(Modifier.fillMaxSize().padding(top = 28.dp)) {
@@ -171,7 +179,10 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
                     item { SectionRow(VodSection.Services, selected == VodSection.Services) { pick(VodSection.Services) } }
                 }
             }
-            SectionContent(selected, shelf, navigator, playback, Modifier.weight(1f))
+            Column(Modifier.weight(1f)) {
+                RegionStrip(regions, region, pickRegion, Modifier.padding(bottom = 8.dp), PaddingValues(start = 16.dp, end = 24.dp))
+                SectionContent(selected, shelf, region, navigator, playback, Modifier.weight(1f))
+            }
         }
     }
 }
@@ -221,12 +232,12 @@ private fun SectionRow(s: VodSection, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SectionContent(section: VodSection, shelf: VodShelf, navigator: Navigator, playback: PlaybackController, modifier: Modifier) {
+private fun SectionContent(section: VodSection, shelf: VodShelf, region: String?, navigator: Navigator, playback: PlaybackController, modifier: Modifier) {
     Box(modifier.fillMaxHeight()) {
         when (section) {
             is VodSection.Playlist ->
-                if (section.kind == ContentKind.SERIES) PlaylistShows(section.group, navigator, playback)
-                else PlaylistMovies(section.group, navigator, playback)
+                if (section.kind == ContentKind.SERIES) PlaylistShows(section.group, region, navigator, playback)
+                else PlaylistMovies(section.group, region, navigator, playback)
             is VodSection.Archive -> ArchiveGrid(shelf, section.genre, navigator, playback)
             VodSection.OpenFilms -> OpenFilmsGrid(shelf, navigator, playback)
             VodSection.Services -> ServicesGrid()
@@ -241,11 +252,11 @@ private val GRID_PADDING = PaddingValues(start = 16.dp, end = 24.dp, top = 8.dp,
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun PlaylistMovies(group: String, navigator: Navigator, playback: PlaybackController) {
+private fun PlaylistMovies(group: String, region: String?, navigator: Navigator, playback: PlaybackController) {
     val c = (LocalContext.current.applicationContext as TclApp).container
-    val flow = remember(group) {
+    val flow = remember(group, region) {
         Pager(PagingConfig(pageSize = 60, prefetchDistance = 60, enablePlaceholders = true, maxSize = 600)) {
-            c.db.channels().paging(0, group, 0, ContentKind.MOVIE)
+            c.db.channels().paging(0, group, 0, ContentKind.MOVIE, region)
         }.flow
     }
     val paged = flow.collectAsLazyPagingItems()
@@ -260,7 +271,7 @@ private fun PlaylistMovies(group: String, navigator: Navigator, playback: Playba
         items(count = paged.itemCount, key = paged.itemKey { it.id }) { i ->
             val ch = paged[i] ?: return@items
             ChannelPoster(ch) {
-                playback.play(PlayItem.fromChannel(ch, Lineup(0, group, false, ContentKind.MOVIE)))
+                playback.play(PlayItem.fromChannel(ch, Lineup(0, group, false, ContentKind.MOVIE, region)))
                 navigator.openPlayer()
             }
         }
@@ -271,10 +282,60 @@ private data class Show(val name: String, val logo: String?, val episodes: List<
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun PlaylistShows(group: String, navigator: Navigator, playback: PlaybackController) {
+private fun PlaylistShows(group: String, region: String?, navigator: Navigator, playback: PlaybackController) {
+    val c = (LocalContext.current.applicationContext as TclApp).container
+    // Xtream accounts give one row per series (episodes are fetched when opened): page through them.
+    // M3U playlists give one row per episode: those are grouped by show name.
+    var plain by remember(group) { mutableStateOf<Int?>(null) }
+    LaunchedEffect(group) { plain = c.db.channels().countPlainEntries(ContentKind.SERIES, group) }
+    when (plain) {
+        null -> Unit
+        0 -> AccountShows(group, region, navigator, playback)
+        else -> PlaylistEpisodeShows(group, navigator, playback)
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun AccountShows(group: String, region: String?, navigator: Navigator, playback: PlaybackController) {
+    val c = (LocalContext.current.applicationContext as TclApp).container
+    val flow = remember(group, region) {
+        Pager(PagingConfig(pageSize = 60, prefetchDistance = 60, enablePlaceholders = true, maxSize = 600)) {
+            c.db.channels().paging(0, group, 0, ContentKind.SERIES, region)
+        }.flow
+    }
+    val paged = flow.collectAsLazyPagingItems()
+    var open by remember(group) { mutableStateOf<ChannelEntity?>(null) }
+    Box(Modifier.fillMaxSize()) {
+        LazyVerticalGrid(
+            columns = GRID,
+            modifier = Modifier.fillMaxSize().focusRestorer(),
+            contentPadding = GRID_PADDING,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            item(span = { GridItemSpan(maxLineSpan) }) { GridTitle(group, stringResource(R.string.vod_shows, paged.itemCount)) }
+            items(count = paged.itemCount, key = paged.itemKey { it.id }) { i ->
+                val ch = paged[i] ?: return@items
+                ChannelPoster(ch) { open = ch }
+            }
+        }
+        open?.let { series ->
+            SeriesPanel(series, Modifier.align(Alignment.CenterEnd), onClose = { open = null }) { item ->
+                playback.play(item)
+                navigator.openPlayer()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun PlaylistEpisodeShows(group: String, navigator: Navigator, playback: PlaybackController) {
     val c = (LocalContext.current.applicationContext as TclApp).container
     var shows by remember(group) { mutableStateOf<List<Show>?>(null) }
     var open by remember(group) { mutableStateOf<Show?>(null) }
+    var openAccountSeries by remember(group) { mutableStateOf<ChannelEntity?>(null) }
     LaunchedEffect(group) {
         val all = c.db.channels().allInGroup(ContentKind.SERIES, group, MAX_EPISODES)
         shows = all.groupBy { M3uParser.normalize(M3uParser.seriesShow(it.name)) }
@@ -296,7 +357,8 @@ private fun PlaylistShows(group: String, navigator: Navigator, playback: Playbac
         if (list != null) {
             items(list, key = { M3uParser.normalize(it.name) + ":" + it.episodes.first().id }) { show ->
                 PosterTile(VodItem(show.name, show.name, stringResource(R.string.vod_episodes, show.episodes.size), show.logo, null, null)) {
-                    open = show
+                    val only = show.episodes.singleOrNull()
+                    if (only != null && XtreamRepository.isSeries(only.url)) openAccountSeries = only else open = show
                 }
             }
         }
@@ -304,6 +366,12 @@ private fun PlaylistShows(group: String, navigator: Navigator, playback: Playbac
     open?.let { show ->
         EpisodesPanel(show, Modifier.align(Alignment.CenterEnd), onClose = { open = null }) { ep ->
             playback.play(PlayItem.fromChannel(ep, Lineup(0, group, false, ContentKind.SERIES)))
+            navigator.openPlayer()
+        }
+    }
+    openAccountSeries?.let { series ->
+        SeriesPanel(series, Modifier.align(Alignment.CenterEnd), onClose = { openAccountSeries = null }) { item ->
+            playback.play(item)
             navigator.openPlayer()
         }
     }

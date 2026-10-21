@@ -126,7 +126,7 @@
     <string name="local_empty">لم يُعثر على فيديوهات في التلفاز أو أجهزة USB.</string>
     <string name="local_no_picker">لا يوجد منتقي ملفات على هذا التلفاز.</string>
 
-    <string name="search_hint">اسم القناة</string>
+    <string name="search_hint">قناة أو فيلم أو مسلسل</string>
     <string name="search_empty">لا نتائج</string>
 
     <string name="playlists_title">قوائم التشغيل</string>
@@ -217,4 +217,30 @@
     <string name="cat_music">موسيقى</string>
     <string name="cat_religious">دينية</string>
     <string name="cat_documentary">وثائقية</string>
+    <string name="import_error_AUTH">رفض الخادم اسم المستخدم أو كلمة المرور</string>
+    <string name="import_error_INACTIVE">الحساب معطّل لدى المزوّد</string>
+    <string name="import_error_EXPIRED">انتهت صلاحية الاشتراك</string>
+    <string name="import_error_FORMAT">تعذّرت قراءة استجابة الخادم</string>
+    <string name="import_error_KEY_LOST">يجب إدخال بيانات الدخول من جديد (فُقد مفتاح التشفير)</string>
+    <string name="xtream_title">حساب Xtream Codes</string>
+    <string name="xtream_server_hint">الخادم (http://server:port)</string>
+    <string name="xtream_user_hint">اسم المستخدم</string>
+    <string name="xtream_pass_hint">كلمة المرور</string>
+    <string name="xtream_add">تسجيل الدخول</string>
+    <string name="xtream_note">استخدم اشتراكًا يحقّ لك استخدامه فقط. تُشفَّر كلمة المرور على الجهاز (Android Keystore)، ولا تُعرض ولا تُكتب في السجلات.</string>
+    <string name="xtream_status">الحالة: %1$s</string>
+    <string name="xtream_expires">ينتهي في %1$s</string>
+    <string name="xtream_no_expiry">بلا تاريخ انتهاء</string>
+    <string name="xtream_connections">اتصالات متزامنة: %1$d</string>
+    <string name="xtream_trial">تجريبي</string>
+    <string name="xtream_no_bulk_check">لا تُفحص حسابات الاشتراك دفعةً واحدة، لأن المزوّد يحدّ من عدد الاتصالات المتزامنة.</string>
+    <string name="playlists_entries">%1$d عنصر</string>
+    <string name="region_all">كل البلدان واللغات</string>
+    <string name="series_season">الموسم %1$d</string>
+    <string name="series_episode">الحلقة %1$d</string>
+    <string name="player_external">فتح بمشغّل آخر</string>
+    <string name="player_external_none">لا يوجد مشغّل فيديو آخر مثبّت.</string>
+    <string name="search_live">القنوات</string>
+    <string name="search_movies">الأفلام</string>
+    <string name="search_series">المسلسلات</string>
 </resources>

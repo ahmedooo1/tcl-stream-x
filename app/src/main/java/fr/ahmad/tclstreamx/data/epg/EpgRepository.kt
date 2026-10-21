@@ -4,6 +4,7 @@ import android.util.Xml
 import fr.ahmad.tclstreamx.data.db.AppDatabase
 import fr.ahmad.tclstreamx.data.db.ProgrammeEntity
 import fr.ahmad.tclstreamx.data.m3u.M3uParser
+import fr.ahmad.tclstreamx.data.xtream.XtreamUrls
 import fr.ahmad.tclstreamx.data.m3u.PlaylistImporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +24,12 @@ sealed interface EpgState {
     data class Done(val programmes: Int, val sources: Int, val failed: Int) : EpgState
 }
 
-class EpgRepository(private val db: AppDatabase, private val http: OkHttpClient) {
+class EpgRepository(
+    private val db: AppDatabase,
+    private val http: OkHttpClient,
+    /** Turns internal `xtream://` guide references into real addresses, in memory only. */
+    private val resolve: suspend (String) -> String?,
+) {
     private val _state = MutableStateFlow<EpgState>(EpgState.Idle)
     val state: StateFlow<EpgState> = _state.asStateFlow()
 
@@ -31,7 +37,7 @@ class EpgRepository(private val db: AppDatabase, private val http: OkHttpClient)
     suspend fun refresh(userEpgUrl: String?): EpgState = withContext(Dispatchers.IO) {
         val urls = (listOf(userEpgUrl?.trim()?.takeIf { it.isNotEmpty() } ?: DEFAULT_GUIDE) +
             db.playlists().all().mapNotNull { it.epgUrl })
-            .filter { M3uParser.isSupportedScheme(it) }
+            .filter { M3uParser.isSupportedScheme(it) || XtreamUrls.isInternal(it) }
             .distinct()
         if (urls.isEmpty()) {
             return@withContext EpgState.Done(0, 0, 0).also { _state.value = it }
@@ -46,9 +52,11 @@ class EpgRepository(private val db: AppDatabase, private val http: OkHttpClient)
         db.epg().clear()
         var total = 0
         var failed = 0
-        for (url in urls) {
-            _state.value = EpgState.Loading(url)
+        for (source in urls) {
+            // The state is shown on screen: an account guide is labelled by its reference, never by its address.
+            _state.value = EpgState.Loading(if (XtreamUrls.isInternal(source)) source.substringBefore("/epg") else source)
             try {
+                val url = resolve(source) ?: throw IOException("guide unavailable")
                 total += download(url) { stream ->
                     val xml = Xml.newPullParser()
                     xml.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)

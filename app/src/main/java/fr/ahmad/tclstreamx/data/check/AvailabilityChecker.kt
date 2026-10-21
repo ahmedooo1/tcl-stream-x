@@ -4,6 +4,7 @@ import fr.ahmad.tclstreamx.data.db.AppDatabase
 import fr.ahmad.tclstreamx.data.db.ChannelEntity
 import fr.ahmad.tclstreamx.data.db.ContentKind
 import fr.ahmad.tclstreamx.data.db.StreamStatus
+import fr.ahmad.tclstreamx.data.xtream.XtreamUrls
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,10 +34,17 @@ class AvailabilityChecker(
     private var job: Job? = null
 
     /** Checks up to [limit] channels of a lineup, oldest results first. */
-    fun checkLineup(playlistId: Long, group: String?, favoritesOnly: Boolean, kind: Int = ContentKind.LIVE, limit: Int = DEFAULT_LIMIT) {
+    fun checkLineup(
+        playlistId: Long,
+        group: String?,
+        favoritesOnly: Boolean,
+        kind: Int = ContentKind.LIVE,
+        region: String? = null,
+        limit: Int = DEFAULT_LIMIT,
+    ) {
         if (job?.isActive == true) return
         job = scope.launch {
-            val channels = db.channels().stalest(playlistId, group, if (favoritesOnly) 1 else 0, kind, limit)
+            val channels = db.channels().stalest(playlistId, group, if (favoritesOnly) 1 else 0, kind, region, limit)
             runChecks(channels)
         }
     }
@@ -58,7 +66,10 @@ class AvailabilityChecker(
         result
     }
 
-    private suspend fun runChecks(channels: List<ChannelEntity>) = withContext(Dispatchers.IO) {
+    private suspend fun runChecks(all: List<ChannelEntity>) = withContext(Dispatchers.IO) {
+        // Subscription accounts (Xtream Codes) are never probed in bulk: panels allow one or two
+        // simultaneous connections, so probing would use the user's slots or get the account flagged.
+        val channels = all.filterNot { XtreamUrls.isInternal(it.url) }
         val total = channels.size
         var done = 0
         var online = 0

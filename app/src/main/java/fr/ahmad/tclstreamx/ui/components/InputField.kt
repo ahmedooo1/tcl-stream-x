@@ -24,7 +24,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Text
@@ -43,6 +45,8 @@ fun InputField(
     modifier: Modifier = Modifier,
     keyboardType: KeyboardType = KeyboardType.Text,
     rowModifier: Modifier = Modifier,
+    /** Password entry: masked on screen, no suggestions or learning by the keyboard. */
+    secret: Boolean = false,
 ) {
     var editing by remember { mutableStateOf(false) }
     var edited by remember { mutableStateOf(false) }
@@ -57,7 +61,7 @@ fun InputField(
         ) {
             Box(Modifier.fillMaxWidth().padding(horizontal = 14.dp).align(Alignment.CenterStart)) {
                 Text(
-                    value.ifEmpty { placeholder },
+                    if (secret && value.isNotEmpty()) "•".repeat(value.length.coerceAtMost(16)) else value.ifEmpty { placeholder },
                     style = type.body.copy(color = if (value.isEmpty()) Palette.TextFaint else Palette.Text),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -75,7 +79,12 @@ fun InputField(
             singleLine = true,
             textStyle = type.body.copy(color = Palette.Text),
             cursorBrush = SolidColor(Palette.Tally),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Done),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = if (secret) KeyboardType.Password else keyboardType,
+                imeAction = ImeAction.Done,
+                autoCorrectEnabled = !secret,
+            ),
+            visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardActions = KeyboardActions(onDone = {
                 editing = false
                 onSubmit(field.text.trim())

@@ -126,7 +126,7 @@
     <string name="local_empty">Aucune vidéo trouvée sur la TV ou les périphériques USB.</string>
     <string name="local_no_picker">Aucun sélecteur de fichiers sur cette TV.</string>
 
-    <string name="search_hint">Nom de chaîne</string>
+    <string name="search_hint">Chaîne, film ou série</string>
     <string name="search_empty">Aucun résultat</string>
 
     <string name="playlists_title">Playlists</string>
@@ -217,4 +217,30 @@
     <string name="cat_music">Musique</string>
     <string name="cat_religious">Religion</string>
     <string name="cat_documentary">Découverte</string>
+    <string name="import_error_AUTH">identifiant ou mot de passe refusé par le serveur</string>
+    <string name="import_error_INACTIVE">compte désactivé par le fournisseur</string>
+    <string name="import_error_EXPIRED">abonnement expiré</string>
+    <string name="import_error_FORMAT">réponse du serveur illisible</string>
+    <string name="import_error_KEY_LOST">identifiants à saisir de nouveau (clé de chiffrement perdue)</string>
+    <string name="xtream_title">Compte Xtream Codes</string>
+    <string name="xtream_server_hint">Serveur (http://serveur:port)</string>
+    <string name="xtream_user_hint">Nom d\'utilisateur</string>
+    <string name="xtream_pass_hint">Mot de passe</string>
+    <string name="xtream_add">Se connecter</string>
+    <string name="xtream_note">Utilisez uniquement un abonnement auquel vous avez droit. Le mot de passe est chiffré sur l\'appareil (Android Keystore), jamais affiché ni écrit dans les journaux.</string>
+    <string name="xtream_status">État : %1$s</string>
+    <string name="xtream_expires">expire le %1$s</string>
+    <string name="xtream_no_expiry">sans date d\'expiration</string>
+    <string name="xtream_connections">%1$d connexion(s) simultanée(s)</string>
+    <string name="xtream_trial">essai</string>
+    <string name="xtream_no_bulk_check">Les comptes d\'abonnement ne sont pas vérifiés en masse : le fournisseur limite les connexions simultanées.</string>
+    <string name="playlists_entries">%1$d entrées</string>
+    <string name="region_all">Tous pays et langues</string>
+    <string name="series_season">Saison %1$d</string>
+    <string name="series_episode">É%1$d</string>
+    <string name="player_external">Ouvrir avec un autre lecteur</string>
+    <string name="player_external_none">Aucun autre lecteur vidéo n\'est installé.</string>
+    <string name="search_live">Chaînes</string>
+    <string name="search_movies">Films</string>
+    <string name="search_series">Séries</string>
 </resources>

@@ -77,9 +77,9 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     val news by remember { dao.observeCategory("news") }.collectAsState(initial = emptyList())
     val sports by remember { dao.observeCategory("sports") }.collectAsState(initial = emptyList())
     val resume by remember { c.db.vodProgress().observeContinue(12) }.collectAsState(initial = emptyList())
-    val liveCount by remember { dao.observeCount(0, ContentKind.LIVE) }.collectAsState(initial = 0)
-    val movieCount by remember { dao.observeCount(0, ContentKind.MOVIE) }.collectAsState(initial = 0)
-    val seriesCount by remember { dao.observeCount(0, ContentKind.SERIES) }.collectAsState(initial = 0)
+    val liveCount by remember { dao.observeCount(0, ContentKind.LIVE, null) }.collectAsState(initial = 0)
+    val movieCount by remember { dao.observeCount(0, ContentKind.MOVIE, null) }.collectAsState(initial = 0)
+    val seriesCount by remember { dao.observeCount(0, ContentKind.SERIES, null) }.collectAsState(initial = 0)
     val playlists by live.playlists.collectAsState()
     val firstTile = remember { FocusRequester() }
 

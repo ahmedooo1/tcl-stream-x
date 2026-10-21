@@ -27,6 +27,7 @@ import fr.ahmad.tclstreamx.data.db.ChannelEntity
 import fr.ahmad.tclstreamx.data.db.HistoryEntity
 import fr.ahmad.tclstreamx.data.db.StreamStatus
 import fr.ahmad.tclstreamx.data.db.VodProgressEntity
+import fr.ahmad.tclstreamx.data.xtream.XtreamUrls
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,6 +74,7 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
     private var forceHls = false
     private var autoRetries = 0
     private var retryJob: Job? = null
+    private var resolveJob: Job? = null
     private var progressJob: Job? = null
 
     private val listener = object : Player.Listener {
@@ -160,7 +162,27 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
 
     private fun load(resumeFromSaved: Boolean) {
         val item = _ui.value.item ?: return
-        val url = item.urls.getOrNull(urlIndex) ?: return
+        val ref = item.urls.getOrNull(urlIndex) ?: return
+        resolveJob?.cancel()
+        if (!XtreamUrls.isInternal(ref)) {
+            start(item, ref, resumeFromSaved)
+            return
+        }
+        // Account references are turned into real addresses in memory, right before playback.
+        val index = urlIndex
+        resolveJob = viewModelScope.launch {
+            val url = container.xtream.resolve(ref)
+            if (_ui.value.item !== item || urlIndex != index) return@launch
+            if (url == null) {
+                _player.value?.stop()
+                _ui.update { it.copy(issue = PlaybackIssue.AUTH, buffering = false) }
+                return@launch
+            }
+            start(item, url, resumeFromSaved)
+        }
+    }
+
+    private fun start(item: PlayItem, url: String, resumeFromSaved: Boolean) {
         val p = obtainPlayer()
         val ctx = getApplication<Application>()
         val http = OkHttpDataSource.Factory(container.playerHttp)
@@ -256,11 +278,11 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
             val dao = container.db.channels()
             val fav = if (lineup.favoritesOnly) 1 else 0
             val target = if (direction > 0) {
-                dao.next(lineup.playlistId, lineup.group, fav, lineup.kind, ch.playlistId, ch.position)
-                    ?: dao.firstOfLineup(lineup.playlistId, lineup.group, fav, lineup.kind, 1).firstOrNull()
+                dao.next(lineup.playlistId, lineup.group, fav, lineup.kind, lineup.region, ch.playlistId, ch.position)
+                    ?: dao.firstOfLineup(lineup.playlistId, lineup.group, fav, lineup.kind, lineup.region, 1).firstOrNull()
             } else {
-                dao.previous(lineup.playlistId, lineup.group, fav, lineup.kind, ch.playlistId, ch.position)
-                    ?: dao.lastOfLineup(lineup.playlistId, lineup.group, fav, lineup.kind)
+                dao.previous(lineup.playlistId, lineup.group, fav, lineup.kind, lineup.region, ch.playlistId, ch.position)
+                    ?: dao.lastOfLineup(lineup.playlistId, lineup.group, fav, lineup.kind, lineup.region)
             }
             if (target != null && target.channelKey != ch.channelKey) play(PlayItem.fromChannel(target, lineup))
         }
@@ -375,9 +397,20 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Address of the current item for another player app installed on the device (for formats the
+     * built-in player cannot decode). Resolved on demand; the caller hands it straight to the intent.
+     */
+    suspend fun externalUrl(): String? {
+        val item = _ui.value.item ?: return null
+        val ref = item.urls.getOrNull(urlIndex) ?: item.urls.firstOrNull() ?: return null
+        return container.xtream.resolve(ref)
+    }
+
     fun stop() {
         saveProgress(completed = false)
         retryJob?.cancel()
+        resolveJob?.cancel()
         progressJob?.cancel()
         _player.value?.stop()
         _ui.update { PlayerUi(resizeMode = it.resizeMode) }

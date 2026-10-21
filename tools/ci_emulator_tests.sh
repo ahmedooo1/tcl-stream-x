@@ -27,6 +27,7 @@ run_test() {
   fi
 }
 run_test ImportOnDeviceTest
+run_test XtreamOnDeviceTest
 run_test PlaybackOnDeviceTest
 # The default AVD panel is 320x640 px and refuses overrides much larger than 2x, so the logical
 # geometry is set with sizes it accepts and a density that gives the wanted width in dp.

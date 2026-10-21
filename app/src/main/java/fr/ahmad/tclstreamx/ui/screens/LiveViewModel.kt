@@ -13,6 +13,7 @@ import fr.ahmad.tclstreamx.data.db.ContentKind
 import fr.ahmad.tclstreamx.data.db.GroupCount
 import fr.ahmad.tclstreamx.data.db.PlaylistEntity
 import fr.ahmad.tclstreamx.data.db.ProgrammeEntity
+import fr.ahmad.tclstreamx.data.db.RegionCount
 import fr.ahmad.tclstreamx.player.Lineup
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -41,20 +42,26 @@ class LiveViewModel(app: Application) : AndroidViewModel(app) {
 
     val playlistId = MutableStateFlow(0L)
     val group = MutableStateFlow<GroupSel>(GroupSel.All)
+    /** Country (upper case) or language (lower case) filter, null for all. */
+    val region = MutableStateFlow<String?>(null)
     val focused = MutableStateFlow<ChannelEntity?>(null)
 
-    val groups: StateFlow<List<GroupCount>> = playlistId
-        .flatMapLatest { c.db.channels().observeGroups(it, ContentKind.LIVE) }
+    val regions: StateFlow<List<RegionCount>> = playlistId
+        .flatMapLatest { c.db.channels().observeRegions(it, ContentKind.LIVE) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val totalCount: StateFlow<Int> = playlistId
-        .flatMapLatest { c.db.channels().observeCount(it, ContentKind.LIVE) }
+    val groups: StateFlow<List<GroupCount>> = combine(playlistId, region) { p, r -> p to r }
+        .flatMapLatest { (p, r) -> c.db.channels().observeGroups(p, ContentKind.LIVE, r) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val totalCount: StateFlow<Int> = combine(playlistId, region) { p, r -> p to r }
+        .flatMapLatest { (p, r) -> c.db.channels().observeCount(p, ContentKind.LIVE, r) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
-    val channels: Flow<PagingData<ChannelEntity>> = combine(playlistId, group) { p, g -> p to g }
-        .flatMapLatest { (p, g) ->
+    val channels: Flow<PagingData<ChannelEntity>> = combine(playlistId, group, region) { p, g, r -> Triple(p, g, r) }
+        .flatMapLatest { (p, g, r) ->
             Pager(PagingConfig(pageSize = PAGE, prefetchDistance = PAGE, enablePlaceholders = true, maxSize = PAGE * 10)) {
-                c.db.channels().paging(p, (g as? GroupSel.Named)?.title, if (g == GroupSel.Favorites) 1 else 0, ContentKind.LIVE)
+                c.db.channels().paging(p, (g as? GroupSel.Named)?.title, if (g == GroupSel.Favorites) 1 else 0, ContentKind.LIVE, r)
             }.flow
         }
         .cachedIn(viewModelScope)
@@ -80,17 +87,23 @@ class LiveViewModel(app: Application) : AndroidViewModel(app) {
 
     fun lineup(): Lineup {
         val g = group.value
-        return Lineup(playlistId.value, (g as? GroupSel.Named)?.title, g == GroupSel.Favorites, ContentKind.LIVE)
+        return Lineup(playlistId.value, (g as? GroupSel.Named)?.title, g == GroupSel.Favorites, ContentKind.LIVE, region.value)
     }
 
     fun selectPlaylist(id: Long) {
         playlistId.value = id
         group.value = GroupSel.All
+        region.value = null
+    }
+
+    fun selectRegion(code: String?) {
+        region.value = code
+        group.value = GroupSel.All
     }
 
     fun checkCurrentLineup() {
         val l = lineup()
-        c.checker.checkLineup(l.playlistId, l.group, l.favoritesOnly)
+        c.checker.checkLineup(l.playlistId, l.group, l.favoritesOnly, ContentKind.LIVE, l.region)
     }
 
     fun toggleFavorite(ch: ChannelEntity) {

@@ -10,6 +10,8 @@ data class Lineup(
     val group: String? = null,
     val favoritesOnly: Boolean = false,
     val kind: Int = ContentKind.LIVE,
+    /** Country (upper case) or language (lower case) filter, null for all. */
+    val region: String? = null,
 )
 
 data class PlayItem(

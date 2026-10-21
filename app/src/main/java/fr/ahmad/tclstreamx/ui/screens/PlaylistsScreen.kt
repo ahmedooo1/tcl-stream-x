@@ -42,6 +42,7 @@ import fr.ahmad.tclstreamx.TclApp
 import fr.ahmad.tclstreamx.data.db.PlaylistKind
 import fr.ahmad.tclstreamx.data.m3u.ImportException
 import fr.ahmad.tclstreamx.data.m3u.ImportState
+import fr.ahmad.tclstreamx.data.xtream.XtreamAccount
 import fr.ahmad.tclstreamx.ui.components.InputField
 import fr.ahmad.tclstreamx.ui.components.TallyRow
 import fr.ahmad.tclstreamx.ui.nav.Navigator
@@ -61,6 +62,10 @@ fun PlaylistsScreen(navigator: Navigator) {
     val state by c.importer.state.collectAsState()
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
+    var xName by remember { mutableStateOf("") }
+    var xServer by remember { mutableStateOf("") }
+    var xUser by remember { mutableStateOf("") }
+    var xPass by remember { mutableStateOf("") }
     var noPicker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf<Long?>(null) }
     val first = remember { FocusRequester() }
@@ -149,6 +154,56 @@ fun PlaylistsScreen(navigator: Navigator) {
         }
         if (noPicker) item { Text(stringResource(R.string.local_no_picker), style = type.bodySmall.copy(color = Palette.Caution)) }
 
+        // ---- Xtream Codes account -------------------------------------------------------------
+        item { Text(stringResource(R.string.xtream_title), style = type.headline, modifier = Modifier.padding(top = 18.dp)) }
+        item { Text(stringResource(R.string.xtream_note), style = type.bodySmall, modifier = Modifier.padding(bottom = 6.dp)) }
+        item {
+            val connect = {
+                val n = xName
+                val server = xServer
+                val user = xUser
+                val pass = xPass
+                // The password leaves the screen state at once; only the encrypted copy is kept.
+                xPass = ""
+                c.appScope.launch {
+                    try {
+                        c.importer.addXtream(n, server, user, pass)
+                    } catch (e: ImportException) {
+                        android.util.Log.i("TclStreamX", "xtream account rejected: ${e.error}")
+                    }
+                }
+                Unit
+            }
+            val fields: @Composable (Modifier) -> Unit = { m ->
+                InputField(xServer, stringResource(R.string.xtream_server_hint), onSubmit = { xServer = it }, modifier = m, keyboardType = KeyboardType.Uri)
+                InputField(xUser, stringResource(R.string.xtream_user_hint), onSubmit = { xUser = it }, modifier = m)
+                InputField(xPass, stringResource(R.string.xtream_pass_hint), onSubmit = { xPass = it }, modifier = m, secret = true)
+            }
+            if (compact) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    InputField(xName, stringResource(R.string.playlists_name_hint), onSubmit = { xName = it })
+                    fields(Modifier)
+                    TallyRow(onClick = connect, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                        Text(stringResource(R.string.xtream_add), style = type.title.copy(color = Palette.Tally), modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        InputField(xName, stringResource(R.string.playlists_name_hint), onSubmit = { xName = it }, modifier = Modifier.width(260.dp))
+                        InputField(xServer, stringResource(R.string.xtream_server_hint), onSubmit = { xServer = it }, modifier = Modifier.weight(1f), keyboardType = KeyboardType.Uri)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        InputField(xUser, stringResource(R.string.xtream_user_hint), onSubmit = { xUser = it }, modifier = Modifier.weight(1f))
+                        InputField(xPass, stringResource(R.string.xtream_pass_hint), onSubmit = { xPass = it }, modifier = Modifier.weight(1f), secret = true)
+                        TallyRow(onClick = connect, modifier = Modifier.width(180.dp).height(52.dp)) {
+                            Text(stringResource(R.string.xtream_add), style = type.title.copy(color = Palette.Tally), modifier = Modifier.align(Alignment.Center))
+                        }
+                    }
+                }
+            }
+        }
+
         item { Spacer(Modifier.height(18.dp)) }
         items(playlists, key = { it.id }) { p ->
             Column(Modifier.fillMaxWidth().background(Palette.Graphite).padding(vertical = 10.dp)) {
@@ -157,16 +212,22 @@ fun PlaylistsScreen(navigator: Navigator) {
                         Text(p.name, style = type.title)
                         Text(
                             listOfNotNull(
-                                stringResource(R.string.playlists_channels, p.channelCount),
+                                if (p.kind == PlaylistKind.XTREAM) stringResource(R.string.playlists_entries, p.channelCount)
+                                else stringResource(R.string.playlists_channels, p.channelCount),
                                 if (p.updatedAt > 0) stringResource(R.string.playlists_updated, relativeTime(p.updatedAt)) else null,
                                 p.epgUrl?.let { "EPG" },
                             ).joinToString(" · "),
                             style = type.mono,
                         )
                         if (p.kind == PlaylistKind.BUILTIN) Text(stringResource(R.string.playlists_builtin_note), style = type.bodySmall)
+                        if (p.kind == PlaylistKind.XTREAM) {
+                            Text(p.source.orEmpty(), style = type.mono, maxLines = 1)
+                            XtreamAccount.parseSummary(p.accountInfo)?.let { a -> AccountLine(a) }
+                            Text(stringResource(R.string.xtream_no_bulk_check), style = type.bodySmall)
+                        }
                         p.lastError?.let { Text("⚠ $it", style = type.mono.copy(color = Palette.Caution)) }
                     }
-                    if (p.kind == PlaylistKind.URL || p.kind == PlaylistKind.FILE) {
+                    if (p.kind == PlaylistKind.URL || p.kind == PlaylistKind.FILE || p.kind == PlaylistKind.XTREAM) {
                         TallyRow(onClick = { c.appScope.launch { c.importer.refresh(p.id) } }, modifier = Modifier.width(if (compact) 96.dp else 150.dp).height(44.dp)) {
                             Text(stringResource(R.string.playlists_refresh), style = type.body, modifier = Modifier.align(Alignment.Center))
                         }
@@ -196,4 +257,17 @@ fun PlaylistsScreen(navigator: Navigator) {
             }
         }
     }
+}
+
+@Composable
+private fun AccountLine(a: XtreamAccount) {
+    val type = LocalTallyType.current
+    val parts = listOfNotNull(
+        stringResource(R.string.xtream_status, a.status),
+        a.expiresAt?.let { stringResource(R.string.xtream_expires, java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM).format(java.util.Date(it * 1000))) }
+            ?: stringResource(R.string.xtream_no_expiry),
+        a.maxConnections?.let { stringResource(R.string.xtream_connections, it) },
+        if (a.isTrial) stringResource(R.string.xtream_trial) else null,
+    )
+    Text(parts.joinToString(" · "), style = type.bodySmall.copy(color = if (a.status.equals("Active", true)) Palette.Signal else Palette.Caution))
 }

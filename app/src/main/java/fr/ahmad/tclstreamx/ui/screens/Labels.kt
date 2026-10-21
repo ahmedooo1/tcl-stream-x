@@ -2,12 +2,14 @@ package fr.ahmad.tclstreamx.ui.screens
 
 import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import fr.ahmad.tclstreamx.R
 import fr.ahmad.tclstreamx.data.m3u.ImportError
 import fr.ahmad.tclstreamx.player.PlaybackIssue
 import java.text.DateFormat
 import java.util.Date
+import java.util.Locale
 
 /** Built-in subsections are stored as "category:language" (e.g. "news:ar"); playlist groups as is. */
 @Composable
@@ -76,5 +78,18 @@ fun importErrorText(e: ImportError): String = stringResource(
         ImportError.EMPTY -> R.string.import_error_EMPTY
         ImportError.TOO_LARGE -> R.string.import_error_TOO_LARGE
         ImportError.UNREADABLE -> R.string.import_error_UNREADABLE
+        ImportError.AUTH -> R.string.import_error_AUTH
+        ImportError.INACTIVE -> R.string.import_error_INACTIVE
+        ImportError.EXPIRED -> R.string.import_error_EXPIRED
+        ImportError.FORMAT -> R.string.import_error_FORMAT
+        ImportError.KEY_LOST -> R.string.import_error_KEY_LOST
     }
 )
+
+/** "FR" → "France", "ar" → "arabe" (in the interface language); upper case codes are countries, lower case languages. */
+@Composable
+fun regionLabel(code: String): String {
+    val ui = LocalConfiguration.current.locales[0]
+    val name = if (code.isNotEmpty() && code[0].isUpperCase()) Locale("", code).getDisplayCountry(ui) else Locale(code).getDisplayLanguage(ui)
+    return name.ifBlank { code }.replaceFirstChar { it.titlecase(ui) }
+}

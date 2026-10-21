@@ -10,6 +10,10 @@ import fr.ahmad.tclstreamx.data.m3u.PlaylistImporter
 import fr.ahmad.tclstreamx.data.settings.SettingsStore
 import fr.ahmad.tclstreamx.data.sports.SportsRepository
 import fr.ahmad.tclstreamx.data.vod.VodRepository
+import fr.ahmad.tclstreamx.data.xtream.KeystoreSecretBox
+import fr.ahmad.tclstreamx.data.xtream.Redactor
+import fr.ahmad.tclstreamx.data.xtream.XtreamClient
+import fr.ahmad.tclstreamx.data.xtream.XtreamRepository
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +25,10 @@ import java.util.concurrent.TimeUnit
 
 /** Manual dependency container: the app is small enough not to need a DI framework. */
 class AppContainer(private val context: Context) {
-    private val errors = CoroutineExceptionHandler { _, t -> android.util.Log.w("TclStreamX", "background task failed", t) }
+    // Only the exception type and a redacted message are logged: never a stack trace that could carry an address with a login.
+    private val errors = CoroutineExceptionHandler { _, t ->
+        android.util.Log.w("TclStreamX", "background task failed: ${t.javaClass.simpleName} ${Redactor.redact(t.message)}")
+    }
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default + errors)
 
     val db: AppDatabase = AppDatabase.build(context)
@@ -51,10 +58,17 @@ class AppContainer(private val context: Context) {
         .callTimeout(15, TimeUnit.SECONDS)
         .build()
 
-    val importer = PlaylistImporter(db, http, context.contentResolver)
+    /** Panel API client: lists of tens of megabytes, so a longer read timeout and no HTTP cache. */
+    private val xtreamHttp: OkHttpClient = http.newBuilder()
+        .cache(null)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .build()
+    val xtreamClient = XtreamClient(xtreamHttp)
+    val xtream = XtreamRepository(db, xtreamClient, KeystoreSecretBox())
+    val importer = PlaylistImporter(db, http, context.contentResolver, xtream, xtreamClient)
     val catalog = BuiltInCatalog(context, db)
     val checker = AvailabilityChecker(db, StreamProbe(probeHttp), appScope)
-    val epg = EpgRepository(db, http)
+    val epg = EpgRepository(db, http) { xtream.resolve(it) }
     val sports = SportsRepository(context, http)
     val vod = VodRepository(context, http)
 

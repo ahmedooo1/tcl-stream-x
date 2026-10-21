@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-enum class PlaylistKind { BUILTIN, URL, FILE, LAN }
+enum class PlaylistKind { BUILTIN, URL, FILE, LAN, XTREAM }
 
 @Entity(tableName = "playlists")
 data class PlaylistEntity(
@@ -23,6 +23,10 @@ data class PlaylistEntity(
     val lastError: String? = null,
     /** For the built-in catalog: generatedAt of the bundled asset, to refresh after an app update. */
     val sourceVersion: Long = 0,
+    /** Xtream Codes login, encrypted with a Keystore key (see SecretBox). Never stored in clear. */
+    val secret: String? = null,
+    /** Xtream Codes account state without secrets: status|expiry|max connections|trial. */
+    val accountInfo: String? = null,
 )
 
 @Entity(
@@ -31,6 +35,8 @@ data class PlaylistEntity(
         Index(value = ["playlistId", "generation", "position"]),
         Index(value = ["playlistId", "generation", "groupTitle", "position"]),
         Index(value = ["kind", "groupTitle", "position"]),
+        Index(value = ["kind", "country"]),
+        Index(value = ["kind", "language"]),
         Index(value = ["nameNorm"]),
         Index(value = ["channelKey"]),
         Index(value = ["tvgId"]),
@@ -120,6 +126,12 @@ data class VodProgressEntity(
     val positionMs: Long,
     val durationMs: Long,
     val updatedAt: Long,
+)
+
+/** A country (upper case ISO code) or a language (lower case ISO code) with its number of entries. */
+data class RegionCount(
+    val code: String,
+    val count: Int,
 )
 
 data class GroupCount(

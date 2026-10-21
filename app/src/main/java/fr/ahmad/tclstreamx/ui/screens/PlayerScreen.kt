@@ -74,6 +74,7 @@ import fr.ahmad.tclstreamx.ui.theme.isCompactWidth
 import fr.ahmad.tclstreamx.ui.theme.isTv
 import fr.ahmad.tclstreamx.data.db.StreamStatus
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 private enum class Panel { NONE, CHANNELS, OPTIONS }
@@ -92,6 +93,9 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
     var duration by remember { mutableLongStateOf(0L) }
     val rootFocus = remember { FocusRequester() }
     val errorFocus = remember { FocusRequester() }
+    val externalScope = androidx.compose.runtime.rememberCoroutineScope()
+    val externalContext = LocalContext.current
+    var noExternalPlayer by remember(item?.key) { mutableStateOf(false) }
 
     val keepPlayingOnExit = remember { navigator.previousRoute() == Routes.LIVE }
     // Phones: the rotate button locks the player in landscape; leaving the player gives rotation back.
@@ -242,6 +246,28 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
                     TallyRow(onClick = { playback.zap(+1) }, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                         Text(stringResource(R.string.player_next_channel), style = type.title, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp))
                     }
+                }
+                // Formats the built-in player cannot read: hand the stream to another player app the user installed (VLC, etc.).
+                if (issue == fr.ahmad.tclstreamx.player.PlaybackIssue.FORMAT || issue == fr.ahmad.tclstreamx.player.PlaybackIssue.DECODER) {
+                    TallyRow(
+                        onClick = {
+                            externalScope.launch {
+                                val url = playback.externalUrl() ?: return@launch
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW)
+                                    .setDataAndType(android.net.Uri.parse(url), "video/*")
+                                    .putExtra("title", item?.title)
+                                try {
+                                    externalContext.startActivity(intent)
+                                } catch (e: android.content.ActivityNotFoundException) {
+                                    noExternalPlayer = true
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                    ) {
+                        Text(stringResource(R.string.player_external), style = type.title, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp))
+                    }
+                    if (noExternalPlayer) Text(stringResource(R.string.player_external_none), style = type.bodySmall.copy(color = Palette.Caution))
                 }
                 TallyRow(onClick = { navigator.back() }, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                     Text(stringResource(R.string.player_back), style = type.title, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp))

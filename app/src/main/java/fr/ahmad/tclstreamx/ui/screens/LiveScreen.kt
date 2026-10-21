@@ -79,6 +79,8 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
     val playlistId by vm.playlistId.collectAsState()
     val group by vm.group.collectAsState()
     val groups by vm.groups.collectAsState()
+    val regions by vm.regions.collectAsState()
+    val region by vm.region.collectAsState()
     val total by vm.totalCount.collectAsState()
     val favorites by vm.favoriteKeys.collectAsState()
     val focused by vm.focused.collectAsState()
@@ -118,6 +120,7 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
     // Channel list, shared by the phone and TV layouts.
     val channelColumn: @Composable (Modifier) -> Unit = { mod ->
         Column(mod) {
+            RegionStrip(regions, region, vm::selectRegion, Modifier.padding(bottom = 8.dp), PaddingValues(0.dp))
             Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(bottom = 10.dp)) {
                 val title = when (val g = group) {
                     GroupSel.All -> stringResource(R.string.group_all)
