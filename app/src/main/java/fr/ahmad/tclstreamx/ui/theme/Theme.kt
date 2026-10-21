@@ -41,8 +41,6 @@ object Palette {
     val Violet = Color(0xFF9C8CFF)
     val Cyan = Color(0xFF3FC8E4)
     val Rose = Color(0xFFFF6F91)
-    // Logos are designed for white backgrounds: they sit on a light plate so dark logos stay visible.
-    val Plate = Color(0xFFE9ECEF)
 }
 
 val PlexSans = FontFamily(
