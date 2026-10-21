@@ -119,10 +119,10 @@ def probe(c: Candidate) -> Candidate:
             c.status, c.detail = classify_http(code) if code not in (200, 206) else "empty_segment", f"segment HTTP {code}"
             return c
         c.status, c.detail = "ok", f"manifest + segment downloaded ({len(seg)} bytes)"
-    except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as e:
+    except Exception as e:  # any failure of a remote stream is a result, never a crash
         reason = getattr(e, "reason", e)
         c.status = "timeout" if "timed out" in str(reason) else "network_error"
-        c.detail = str(reason)[:160]
+        c.detail = f"{type(e).__name__}: {str(reason)[:140]}"
     return c
 
 

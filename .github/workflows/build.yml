@@ -31,11 +31,16 @@ jobs:
       - name: Check built-in channels (manifest + segment of every candidate)
         run: |
           COUNTRY=$(curl -s --max-time 5 https://ipinfo.io/country || echo "?")
-          python3 tools/build_catalog.py --check --checked-from "GitHub Actions runner, country ${COUNTRY}"
+          if ! python3 tools/build_catalog.py --check --checked-from "GitHub Actions runner, country ${COUNTRY}" > catalog.log 2>&1; then
+            tail -25 catalog.log | while read -r l; do echo "::error::$l"; done
+            echo "::error::catalog check failed, the APK keeps the committed (unchecked) catalog"
+          fi
+          cat catalog.log
           cat catalog/REPORT.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Probe other sources (open films, sports API, Internet Archive, XMLTV)
-        run: python3 tools/probe_sources.py || echo "::warning::source probe failed"
+        run: |
+          python3 tools/probe_sources.py > probe.log 2>&1 || tail -15 probe.log | while read -r l; do echo "::warning::$l"; done
 
       - name: Unit tests
         id: unit
