@@ -251,16 +251,16 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
     fun zap(direction: Int) {
         val item = _ui.value.item ?: return
         val ch = item.channel ?: return
-        val lineup = item.lineup ?: Lineup(playlistId = ch.playlistId)
+        val lineup = item.lineup ?: Lineup(playlistId = ch.playlistId, kind = ch.kind)
         viewModelScope.launch {
             val dao = container.db.channels()
             val fav = if (lineup.favoritesOnly) 1 else 0
             val target = if (direction > 0) {
-                dao.next(lineup.playlistId, lineup.group, fav, ch.playlistId, ch.position)
-                    ?: dao.firstOfLineup(lineup.playlistId, lineup.group, fav, 1).firstOrNull()
+                dao.next(lineup.playlistId, lineup.group, fav, lineup.kind, ch.playlistId, ch.position)
+                    ?: dao.firstOfLineup(lineup.playlistId, lineup.group, fav, lineup.kind, 1).firstOrNull()
             } else {
-                dao.previous(lineup.playlistId, lineup.group, fav, ch.playlistId, ch.position)
-                    ?: dao.lastOfLineup(lineup.playlistId, lineup.group, fav)
+                dao.previous(lineup.playlistId, lineup.group, fav, lineup.kind, ch.playlistId, ch.position)
+                    ?: dao.lastOfLineup(lineup.playlistId, lineup.group, fav, lineup.kind)
             }
             if (target != null && target.channelKey != ch.channelKey) play(PlayItem.fromChannel(target, lineup))
         }

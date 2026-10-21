@@ -3,7 +3,7 @@
     <string name="app_name">TCL Stream X</string>
 
     <string name="nav_home">Accueil</string>
-    <string name="nav_live">Direct</string>
+    <string name="nav_live">Chaînes</string>
     <string name="nav_sports">Sport</string>
     <string name="nav_movies">Films</string>
     <string name="nav_series">Séries</string>
@@ -176,4 +176,32 @@
     <string name="settings_version">Version %1$s</string>
     <string name="on">Activé</string>
     <string name="off">Désactivé</string>
+    <string name="genre_MOVIES_ALL">Tous les films</string>
+    <string name="genre_COMEDY">Comédie</string>
+    <string name="genre_DRAMA">Drame</string>
+    <string name="genre_HORROR">Horreur</string>
+    <string name="genre_SCIFI">Science-fiction</string>
+    <string name="genre_WESTERN">Western</string>
+    <string name="genre_CRIME">Policier et film noir</string>
+    <string name="genre_WAR">Guerre</string>
+    <string name="genre_SILENT">Cinéma muet</string>
+    <string name="genre_SERIES_ALL">Toutes les séries</string>
+    <string name="genre_SITCOM">Comédie</string>
+    <string name="genre_MYSTERY">Enquêtes et mystère</string>
+    <string name="genre_TV_WESTERN">Western</string>
+    <string name="genre_TV_SCIFI">Science-fiction</string>
+    <string name="genre_ADVENTURE">Aventure</string>
+    <string name="genre_KIDS">Jeunesse</string>
+    <string name="genre_ANIMATION_ALL">Tous les dessins animés</string>
+    <string name="genre_FLEISCHER">Popeye, Superman, Betty Boop</string>
+    <string name="genre_LOONEY">Looney Tunes</string>
+    <string name="genre_FELIX">Félix le chat</string>
+    <string name="section_my_playlists">Mes playlists</string>
+    <string name="section_public_domain">Domaine public</string>
+    <string name="section_open_films">Films libres (Blender)</string>
+    <string name="vod_group_empty">Aucun élément dans ce groupe.</string>
+    <string name="vod_shows">%1$d séries</string>
+    <string name="vod_items">%1$d titres</string>
+    <string name="vod_sections">Sections</string>
+    <string name="vod_no_playlist_hint">Ajoutez une playlist M3U qui contient des films ou des séries : ils apparaîtront ici, triés par groupe.</string>
 </resources>

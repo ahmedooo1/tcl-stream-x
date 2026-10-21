@@ -5,7 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -53,6 +56,7 @@ import fr.ahmad.tclstreamx.ui.screens.SportsScreen
 import fr.ahmad.tclstreamx.ui.screens.VodScreen
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
 import fr.ahmad.tclstreamx.ui.theme.Palette
+import fr.ahmad.tclstreamx.ui.theme.isCompactWidth
 
 object Routes {
     const val HOME = "home"
@@ -109,11 +113,9 @@ fun AppRoot(playback: PlaybackController) {
     val route = entry?.destination?.route ?: Routes.HOME
     val live: LiveViewModel = viewModel()
 
-    Row(Modifier.fillMaxSize().background(Palette.Ink)) {
-        if (route != Routes.PLAYER) {
-            Rail(current = route, onSelect = navigator::go)
-        }
-        Box(Modifier.weight(1f).fillMaxHeight()) {
+    val compact = isCompactWidth()
+    val host: @Composable (Modifier) -> Unit = { mod ->
+        Box(mod) {
             NavHost(navController = nav, startDestination = Routes.HOME) {
                 composable(Routes.HOME) { HomeScreen(navigator, playback, live) }
                 composable(Routes.LIVE) { LiveScreen(navigator, playback, live) }
@@ -127,6 +129,42 @@ fun AppRoot(playback: PlaybackController) {
                 composable(Routes.PLAYLISTS) { PlaylistsScreen(navigator) }
                 composable(Routes.SETTINGS) { SettingsScreen() }
                 composable(Routes.LAN) { LanScreen(navigator) }
+            }
+        }
+    }
+
+    if (compact) {
+        // Portrait phone: sections as a scrollable tab strip on top, content below.
+        Column(Modifier.fillMaxSize().background(Palette.Ink)) {
+            if (route != Routes.PLAYER) TopTabs(current = route, onSelect = navigator::go)
+            host(Modifier.weight(1f).fillMaxWidth())
+        }
+    } else {
+        Row(Modifier.fillMaxSize().background(Palette.Ink)) {
+            if (route != Routes.PLAYER) Rail(current = route, onSelect = navigator::go)
+            host(Modifier.weight(1f).fillMaxHeight())
+        }
+    }
+}
+
+@Composable
+private fun TopTabs(current: String, onSelect: (String) -> Unit) {
+    val type = LocalTallyType.current
+    val selectedIndex = RAIL.indexOfFirst { current.startsWith(it.route) }.coerceAtLeast(0)
+    LazyRow(
+        Modifier.fillMaxWidth().background(Palette.Graphite),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        itemsIndexed(RAIL, key = { _, e -> e.route }) { i, item ->
+            val selected = i == selectedIndex
+            TallyRow(onClick = { onSelect(item.route) }, selected = selected, modifier = Modifier.height(44.dp)) { focused ->
+                Text(
+                    stringResource(item.label),
+                    style = type.title.copy(color = if (focused || selected) Palette.Text else Palette.TextDim),
+                    maxLines = 1,
+                    modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp),
+                )
             }
         }
     }

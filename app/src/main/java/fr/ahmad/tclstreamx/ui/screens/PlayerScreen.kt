@@ -2,6 +2,9 @@ package fr.ahmad.tclstreamx.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,7 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -162,6 +167,17 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
                 }
             }
             .focusable()
+            // Touch: a tap shows or hides the controls, or closes an open panel.
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    if (panel != Panel.NONE) {
+                        panel = Panel.NONE
+                    } else {
+                        overlay = !overlay
+                        lastInput = System.currentTimeMillis()
+                    }
+                })
+            }
     ) {
         VideoSurface(player, ui.resizeMode, Modifier.fillMaxSize())
 
@@ -181,11 +197,24 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
 
         if (item != null && overlay && ui.issue == null) {
             InfoBar(item, ui, live, position, duration, Modifier.align(Alignment.BottomCenter))
+            TouchBar(
+                isLive = item.isLive,
+                playing = ui.playing,
+                modifier = Modifier.align(Alignment.TopCenter),
+                onBack = { navigator.back() },
+                onChannels = { panel = Panel.CHANNELS },
+                onOptions = { panel = Panel.OPTIONS },
+                onPrev = { playback.zap(-1); touch() },
+                onNext = { playback.zap(+1); touch() },
+                onPlayPause = { player?.let { if (it.isPlaying) it.pause() else it.play() }; touch() },
+                onRewind = { player?.let { it.seekTo((it.currentPosition - 10_000).coerceAtLeast(0)) }; touch() },
+                onForward = { player?.let { it.seekTo(it.currentPosition + 30_000) }; touch() },
+            )
         }
 
         ui.issue?.let { issue ->
             Column(
-                Modifier.align(Alignment.Center).width(560.dp).background(Palette.Graphite).padding(28.dp),
+                Modifier.align(Alignment.Center).padding(16.dp).widthIn(max = 560.dp).fillMaxWidth().background(Palette.Graphite).padding(28.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(stringResource(R.string.player_error_title), style = type.headline)
@@ -210,6 +239,61 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
             Panel.OPTIONS -> OptionsPanel(playback, Modifier.align(Alignment.CenterEnd))
             Panel.NONE -> Unit
         }
+    }
+}
+
+/**
+ * Touch-only controls (phones, tablets). Not focusable, so the remote keeps its own mapping:
+ * the D-pad never lands on these buttons.
+ */
+@Composable
+private fun TouchBar(
+    isLive: Boolean,
+    playing: Boolean,
+    modifier: Modifier,
+    onBack: () -> Unit,
+    onChannels: () -> Unit,
+    onOptions: () -> Unit,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+    onPlayPause: () -> Unit,
+    onRewind: () -> Unit,
+    onForward: () -> Unit,
+) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .background(Brush.verticalGradient(listOf(Palette.Ink.copy(alpha = 0.85f), Color.Transparent)))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TouchButton("←", onBack)
+        Spacer(Modifier.weight(1f))
+        if (isLive) {
+            TouchButton("☰", onChannels)
+            TouchButton("▼", onPrev)
+            TouchButton("▲", onNext)
+        } else {
+            TouchButton("−10", onRewind)
+            TouchButton(if (playing) "❚❚" else "▶", onPlayPause)
+            TouchButton("+30", onForward)
+        }
+        TouchButton("⚙", onOptions)
+    }
+}
+
+@Composable
+private fun TouchButton(label: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(48.dp)
+            .background(Palette.Graphite.copy(alpha = 0.8f))
+            .focusProperties { canFocus = false }
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = LocalTallyType.current.title.copy(color = Palette.Text))
     }
 }
 
@@ -285,7 +369,7 @@ private fun ChannelPanel(live: LiveViewModel, playback: PlaybackController, modi
     val paged = live.channels.collectAsLazyPagingItems()
     val first = remember { FocusRequester() }
     LaunchedEffect(paged.itemCount > 0) { if (paged.itemCount > 0) runCatching { first.requestFocus() } }
-    Column(modifier.width(420.dp).fillMaxHeight().background(Palette.Graphite.copy(alpha = 0.96f)).padding(vertical = 24.dp)) {
+    Column(modifier.widthIn(max = 420.dp).fillMaxWidth(0.88f).fillMaxHeight().background(Palette.Graphite.copy(alpha = 0.96f)).padding(vertical = 24.dp)) {
         LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
             items(count = paged.itemCount, key = paged.itemKey { it.id }) { i ->
                 val ch = paged[i] ?: return@items
@@ -322,7 +406,7 @@ private fun OptionsPanel(playback: PlaybackController, modifier: Modifier) {
         else -> o.label
     }
     LazyColumn(
-        modifier.width(400.dp).fillMaxHeight().background(Palette.Graphite.copy(alpha = 0.96f)),
+        modifier.widthIn(max = 400.dp).fillMaxWidth(0.88f).fillMaxHeight().background(Palette.Graphite.copy(alpha = 0.96f)),
         contentPadding = PaddingValues(vertical = 24.dp),
     ) {
         item {

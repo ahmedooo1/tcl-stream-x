@@ -3,7 +3,7 @@
     <string name="app_name">TCL Stream X</string>
 
     <string name="nav_home">الرئيسية</string>
-    <string name="nav_live">البث المباشر</string>
+    <string name="nav_live">القنوات</string>
     <string name="nav_sports">الرياضة</string>
     <string name="nav_movies">الأفلام</string>
     <string name="nav_series">المسلسلات</string>
@@ -176,4 +176,32 @@
     <string name="settings_version">الإصدار %1$s</string>
     <string name="on">مفعّل</string>
     <string name="off">معطّل</string>
+    <string name="genre_MOVIES_ALL">كل الأفلام</string>
+    <string name="genre_COMEDY">كوميديا</string>
+    <string name="genre_DRAMA">دراما</string>
+    <string name="genre_HORROR">رعب</string>
+    <string name="genre_SCIFI">خيال علمي</string>
+    <string name="genre_WESTERN">ويسترن</string>
+    <string name="genre_CRIME">جريمة وأفلام نوار</string>
+    <string name="genre_WAR">حرب</string>
+    <string name="genre_SILENT">السينما الصامتة</string>
+    <string name="genre_SERIES_ALL">كل المسلسلات</string>
+    <string name="genre_SITCOM">كوميديا</string>
+    <string name="genre_MYSTERY">تحقيق وغموض</string>
+    <string name="genre_TV_WESTERN">ويسترن</string>
+    <string name="genre_TV_SCIFI">خيال علمي</string>
+    <string name="genre_ADVENTURE">مغامرات</string>
+    <string name="genre_KIDS">للأطفال</string>
+    <string name="genre_ANIMATION_ALL">كل الرسوم المتحركة</string>
+    <string name="genre_FLEISCHER">باباي وسوبرمان وبيتي بوب</string>
+    <string name="genre_LOONEY">لوني تونز</string>
+    <string name="genre_FELIX">القط فيليكس</string>
+    <string name="section_my_playlists">قوائمي</string>
+    <string name="section_public_domain">الملكية العامة</string>
+    <string name="section_open_films">أفلام حرة (Blender)</string>
+    <string name="vod_group_empty">لا عناصر في هذه المجموعة.</string>
+    <string name="vod_shows">%1$d مسلسل</string>
+    <string name="vod_items">%1$d عنوان</string>
+    <string name="vod_sections">الأقسام</string>
+    <string name="vod_no_playlist_hint">أضف قائمة M3U تحتوي على أفلام أو مسلسلات وستظهر هنا مرتبة حسب المجموعات.</string>
 </resources>

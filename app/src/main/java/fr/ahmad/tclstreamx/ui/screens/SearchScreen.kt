@@ -41,6 +41,7 @@ import fr.ahmad.tclstreamx.ui.components.StatusDot
 import fr.ahmad.tclstreamx.ui.components.TallyRow
 import fr.ahmad.tclstreamx.ui.nav.Navigator
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
+import fr.ahmad.tclstreamx.ui.theme.screenPadding
 
 @Composable
 fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
@@ -58,7 +59,7 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
 
     LazyColumn(
         Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 40.dp, end = 40.dp, top = 30.dp, bottom = 40.dp),
+        contentPadding = screenPadding(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         item { Text(stringResource(R.string.nav_search), style = type.display, modifier = Modifier.padding(bottom = 12.dp)) }

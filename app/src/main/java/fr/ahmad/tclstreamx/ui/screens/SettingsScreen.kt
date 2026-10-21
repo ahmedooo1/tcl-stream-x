@@ -33,6 +33,7 @@ import fr.ahmad.tclstreamx.data.epg.EpgState
 import fr.ahmad.tclstreamx.ui.components.InputField
 import fr.ahmad.tclstreamx.ui.components.TallyRow
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
+import fr.ahmad.tclstreamx.ui.theme.screenPadding
 import fr.ahmad.tclstreamx.ui.theme.Palette
 import kotlinx.coroutines.launch
 
@@ -51,7 +52,7 @@ fun SettingsScreen() {
 
     LazyColumn(
         Modifier.fillMaxSize().focusRestorer(),
-        contentPadding = PaddingValues(start = 40.dp, end = 120.dp, top = 30.dp, bottom = 40.dp),
+        contentPadding = screenPadding(end = 120.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         item { Text(stringResource(R.string.settings_title), style = type.display, modifier = Modifier.padding(bottom = 16.dp)) }

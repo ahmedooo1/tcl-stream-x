@@ -9,6 +9,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import fr.ahmad.tclstreamx.TclApp
 import fr.ahmad.tclstreamx.data.db.ChannelEntity
+import fr.ahmad.tclstreamx.data.db.ContentKind
 import fr.ahmad.tclstreamx.data.db.GroupCount
 import fr.ahmad.tclstreamx.data.db.PlaylistEntity
 import fr.ahmad.tclstreamx.data.db.ProgrammeEntity
@@ -43,17 +44,17 @@ class LiveViewModel(app: Application) : AndroidViewModel(app) {
     val focused = MutableStateFlow<ChannelEntity?>(null)
 
     val groups: StateFlow<List<GroupCount>> = playlistId
-        .flatMapLatest { c.db.channels().observeGroups(it) }
+        .flatMapLatest { c.db.channels().observeGroups(it, ContentKind.LIVE) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val totalCount: StateFlow<Int> = playlistId
-        .flatMapLatest { c.db.channels().observeCount(it) }
+        .flatMapLatest { c.db.channels().observeCount(it, ContentKind.LIVE) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     val channels: Flow<PagingData<ChannelEntity>> = combine(playlistId, group) { p, g -> p to g }
         .flatMapLatest { (p, g) ->
             Pager(PagingConfig(pageSize = PAGE, prefetchDistance = PAGE, enablePlaceholders = true, maxSize = PAGE * 10)) {
-                c.db.channels().paging(p, (g as? GroupSel.Named)?.title, if (g == GroupSel.Favorites) 1 else 0)
+                c.db.channels().paging(p, (g as? GroupSel.Named)?.title, if (g == GroupSel.Favorites) 1 else 0, ContentKind.LIVE)
             }.flow
         }
         .cachedIn(viewModelScope)
@@ -79,7 +80,7 @@ class LiveViewModel(app: Application) : AndroidViewModel(app) {
 
     fun lineup(): Lineup {
         val g = group.value
-        return Lineup(playlistId.value, (g as? GroupSel.Named)?.title, g == GroupSel.Favorites)
+        return Lineup(playlistId.value, (g as? GroupSel.Named)?.title, g == GroupSel.Favorites, ContentKind.LIVE)
     }
 
     fun selectPlaylist(id: Long) {

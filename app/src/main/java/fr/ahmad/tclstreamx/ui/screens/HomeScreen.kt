@@ -47,6 +47,7 @@ import fr.ahmad.tclstreamx.ui.components.StatusDot
 import fr.ahmad.tclstreamx.ui.components.TallyCard
 import fr.ahmad.tclstreamx.ui.nav.Navigator
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
+import fr.ahmad.tclstreamx.ui.theme.screenPadding
 import fr.ahmad.tclstreamx.ui.theme.Palette
 import java.text.DateFormat
 import java.util.Calendar
@@ -79,7 +80,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
 
     LazyColumn(
         Modifier.fillMaxSize().focusRestorer(),
-        contentPadding = PaddingValues(start = 40.dp, end = 0.dp, top = 30.dp, bottom = 40.dp),
+        contentPadding = screenPadding(end = 0.dp),
         verticalArrangement = Arrangement.spacedBy(30.dp),
     ) {
         item {

@@ -149,4 +149,28 @@ class M3uParserTest {
         assertEquals(count, stats.entries)
         assertTrue("parsing took $ms ms", ms < 10_000)
     }
+
+    private fun entry(name: String, url: String, group: String = "") =
+        M3uEntry(name, url, null, group, null, null, null, null, null, false)
+
+    @Test
+    fun splitsMixedPlaylistsIntoSections() {
+        val k = fr.ahmad.tclstreamx.data.m3u.ContentKindCodes
+        assertEquals(k.SERIES, M3uParser.classify(entry("Breaking Bad S02 E05", "http://h/x/1.mkv", "US")))
+        assertEquals(k.SERIES, M3uParser.classify(entry("باب الحارة الحلقة 12", "http://h/v/9.mp4")))
+        assertEquals(k.SERIES, M3uParser.classify(entry("Anything", "http://h:8080/series/u/p/77.mkv")))
+        assertEquals(k.MOVIE, M3uParser.classify(entry("Dune", "http://h:8080/movie/u/p/123.mkv")))
+        assertEquals(k.MOVIE, M3uParser.classify(entry("Inception", "http://h/m/2.ts", "Films Action")))
+        assertEquals(k.MOVIE, M3uParser.classify(entry("Clip", "http://h/m/2.mp4")))
+        assertEquals(k.LIVE, M3uParser.classify(entry("beIN Serie A", "http://h/live/1.ts", "Serie A")))
+        assertEquals(k.LIVE, M3uParser.classify(entry("Al Jazeera", "https://x/live.m3u8", "News")))
+    }
+
+    @Test
+    fun groupsEpisodesByShow() {
+        assertEquals("Breaking Bad", M3uParser.seriesShow("Breaking Bad S02 E05 - Peekaboo"))
+        assertEquals("The Office", M3uParser.seriesShow("The Office 3x07"))
+        assertEquals("باب الحارة", M3uParser.seriesShow("باب الحارة الحلقة 12"))
+        assertEquals("Movie Title", M3uParser.seriesShow("Movie Title"))
+    }
 }

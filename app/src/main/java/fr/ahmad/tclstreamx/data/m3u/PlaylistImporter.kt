@@ -141,6 +141,7 @@ class PlaylistImporter(
                         userAgent = e.userAgent,
                         referrer = e.referrer,
                         drm = e.drm,
+                        kind = M3uParser.classify(e),
                         channelKey = M3uParser.channelKey(e.tvgId, e.name, e.group),
                     )
                     if (batch.size >= BATCH) {

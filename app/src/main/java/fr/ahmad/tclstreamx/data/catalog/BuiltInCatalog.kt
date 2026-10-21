@@ -78,7 +78,8 @@ class BuiltInCatalog(private val context: Context, private val db: AppDatabase) 
                 url = best.url,
                 backupUrls = ordered.drop(1).joinToString("\n") { it.url }.ifEmpty { null },
                 logo = ch.logo,
-                groupTitle = ch.category,
+                // Subsection = category and language, e.g. "news:ar" shown as "Information · العربية".
+                groupTitle = "${ch.category}:${ch.language}",
                 category = ch.category,
                 tvgId = ch.id.substringBefore('@'),
                 language = ch.language,

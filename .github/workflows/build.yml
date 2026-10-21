@@ -95,7 +95,7 @@ jobs:
           arch: x86
           disable-animations: true
           emulator-boot-timeout: 900
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -skin 1920x1080
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash tools/ci_emulator_tests.sh
 
       - name: Retry emulator tests once (default skin)

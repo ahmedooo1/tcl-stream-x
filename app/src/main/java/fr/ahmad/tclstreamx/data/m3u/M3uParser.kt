@@ -27,6 +27,13 @@ data class M3uStats(var entries: Int = 0, var skippedUnsupported: Int = 0, var s
  * Streaming parser: reads line by line and hands every entry to [onEntry], so a 100 MB playlist
  * never has to be held in memory. All text is treated as untrusted and length-capped.
  */
+/** Mirrors data.db.ContentKind so the parser stays free of Android/Room types (unit tested on the JVM). */
+object ContentKindCodes {
+    const val LIVE = 0
+    const val MOVIE = 1
+    const val SERIES = 2
+}
+
 class M3uParser {
 
     fun parse(reader: Reader, onHeader: (M3uHeader) -> Unit = {}, onEntry: (M3uEntry) -> Unit): M3uStats {
@@ -196,6 +203,38 @@ class M3uParser {
                 .map { it.trim() }
                 .filter { it.startsWith("http://") || it.startsWith("https://") }
                 .distinct()
+        }
+
+        private val EPISODE = Regex("""(?i)\bS\d{1,2}\s*[.\-_ ]?\s*E\d{1,4}\b|\b\d{1,2}x\d{2,3}\b|(?:الحلقة|حلقة)\s*\d+|\bEp(?:isode)?\.?\s*\d+\b""")
+        private val VIDEO_FILE = Regex("""(?i)\.(mp4|mkv|avi|mov|m4v|webm|wmv|flv)$""")
+        // Plural forms only: "Serie A" is a football channel group, not a series section.
+        private val SERIES_WORDS = listOf("series", "séries", "tv show", "مسلسل", "مسلسلات", "حلقات")
+        private val MOVIE_WORDS = listOf("vod", "film", "movie", "cinema", "cinéma", "افلام", "أفلام", "فيلم", "سينما")
+
+        /**
+         * Splits mixed IPTV playlists into sections. Signals, strongest first: Xtream URL paths
+         * (/series/, /movie/), episode markers in the title (S01E02, 1x02, الحلقة 3), group names,
+         * then a video-file extension. Anything else is a live channel.
+         */
+        fun classify(e: M3uEntry): Int {
+            val path = e.url.substringBefore('?').lowercase()
+            val group = e.group.lowercase()
+            return when {
+                "/series/" in path -> ContentKindCodes.SERIES
+                "/movie/" in path || "/movies/" in path -> ContentKindCodes.MOVIE
+                EPISODE.containsMatchIn(e.name) -> ContentKindCodes.SERIES
+                SERIES_WORDS.any { it in group } -> ContentKindCodes.SERIES
+                MOVIE_WORDS.any { it in group } -> ContentKindCodes.MOVIE
+                VIDEO_FILE.containsMatchIn(path) -> ContentKindCodes.MOVIE
+                else -> ContentKindCodes.LIVE
+            }
+        }
+
+        /** "Breaking Bad S02 E05 - Title" -> "Breaking Bad": the show an episode belongs to. */
+        fun seriesShow(name: String): String {
+            val m = EPISODE.find(name) ?: return name.trim()
+            val head = name.substring(0, m.range.first).trim().trimEnd('-', '|', ':', '.', '–', ' ')
+            return head.ifBlank { name.trim() }
         }
 
         private val COMBINING = Regex("\\p{Mn}+")

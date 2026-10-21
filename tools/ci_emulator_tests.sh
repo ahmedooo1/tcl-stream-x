@@ -11,7 +11,8 @@ adb shell getprop ro.product.model >> "$OUT/device.txt"
 adb shell getprop ro.build.version.sdk >> "$OUT/device.txt"
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-# 1920x1080 skin at 320 dpi = 960x540 dp, the logical size of a 1080p Google TV.
+# 1920x1080 at 320 dpi = 960x540 dp, the logical size of a 1080p Google TV.
+adb shell wm size 1920x1080 || true
 adb shell wm density 320 || true
 adb shell wm size > "$OUT/display.txt" 2>&1 || true
 adb shell wm density >> "$OUT/display.txt" 2>&1 || true

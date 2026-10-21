@@ -30,6 +30,7 @@ data class PlaylistEntity(
     indices = [
         Index(value = ["playlistId", "generation", "position"]),
         Index(value = ["playlistId", "generation", "groupTitle", "position"]),
+        Index(value = ["kind", "groupTitle", "position"]),
         Index(value = ["nameNorm"]),
         Index(value = ["channelKey"]),
         Index(value = ["tvgId"]),
@@ -57,6 +58,8 @@ data class ChannelEntity(
     val referrer: String? = null,
     /** The playlist declares a DRM licence (KODIPROP); such channels are flagged, never played. */
     val drm: Boolean = false,
+    /** Section of the app the entry belongs to: [ContentKind.LIVE], [ContentKind.MOVIE] or [ContentKind.SERIES]. */
+    @ColumnInfo(defaultValue = "0") val kind: Int = ContentKind.LIVE,
     /** Stable identity across re-imports, used by favorites and history. */
     val channelKey: String,
     val owner: String? = null,
@@ -65,6 +68,13 @@ data class ChannelEntity(
     val statusDetail: String? = null,
     @ColumnInfo(defaultValue = "0") val statusCheckedAt: Long = 0,
 )
+
+/** Top-level sections: playlists mixing live channels, films and series are split on import. */
+object ContentKind {
+    const val LIVE = 0
+    const val MOVIE = 1
+    const val SERIES = 2
+}
 
 /** Result of the last availability probe of a channel. */
 enum class StreamStatus(val code: Int) {

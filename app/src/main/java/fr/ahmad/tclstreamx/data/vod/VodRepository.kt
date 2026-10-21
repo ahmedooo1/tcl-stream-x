@@ -18,6 +18,34 @@ import java.io.IOException
 
 enum class VodShelf { MOVIES, SERIES, ANIMATION }
 
+/** Subsections of the public-domain shelves, as fixed Internet Archive search clauses. */
+enum class Genre(val shelf: VodShelf, val clause: String?) {
+    MOVIES_ALL(VodShelf.MOVIES, null),
+    COMEDY(VodShelf.MOVIES, "subject:(comedy)"),
+    DRAMA(VodShelf.MOVIES, "subject:(drama)"),
+    HORROR(VodShelf.MOVIES, "subject:(horror)"),
+    SCIFI(VodShelf.MOVIES, "subject:(\"science fiction\" OR sci-fi OR scifi)"),
+    WESTERN(VodShelf.MOVIES, "subject:(western)"),
+    CRIME(VodShelf.MOVIES, "subject:(\"film noir\" OR noir OR crime)"),
+    WAR(VodShelf.MOVIES, "subject:(war)"),
+    SILENT(VodShelf.MOVIES, "subject:(silent)"),
+    SERIES_ALL(VodShelf.SERIES, null),
+    SITCOM(VodShelf.SERIES, "subject:(comedy OR sitcom)"),
+    MYSTERY(VodShelf.SERIES, "subject:(mystery OR detective OR crime)"),
+    TV_WESTERN(VodShelf.SERIES, "subject:(western)"),
+    TV_SCIFI(VodShelf.SERIES, "subject:(\"science fiction\" OR sci-fi OR scifi)"),
+    ADVENTURE(VodShelf.SERIES, "subject:(adventure)"),
+    KIDS(VodShelf.SERIES, "subject:(children OR kids)"),
+    ANIMATION_ALL(VodShelf.ANIMATION, null),
+    FLEISCHER(VodShelf.ANIMATION, "title:(popeye OR superman OR \"betty boop\")"),
+    LOONEY(VodShelf.ANIMATION, "title:(looney OR merrie OR \"bugs bunny\" OR daffy OR porky)"),
+    FELIX(VodShelf.ANIMATION, "title:(felix)");
+
+    companion object {
+        fun of(shelf: VodShelf) = entries.filter { it.shelf == shelf }
+    }
+}
+
 /** A title in a list. [archiveId] is set for Internet Archive items, which are resolved on demand. */
 data class VodItem(
     val key: String,
@@ -67,13 +95,17 @@ class VodRepository(private val context: Context, private val http: OkHttpClient
         context.assets.open("open_media.json").use { json.decodeFromString(OpenMedia.serializer(), it.readBytes().decodeToString()) }
     }
 
-    suspend fun archiveShelf(shelf: VodShelf, page: Int, query: String? = null): List<VodItem> = withContext(Dispatchers.IO) {
+    /**
+     * [genre] is one of the fixed clauses of [Genre] (never user text); [query] is sanitized user text.
+     */
+    suspend fun archiveShelf(shelf: VodShelf, page: Int, query: String? = null, genre: Genre? = null): List<VodItem> = withContext(Dispatchers.IO) {
         val base = when (shelf) {
             VodShelf.MOVIES -> "collection:(feature_films) AND mediatype:(movies)"
             VodShelf.SERIES -> "collection:(classic_tv) AND mediatype:(movies)"
             VodShelf.ANIMATION -> "collection:(classic_cartoons) AND mediatype:(movies)"
         }
-        val q = if (query.isNullOrBlank()) base else "$base AND title:(${sanitize(query)})"
+        val withGenre = genre?.clause?.let { "$base AND $it" } ?: base
+        val q = if (query.isNullOrBlank()) withGenre else "$withGenre AND title:(${sanitize(query)})"
         val url = "https://archive.org/advancedsearch.php".toHttpUrl().newBuilder()
             .addQueryParameter("q", q)
             .addQueryParameter("fl[]", "identifier")

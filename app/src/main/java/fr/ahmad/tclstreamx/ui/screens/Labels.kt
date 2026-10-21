@@ -9,13 +9,33 @@ import fr.ahmad.tclstreamx.player.PlaybackIssue
 import java.text.DateFormat
 import java.util.Date
 
+/** Built-in subsections are stored as "category:language" (e.g. "news:ar"); playlist groups as is. */
 @Composable
-fun groupLabel(raw: String): String = when (raw) {
-    "news" -> stringResource(R.string.cat_news)
-    "sports" -> stringResource(R.string.cat_sports)
-    "entertainment" -> stringResource(R.string.cat_entertainment)
-    "" -> stringResource(R.string.group_none)
-    else -> raw
+fun groupLabel(raw: String): String {
+    val parts = raw.split(':')
+    if (parts.size == 2 && parts[0] in BUILTIN_CATEGORIES) {
+        return categoryLabel(parts[0]) + " · " + languageLabel(parts[1])
+    }
+    return if (raw in BUILTIN_CATEGORIES) categoryLabel(raw) else raw.ifEmpty { stringResource(R.string.group_none) }
+}
+
+private val BUILTIN_CATEGORIES = setOf("news", "sports", "entertainment")
+
+@Composable
+private fun categoryLabel(c: String): String = stringResource(
+    when (c) {
+        "news" -> R.string.cat_news
+        "sports" -> R.string.cat_sports
+        else -> R.string.cat_entertainment
+    }
+)
+
+private fun languageLabel(code: String): String = when (code) {
+    "fr" -> "Français"
+    "ar" -> "العربية"
+    "en" -> "English"
+    "es" -> "Español"
+    else -> code.uppercase()
 }
 
 fun relativeTime(millis: Long): String =

@@ -1,10 +1,16 @@
 package fr.ahmad.tclstreamx.player
 
 import fr.ahmad.tclstreamx.data.db.ChannelEntity
+import fr.ahmad.tclstreamx.data.db.ContentKind
 import fr.ahmad.tclstreamx.data.vod.Subtitle
 
 /** Which list the player zaps through with channel up/down. */
-data class Lineup(val playlistId: Long = 0, val group: String? = null, val favoritesOnly: Boolean = false)
+data class Lineup(
+    val playlistId: Long = 0,
+    val group: String? = null,
+    val favoritesOnly: Boolean = false,
+    val kind: Int = ContentKind.LIVE,
+)
 
 data class PlayItem(
     val key: String,
@@ -30,12 +36,12 @@ data class PlayItem(
             urls = listOf(c.url) + c.backupUrls.orEmpty().lines().filter { it.isNotBlank() },
             userAgent = c.userAgent,
             referrer = c.referrer,
-            isLive = true,
+            isLive = c.kind == ContentKind.LIVE,
             drm = c.drm,
             logo = c.logo,
             tvgId = c.tvgId,
             channel = c,
-            lineup = lineup,
+            lineup = lineup ?: Lineup(playlistId = c.playlistId, kind = c.kind),
         )
     }
 }

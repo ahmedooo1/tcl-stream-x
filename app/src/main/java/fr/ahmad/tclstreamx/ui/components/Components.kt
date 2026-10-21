@@ -1,8 +1,13 @@
 package fr.ahmad.tclstreamx.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -28,17 +33,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.Border
-import androidx.tv.material3.ClickableSurfaceDefaults
-import androidx.tv.material3.ExperimentalTvMaterial3Api
-import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import fr.ahmad.tclstreamx.R
@@ -53,8 +54,11 @@ import androidx.compose.ui.res.stringResource
 /**
  * The one focus language of the app: the row lifts to a lighter graphite and a tally bar lights
  * up on its leading edge (mirrored automatically in Arabic). No glow, no bounce.
+ *
+ * Built on foundation's combinedClickable, so the same row answers the remote (OK / long OK)
+ * and touch (tap / long press) on a phone or tablet.
  */
-@OptIn(ExperimentalTvMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TallyRow(
     onClick: () -> Unit,
@@ -64,65 +68,67 @@ fun TallyRow(
     onFocus: (() -> Unit)? = null,
     content: @Composable BoxScope.(focused: Boolean) -> Unit,
 ) {
-    var focused by remember { mutableStateOf(false) }
-    Surface(
-        onClick = onClick,
-        onLongClick = onLongClick,
-        modifier = modifier.onFocusChanged {
-            focused = it.isFocused
-            if (it.isFocused) onFocus?.invoke()
-        },
-        shape = ClickableSurfaceDefaults.shape(shape = RectangleShape),
-        colors = ClickableSurfaceDefaults.colors(
-            containerColor = if (selected) Palette.Raised else Color.Transparent,
-            contentColor = Palette.Text,
-            focusedContainerColor = Palette.Lift,
-            focusedContentColor = Palette.Text,
-            pressedContainerColor = Palette.Hairline,
-            pressedContentColor = Palette.Text,
-        ),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1f, pressedScale = 0.99f),
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val pressed by interaction.collectIsPressedAsState()
+    Box(
+        modifier
+            .background(
+                when {
+                    pressed -> Palette.Hairline
+                    focused -> Palette.Lift
+                    selected -> Palette.Raised
+                    else -> Color.Transparent
+                }
+            )
+            .onFocusChanged { if (it.isFocused) onFocus?.invoke() }
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                onLongClick = onLongClick,
+                onClick = onClick,
+            )
     ) {
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
             Box(
                 Modifier
                     .width(4.dp)
                     .fillMaxHeight()
-                    .background(if (focused) Palette.Tally else if (selected) Palette.TallyDeep else Color.Transparent)
+                    .background(if (focused || pressed) Palette.Tally else if (selected) Palette.TallyDeep else Color.Transparent)
             )
             Box(Modifier.weight(1f)) { content(focused) }
         }
     }
 }
 
-/** Poster / tile card: hairline frame that turns white on focus, very slight lift. */
-@OptIn(ExperimentalTvMaterial3Api::class)
+/** Poster / tile card: hairline frame that turns white on focus, very slight lift. Remote and touch. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TallyCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onFocus: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     content: @Composable BoxScope.(focused: Boolean) -> Unit,
 ) {
-    var focused by remember { mutableStateOf(false) }
-    Surface(
-        onClick = onClick,
-        modifier = modifier.onFocusChanged {
-            focused = it.isFocused
-            if (it.isFocused) onFocus?.invoke()
-        },
-        shape = ClickableSurfaceDefaults.shape(shape = RoundedCornerShape(2.dp)),
-        colors = ClickableSurfaceDefaults.colors(
-            containerColor = Palette.Graphite,
-            contentColor = Palette.Text,
-            focusedContainerColor = Palette.Raised,
-            focusedContentColor = Palette.Text,
-        ),
-        border = ClickableSurfaceDefaults.border(
-            border = Border(BorderStroke(1.dp, Palette.Hairline)),
-            focusedBorder = Border(BorderStroke(2.dp, Palette.Text)),
-        ),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.03f),
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (focused) 1.03f else if (pressed) 0.98f else 1f, label = "card")
+    val shape = RoundedCornerShape(2.dp)
+    Box(
+        modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clip(shape)
+            .background(if (focused) Palette.Raised else Palette.Graphite)
+            .border(if (focused) 2.dp else 1.dp, if (focused) Palette.Text else Palette.Hairline, shape)
+            .onFocusChanged { if (it.isFocused) onFocus?.invoke() }
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                onLongClick = onLongClick,
+                onClick = onClick,
+            )
     ) {
         content(focused)
     }

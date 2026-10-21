@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -58,6 +60,8 @@ import fr.ahmad.tclstreamx.ui.components.statusLabel
 import fr.ahmad.tclstreamx.ui.nav.Navigator
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
 import fr.ahmad.tclstreamx.ui.theme.Palette
+import fr.ahmad.tclstreamx.ui.theme.hasRoomForMonitor
+import fr.ahmad.tclstreamx.ui.theme.isCompactWidth
 import kotlinx.coroutines.delay
 import java.util.Locale
 
@@ -84,6 +88,8 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
     val firstChannel = remember { FocusRequester() }
     var goingFullscreen by remember { mutableStateOf(false) }
     var focusedOnce by remember { mutableStateOf(false) }
+    val compact = isCompactWidth()
+    val monitor = hasRoomForMonitor()
 
     // Live preview of the focused channel after a short dwell, like flicking through monitors.
     LaunchedEffect(focused?.channelKey, settings?.previewOnFocus) {
@@ -109,42 +115,9 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
         navigator.openPlayer()
     }
 
-    Row(Modifier.fillMaxSize().padding(top = 28.dp)) {
-        // ---- column 1: playlists + groups --------------------------------------------------
-        Column(Modifier.width(232.dp).fillMaxHeight().padding(start = 12.dp)) {
-            val currentName = playlists.firstOrNull { it.id == playlistId }?.name ?: stringResource(R.string.group_all)
-            TallyRow(
-                onClick = {
-                    val ids = listOf(0L) + playlists.map { it.id }
-                    vm.selectPlaylist(ids[(ids.indexOf(playlistId) + 1) % ids.size])
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-            ) {
-                Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                    Text(currentName, style = type.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("%,d".format(Locale.ROOT, total) + "  ⇄", style = type.mono)
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            LazyColumn(Modifier.fillMaxSize().focusRestorer(), contentPadding = PaddingValues(bottom = 24.dp)) {
-                item {
-                    GroupRow(stringResource(R.string.group_favorites), favorites.size, group == GroupSel.Favorites) {
-                        vm.group.value = GroupSel.Favorites
-                    }
-                }
-                item {
-                    GroupRow(stringResource(R.string.group_all), total, group == GroupSel.All) { vm.group.value = GroupSel.All }
-                }
-                items(groups, key = { "g:" + it.groupTitle }) { g ->
-                    GroupRow(groupLabel(g.groupTitle), g.count, group == GroupSel.Named(g.groupTitle)) {
-                        vm.group.value = GroupSel.Named(g.groupTitle)
-                    }
-                }
-            }
-        }
-
-        // ---- column 2: channels ------------------------------------------------------------
-        Column(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 18.dp)) {
+    // Channel list, shared by the phone and TV layouts.
+    val channelColumn: @Composable (Modifier) -> Unit = { mod ->
+        Column(mod) {
             Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(bottom = 10.dp)) {
                 val title = when (val g = group) {
                     GroupSel.All -> stringResource(R.string.group_all)
@@ -152,7 +125,7 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
                     is GroupSel.Named -> groupLabel(g.title)
                 }
                 Text(title, style = type.headline, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                TallyRow(onClick = vm::checkCurrentLineup, modifier = Modifier.height(40.dp).width(220.dp)) {
+                TallyRow(onClick = vm::checkCurrentLineup, modifier = Modifier.height(40.dp).widthIn(max = 220.dp)) {
                     Text(
                         if (progress.running) stringResource(R.string.live_checking, progress.done, progress.total)
                         else if (progress.total > 0) stringResource(R.string.live_check_done, progress.online, progress.total)
@@ -188,9 +161,87 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
                 }
             }
         }
+    }
 
-        // ---- column 3: monitor -------------------------------------------------------------
-        Monitor(focused, vm, playback, Modifier.width(400.dp).fillMaxHeight().padding(end = 28.dp))
+    val chooseGroup: (GroupSel) -> Unit = { vm.group.value = it }
+
+    when {
+        compact -> Column(Modifier.fillMaxSize().padding(top = 8.dp)) {
+            // Portrait phone: playlist switch and groups on top, channels full width, no preview monitor.
+            Column(Modifier.padding(horizontal = 12.dp)) {
+                val currentName = playlists.firstOrNull { it.id == playlistId }?.name ?: stringResource(R.string.group_all)
+                TallyRow(
+                    onClick = {
+                        val ids = listOf(0L) + playlists.map { it.id }
+                        vm.selectPlaylist(ids[(ids.indexOf(playlistId) + 1) % ids.size])
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                ) {
+                    Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                        Text(currentName, style = type.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("%,d".format(Locale.ROOT, total) + "  ⇄", style = type.mono)
+                    }
+                }
+            }
+            LazyRow(
+                Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                item { GroupChip(stringResource(R.string.group_favorites), group == GroupSel.Favorites) { chooseGroup(GroupSel.Favorites) } }
+                item { GroupChip(stringResource(R.string.group_all), group == GroupSel.All) { chooseGroup(GroupSel.All) } }
+                items(groups, key = { "g:" + it.groupTitle }) { g ->
+                    GroupChip(groupLabel(g.groupTitle), group == GroupSel.Named(g.groupTitle)) { chooseGroup(GroupSel.Named(g.groupTitle)) }
+                }
+            }
+            channelColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp))
+        }
+        else -> Row(Modifier.fillMaxSize().padding(top = 28.dp)) {
+            // ---- column 1: playlists + groups ----------------------------------------------
+            Column(Modifier.width(if (monitor) 232.dp else 200.dp).fillMaxHeight().padding(start = 12.dp)) {
+            val currentName = playlists.firstOrNull { it.id == playlistId }?.name ?: stringResource(R.string.group_all)
+            TallyRow(
+                onClick = {
+                    val ids = listOf(0L) + playlists.map { it.id }
+                    vm.selectPlaylist(ids[(ids.indexOf(playlistId) + 1) % ids.size])
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+            ) {
+                Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                    Text(currentName, style = type.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("%,d".format(Locale.ROOT, total) + "  ⇄", style = type.mono)
+                }
+            }
+                Spacer(Modifier.height(10.dp))
+                LazyColumn(Modifier.fillMaxSize().focusRestorer(), contentPadding = PaddingValues(bottom = 24.dp)) {
+                    item {
+                        GroupRow(stringResource(R.string.group_favorites), favorites.size, group == GroupSel.Favorites) { chooseGroup(GroupSel.Favorites) }
+                    }
+                    item {
+                        GroupRow(stringResource(R.string.group_all), total, group == GroupSel.All) { chooseGroup(GroupSel.All) }
+                    }
+                    items(groups, key = { "g:" + it.groupTitle }) { g ->
+                        GroupRow(groupLabel(g.groupTitle), g.count, group == GroupSel.Named(g.groupTitle)) { chooseGroup(GroupSel.Named(g.groupTitle)) }
+                    }
+                }
+            }
+            // ---- column 2: channels ---------------------------------------------------------
+            channelColumn(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 18.dp))
+            // ---- column 3: monitor (TV and large screens only) ------------------------------
+            if (monitor) Monitor(focused, vm, playback, Modifier.width(400.dp).fillMaxHeight().padding(end = 28.dp))
+        }
+    }
+}
+
+@Composable
+private fun GroupChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    TallyRow(onClick = onClick, selected = selected, modifier = Modifier.height(42.dp)) { focused ->
+        Text(
+            label,
+            style = LocalTallyType.current.body.copy(color = if (focused || selected) Palette.Text else Palette.TextDim),
+            maxLines = 1,
+            modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp),
+        )
     }
 }
 

@@ -2,6 +2,7 @@ package fr.ahmad.tclstreamx.data.check
 
 import fr.ahmad.tclstreamx.data.db.AppDatabase
 import fr.ahmad.tclstreamx.data.db.ChannelEntity
+import fr.ahmad.tclstreamx.data.db.ContentKind
 import fr.ahmad.tclstreamx.data.db.StreamStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,10 +33,10 @@ class AvailabilityChecker(
     private var job: Job? = null
 
     /** Checks up to [limit] channels of a lineup, oldest results first. */
-    fun checkLineup(playlistId: Long, group: String?, favoritesOnly: Boolean, limit: Int = DEFAULT_LIMIT) {
+    fun checkLineup(playlistId: Long, group: String?, favoritesOnly: Boolean, kind: Int = ContentKind.LIVE, limit: Int = DEFAULT_LIMIT) {
         if (job?.isActive == true) return
         job = scope.launch {
-            val channels = db.channels().stalest(playlistId, group, if (favoritesOnly) 1 else 0, limit)
+            val channels = db.channels().stalest(playlistId, group, if (favoritesOnly) 1 else 0, kind, limit)
             runChecks(channels)
         }
     }

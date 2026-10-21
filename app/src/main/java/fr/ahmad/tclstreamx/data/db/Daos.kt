@@ -12,10 +12,11 @@ private const val ACTIVE = "INNER JOIN playlists p ON p.id = c.playlistId AND p.
 
 /**
  * Lineup filter shared by every channel query:
- * playlistId = 0 means every playlist, group = null means every group, fav = 1 keeps favorites only.
+ * kind selects the section (live, movies, series); playlistId = 0 means every playlist, group = null means every group, fav = 1 keeps favorites only.
  */
 private const val LINEUP = """
-    (:playlistId = 0 OR c.playlistId = :playlistId)
+    c.kind = :kind
+    AND (:playlistId = 0 OR c.playlistId = :playlistId)
     AND (:grp IS NULL OR c.groupTitle = :grp)
     AND (:fav = 0 OR c.channelKey IN (SELECT channelKey FROM favorites))
 """
@@ -60,20 +61,24 @@ interface ChannelDao {
     suspend fun deleteForPlaylist(playlistId: Long)
 
     @Query("SELECT c.* FROM channels c $ACTIVE WHERE $LINEUP ORDER BY c.playlistId, c.position")
-    fun paging(playlistId: Long, grp: String?, fav: Int): PagingSource<Int, ChannelEntity>
+    fun paging(playlistId: Long, grp: String?, fav: Int, kind: Int): PagingSource<Int, ChannelEntity>
 
     @Query("SELECT c.* FROM channels c $ACTIVE WHERE $LINEUP ORDER BY c.playlistId, c.position LIMIT :limit")
-    suspend fun firstOfLineup(playlistId: Long, grp: String?, fav: Int, limit: Int): List<ChannelEntity>
+    suspend fun firstOfLineup(playlistId: Long, grp: String?, fav: Int, kind: Int, limit: Int): List<ChannelEntity>
 
     @Query(
         """SELECT c.groupTitle AS groupTitle, COUNT(*) AS count FROM channels c $ACTIVE
-           WHERE (:playlistId = 0 OR c.playlistId = :playlistId)
+           WHERE c.kind = :kind AND (:playlistId = 0 OR c.playlistId = :playlistId)
            GROUP BY c.groupTitle ORDER BY MIN(c.playlistId), MIN(c.position)"""
     )
-    fun observeGroups(playlistId: Long): Flow<List<GroupCount>>
+    fun observeGroups(playlistId: Long, kind: Int): Flow<List<GroupCount>>
 
-    @Query("SELECT COUNT(*) FROM channels c $ACTIVE WHERE (:playlistId = 0 OR c.playlistId = :playlistId)")
-    fun observeCount(playlistId: Long): Flow<Int>
+    @Query("SELECT COUNT(*) FROM channels c $ACTIVE WHERE c.kind = :kind AND (:playlistId = 0 OR c.playlistId = :playlistId)")
+    fun observeCount(playlistId: Long, kind: Int): Flow<Int>
+
+    /** Every entry of one series group, for grouping episodes by show in memory. */
+    @Query("SELECT c.* FROM channels c $ACTIVE WHERE c.kind = :kind AND c.groupTitle = :grp ORDER BY c.position LIMIT :limit")
+    suspend fun allInGroup(kind: Int, grp: String, limit: Int): List<ChannelEntity>
 
     @Query("SELECT c.* FROM channels c $ACTIVE WHERE c.id = :id")
     suspend fun byId(id: Long): ChannelEntity?
@@ -87,20 +92,20 @@ interface ChannelDao {
            AND (c.playlistId > :fromPlaylist OR (c.playlistId = :fromPlaylist AND c.position > :fromPosition))
            ORDER BY c.playlistId, c.position LIMIT 1"""
     )
-    suspend fun next(playlistId: Long, grp: String?, fav: Int, fromPlaylist: Long, fromPosition: Int): ChannelEntity?
+    suspend fun next(playlistId: Long, grp: String?, fav: Int, kind: Int, fromPlaylist: Long, fromPosition: Int): ChannelEntity?
 
     @Query(
         """SELECT c.* FROM channels c $ACTIVE WHERE $LINEUP
            AND (c.playlistId < :fromPlaylist OR (c.playlistId = :fromPlaylist AND c.position < :fromPosition))
            ORDER BY c.playlistId DESC, c.position DESC LIMIT 1"""
     )
-    suspend fun previous(playlistId: Long, grp: String?, fav: Int, fromPlaylist: Long, fromPosition: Int): ChannelEntity?
+    suspend fun previous(playlistId: Long, grp: String?, fav: Int, kind: Int, fromPlaylist: Long, fromPosition: Int): ChannelEntity?
 
     @Query(
         """SELECT c.* FROM channels c $ACTIVE WHERE $LINEUP
            ORDER BY c.playlistId DESC, c.position DESC LIMIT 1"""
     )
-    suspend fun lastOfLineup(playlistId: Long, grp: String?, fav: Int): ChannelEntity?
+    suspend fun lastOfLineup(playlistId: Long, grp: String?, fav: Int, kind: Int): ChannelEntity?
 
     @Query("SELECT c.* FROM channels c $ACTIVE WHERE c.playlistId = :playlistId AND c.position = :number LIMIT 1")
     suspend fun byNumber(playlistId: Long, number: Int): ChannelEntity?
@@ -130,7 +135,7 @@ interface ChannelDao {
         """SELECT c.* FROM channels c $ACTIVE WHERE $LINEUP
            ORDER BY c.statusCheckedAt, c.position LIMIT :limit"""
     )
-    suspend fun stalest(playlistId: Long, grp: String?, fav: Int, limit: Int): List<ChannelEntity>
+    suspend fun stalest(playlistId: Long, grp: String?, fav: Int, kind: Int, limit: Int): List<ChannelEntity>
 
     @Query("UPDATE channels SET status = :status, statusDetail = :detail, statusCheckedAt = :checkedAt WHERE channelKey = :key")
     suspend fun updateStatus(key: String, status: Int, detail: String?, checkedAt: Long)

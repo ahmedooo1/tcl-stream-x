@@ -48,6 +48,7 @@ import fr.ahmad.tclstreamx.ui.nav.Navigator
 import fr.ahmad.tclstreamx.ui.nav.Routes
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
 import fr.ahmad.tclstreamx.ui.theme.Palette
+import fr.ahmad.tclstreamx.ui.theme.isCompactWidth
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -63,6 +64,7 @@ fun PlaylistsScreen(navigator: Navigator) {
     var noPicker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf<Long?>(null) }
     val first = remember { FocusRequester() }
+    val compact = isCompactWidth()
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) {
             runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
@@ -73,7 +75,7 @@ fun PlaylistsScreen(navigator: Navigator) {
 
     LazyColumn(
         Modifier.fillMaxSize().focusRestorer(),
-        contentPadding = PaddingValues(start = 40.dp, end = 40.dp, top = 30.dp, bottom = 40.dp),
+        contentPadding = if (compact) PaddingValues(16.dp) else PaddingValues(start = 40.dp, end = 40.dp, top = 30.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item { Text(stringResource(R.string.playlists_title), style = type.display) }
@@ -95,26 +97,34 @@ fun PlaylistsScreen(navigator: Navigator) {
 
         item { Text(stringResource(R.string.playlists_add_url), style = type.headline, modifier = Modifier.padding(top = 10.dp)) }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                InputField(name, stringResource(R.string.playlists_name_hint), onSubmit = { name = it }, modifier = Modifier.width(260.dp), rowModifier = Modifier.focusRequester(first))
-                InputField(url, stringResource(R.string.playlists_url_hint), onSubmit = { url = it }, modifier = Modifier.weight(1f), keyboardType = KeyboardType.Uri)
-                TallyRow(
-                    onClick = {
-                        val u = url
-                        val n = name
-                        c.appScope.launch {
-                            try {
-                                c.importer.addFromUrl(n, u)
-                            } catch (e: ImportException) {
-                                android.util.Log.i("TclStreamX", "import rejected: ${e.error}")
-                            }
-                        }
-                        url = ""
-                        name = ""
-                    },
-                    modifier = Modifier.width(150.dp).height(52.dp),
-                ) {
-                    Text(stringResource(R.string.playlists_add), style = type.title.copy(color = Palette.Tally), modifier = Modifier.align(Alignment.Center))
+            val importNow = {
+                val u = url
+                val n = name
+                c.appScope.launch {
+                    try {
+                        c.importer.addFromUrl(n, u)
+                    } catch (e: ImportException) {
+                        android.util.Log.i("TclStreamX", "import rejected: ${e.error}")
+                    }
+                }
+                url = ""
+                name = ""
+            }
+            if (compact) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    InputField(name, stringResource(R.string.playlists_name_hint), onSubmit = { name = it }, rowModifier = Modifier.focusRequester(first))
+                    InputField(url, stringResource(R.string.playlists_url_hint), onSubmit = { url = it }, keyboardType = KeyboardType.Uri)
+                    TallyRow(onClick = importNow, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                        Text(stringResource(R.string.playlists_add), style = type.title.copy(color = Palette.Tally), modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    InputField(name, stringResource(R.string.playlists_name_hint), onSubmit = { name = it }, modifier = Modifier.width(260.dp), rowModifier = Modifier.focusRequester(first))
+                    InputField(url, stringResource(R.string.playlists_url_hint), onSubmit = { url = it }, modifier = Modifier.weight(1f), keyboardType = KeyboardType.Uri)
+                    TallyRow(onClick = importNow, modifier = Modifier.width(150.dp).height(52.dp)) {
+                        Text(stringResource(R.string.playlists_add), style = type.title.copy(color = Palette.Tally), modifier = Modifier.align(Alignment.Center))
+                    }
                 }
             }
         }
@@ -157,7 +167,7 @@ fun PlaylistsScreen(navigator: Navigator) {
                         p.lastError?.let { Text("⚠ $it", style = type.mono.copy(color = Palette.Caution)) }
                     }
                     if (p.kind == PlaylistKind.URL || p.kind == PlaylistKind.FILE) {
-                        TallyRow(onClick = { c.appScope.launch { c.importer.refresh(p.id) } }, modifier = Modifier.width(150.dp).height(44.dp)) {
+                        TallyRow(onClick = { c.appScope.launch { c.importer.refresh(p.id) } }, modifier = Modifier.width(if (compact) 96.dp else 150.dp).height(44.dp)) {
                             Text(stringResource(R.string.playlists_refresh), style = type.body, modifier = Modifier.align(Alignment.Center))
                         }
                     }
@@ -173,7 +183,7 @@ fun PlaylistsScreen(navigator: Navigator) {
                                     confirmDelete = p.id
                                 }
                             },
-                            modifier = Modifier.width(150.dp).height(44.dp),
+                            modifier = Modifier.width(if (compact) 96.dp else 150.dp).height(44.dp),
                         ) {
                             Text(
                                 stringResource(R.string.playlists_delete) + if (confirmDelete == p.id) " ?" else "",

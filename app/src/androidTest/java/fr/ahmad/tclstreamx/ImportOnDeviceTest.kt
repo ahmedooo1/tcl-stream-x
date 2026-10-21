@@ -35,7 +35,7 @@ class ImportOnDeviceTest {
         val after = rt.totalMemory() - rt.freeMemory()
         val playlist = app.container.db.playlists().byId(id)!!
         val t1 = System.currentTimeMillis()
-        val page = app.container.db.channels().firstOfLineup(id, "Group 7", 0, 60)
+        val page = app.container.db.channels().firstOfLineup(id, "Group 7", 0, 0, 60)
         val queryMs = System.currentTimeMillis() - t1
         val t2 = System.currentTimeMillis()
         val search = app.container.db.channels().search("test channel 4999", 50)

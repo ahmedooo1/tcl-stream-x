@@ -43,6 +43,7 @@ import fr.ahmad.tclstreamx.player.PlaybackController
 import fr.ahmad.tclstreamx.ui.components.TallyRow
 import fr.ahmad.tclstreamx.ui.nav.Navigator
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
+import fr.ahmad.tclstreamx.ui.theme.screenPadding
 import fr.ahmad.tclstreamx.ui.theme.Palette
 
 private val VIDEO_PERMISSION =
@@ -75,7 +76,7 @@ fun LocalScreen(navigator: Navigator, playback: PlaybackController) {
 
     LazyColumn(
         Modifier.fillMaxSize().focusRestorer(),
-        contentPadding = PaddingValues(start = 40.dp, end = 40.dp, top = 30.dp, bottom = 40.dp),
+        contentPadding = screenPadding(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         item { Text(stringResource(R.string.local_title), style = type.display, modifier = Modifier.padding(bottom = 6.dp)) }
