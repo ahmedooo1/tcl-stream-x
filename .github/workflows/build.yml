@@ -93,13 +93,12 @@ jobs:
           api-level: 30
           target: android-tv
           arch: x86
-          profile: tv_1080p
           disable-animations: true
           emulator-boot-timeout: 900
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -skin 1920x1080
           script: bash tools/ci_emulator_tests.sh
 
-      - name: Retry emulator tests once on the plain AVD (if the TV profile cannot boot)
+      - name: Retry emulator tests once (default skin)
         if: steps.emu1.outcome == 'failure' && hashFiles('ci-out/instrumented-status.txt') == ''
         uses: reactivecircus/android-emulator-runner@v2
         with:
