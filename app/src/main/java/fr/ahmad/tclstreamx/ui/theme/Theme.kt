@@ -9,6 +9,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
@@ -79,7 +80,7 @@ fun TallyTheme(content: @Composable () -> Unit) {
     // Phones: the TV-scale display type would wrap a single word ("Bonjour") on two lines.
     val phone = LocalConfiguration.current.screenWidthDp < 600
     val headlineFamily = if (arabic) PlexSans else Condensed
-    val type = TallyType(
+    val base = TallyType(
         display = TextStyle(
             fontFamily = headlineFamily, fontWeight = FontWeight.Bold, color = Palette.Text,
             fontSize = if (phone) (if (arabic) 28.sp else 34.sp) else if (arabic) 44.sp else 58.sp,
@@ -98,6 +99,16 @@ fun TallyTheme(content: @Composable () -> Unit) {
         numeralSmall = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 20.sp, color = Palette.TextDim),
         mono = TextStyle(fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, color = Palette.TextDim),
     )
+    // Each text picks its direction from its content: Latin channel names stay in order in the Arabic UI
+    // ("20 Minutes TV", not "Minutes TV 20").
+    val type = base.let { t ->
+        fun TextStyle.auto() = copy(textDirection = TextDirection.Content)
+        t.copy(
+            display = t.display.auto(), headline = t.headline.auto(), title = t.title.auto(), body = t.body.auto(),
+            bodySmall = t.bodySmall.auto(), label = t.label.auto(), numeral = t.numeral.auto(),
+            numeralSmall = t.numeralSmall.auto(), mono = t.mono.auto(),
+        )
+    }
     val colors = darkColorScheme(
         primary = Palette.Tally,
         onPrimary = Palette.Ink,

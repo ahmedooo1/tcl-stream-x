@@ -46,8 +46,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import androidx.compose.ui.platform.LocalContext
 import fr.ahmad.tclstreamx.R
 import fr.ahmad.tclstreamx.data.db.StreamStatus
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
@@ -177,14 +175,13 @@ fun statusLabel(status: StreamStatus): String = stringResource(
 )
 
 /**
- * Channel logo on a light plate (logos are made for white backgrounds, many are dark and vanish on
- * graphite); without a logo, the initials on a dark plate.
+ * Channel logo shown as is, without a plate (a light plate hid white logos, a dark one dark logos);
+ * without a logo, the initials on a dark plate.
  */
 @Composable
 fun ChannelLogo(url: String?, name: String, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(8.dp)
     if (url.isNullOrBlank()) {
-        Box(modifier.clip(shape).background(Palette.Lift), contentAlignment = Alignment.Center) {
+        Box(modifier.clip(RoundedCornerShape(8.dp)).background(Palette.Lift), contentAlignment = Alignment.Center) {
             Text(
                 name.trim().split(' ').filter { it.isNotEmpty() }.take(2).joinToString("") { it.take(1) }.uppercase(),
                 style = LocalTallyType.current.numeralSmall.copy(color = Palette.Text),
@@ -192,41 +189,12 @@ fun ChannelLogo(url: String?, name: String, modifier: Modifier = Modifier) {
         }
         return
     }
-    // White logos (made for dark backgrounds) get a dark plate: decided from the logo's own pixels.
-    var lightLogo by remember(url) { mutableStateOf(false) }
-    val context = LocalContext.current
-    val request = remember(url) {
-        ImageRequest.Builder(context).data(url).allowHardware(false).build()
-    }
-    Box(modifier.clip(shape).background(if (lightLogo) Palette.Lift else Palette.Plate), contentAlignment = Alignment.Center) {
-        AsyncImage(
-            model = request,
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize().padding(5.dp),
-            onSuccess = { state -> lightLogo = isLightLogo(state.result.drawable) },
-        )
-    }
-}
-
-/** True when the visible pixels of a logo are mostly light (white text on transparency). */
-private fun isLightLogo(drawable: android.graphics.drawable.Drawable): Boolean {
-    val bitmap = (drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap ?: return false
-    if (bitmap.config == android.graphics.Bitmap.Config.HARDWARE || bitmap.width == 0 || bitmap.height == 0) return false
-    var weight = 0.0
-    var light = 0.0
-    val steps = 20
-    for (i in 0 until steps) for (j in 0 until steps) {
-        val p = bitmap.getPixel(i * (bitmap.width - 1) / (steps - 1), j * (bitmap.height - 1) / (steps - 1))
-        val a = (p ushr 24) / 255.0
-        if (a < 0.2) continue
-        val lum = (0.2126 * ((p shr 16) and 0xFF) + 0.7152 * ((p shr 8) and 0xFF) + 0.0722 * (p and 0xFF)) / 255.0
-        weight += a
-        light += a * lum
-    }
-    // Only logos with transparency and bright ink: an opaque logo already carries its own background.
-    if (weight == 0.0 || weight > steps * steps * 0.85) return false
-    return light / weight > 0.78
+    AsyncImage(
+        model = url,
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = modifier.padding(3.dp),
+    )
 }
 
 val RowShape = RoundedCornerShape(10.dp)
