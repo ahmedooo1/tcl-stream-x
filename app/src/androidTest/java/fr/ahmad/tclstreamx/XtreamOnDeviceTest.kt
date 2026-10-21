@@ -61,7 +61,11 @@ class XtreamOnDeviceTest {
         val films = (openMedia["films"] as JsonArray).map { it as JsonObject }
             .associate { (it["key"] as JsonPrimitive).content to (it["url"] as JsonPrimitive).content }
         val hls = films.getValue("open:bipbop")
-        val mp4 = films["open:bbb"] ?: films.values.first { it.endsWith(".mp4") }
+        // Films and episodes are redirected to an openly licensed MP4 that starts quickly (index at the
+        // start of the file), chosen among the shipped open films: some mirrors put it at the end and
+        // need a second long request, which says nothing about the account path being tested.
+        val mp4 = films.filterKeys { it in setOf("open:bbb", "open:sintel", "open:elephants", "open:tears") }
+            .values.firstOrNull { fastStart(it) } ?: films.getValue("open:bbb")
         val panel = DevicePanel(user, pass, LIVE, MOVIES, SERIES, hls, mp4)
         server.dispatcher = panel
         server.start()
@@ -146,6 +150,19 @@ class XtreamOnDeviceTest {
         assertTrue("stream requests reached the panel with the decrypted login: $stats", stats >= 3)
         assertTrue("account playback: $results", results.all { it.second.first })
     }
+
+    /** True when the first 256 KB of the file already contain the MP4 index ('moov'). */
+    private fun fastStart(url: String): Boolean = runCatching {
+        val req = okhttp3.Request.Builder().url(url).header("Range", "bytes=0-262143").build()
+        app.container.http.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) return@use false
+            // Read at most 256 KB even if the server ignores the Range header.
+            val src = resp.body!!.source()
+            val buf = Buffer()
+            while (buf.size < 262_144) if (src.read(buf, 262_144 - buf.size) == -1L) break
+            buf.readByteArray().decodeToString().contains("moov")
+        }
+    }.getOrDefault(false)
 
     /** Returns (ready, ms to ready, ms spent playing). */
     private fun play(item: PlayItem): Triple<Boolean, Long, Long> {
