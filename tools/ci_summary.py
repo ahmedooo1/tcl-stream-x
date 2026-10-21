@@ -66,6 +66,8 @@ if xp:
     out.append("|---|---|---|---|")
     for r in xp["results"]:
         out.append(f"| {r['kind']} | {'yes' if r['ready'] else 'no'} | {r['readyMs']} ms | {r['playingMs']/1000:.1f} s |")
+    if xp.get("vodSkipped"):
+        out.append("| movie, episode | skipped: no open MP4 reachable from CI in this run | | |")
 
 pb = load("ci-out/playback-report.json")
 if pb:

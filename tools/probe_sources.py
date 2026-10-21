@@ -52,11 +52,16 @@ def main() -> int:
     media = json.load(open("app/src/main/assets/open_media.json", encoding="utf-8"))
     lines.append("\n## Open media\n\n| Title | HTTP | Bytes read | Note |\n|---|---|---|---|")
     for f in media["films"]:
-        for cand in f.get("candidates", [f["url"]]):
-            code, body = get(cand, limit=256 * 1024, headers={"Range": "bytes=0-262143"})
+        # Two rounds over the mirrors: a single network hiccup must not remove a film from the app.
+        for attempt in range(2):
+            for cand in f.get("candidates", [f["url"]]):
+                code, body = get(cand, limit=256 * 1024, headers={"Range": "bytes=0-262143"})
+                if code in (200, 206) and body:
+                    f["url"] = cand
+                    break
             if code in (200, 206) and body:
-                f["url"] = cand
                 break
+            time.sleep(5)
         f["ok"] = code in (200, 206) and bool(body)
         note = ""
         if f["url"].endswith(".m3u8") and body:
