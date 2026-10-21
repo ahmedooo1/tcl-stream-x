@@ -1,0 +1,1632 @@
+{
+ "schema": 1,
+ "generatedAt": 1792545244,
+ "checkedFrom": null,
+ "policy": "Allowlist of free channels whose live stream is published by the broadcaster itself (own domain or a CDN hostname carrying the broadcaster's name), without login, subscription or DRM. Each rule matches iptv-org entries by tvg-id AND url regex; anything else (restreams, raw IPs, pirate hosts) is rejected by construction. 'geo' documents a known territorial restriction; the app never tries to circumvent it.",
+ "channels": [
+  {
+   "id": "France24.fr@French",
+   "name": "France 24 French",
+   "logo": "https://i.imgur.com/u8N6uoj.png",
+   "category": "news",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://www.france24.com/",
+   "owner": "France Médias Monde",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live.france24.com/hls/live/2037179-b/F24_FR_HI_HLS/master_5000.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live.france24.com/hls/live/2037179/F24_FR_HI_HLS/master_5000.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live.france24.com/hls/live/2037179-b/F24_FR_HI_HLS/master_2300.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "France24.fr@Arabic",
+   "name": "France 24 Arabic",
+   "logo": "https://dtil.tmsimg.com/assets/s159111_ld_h15_aa.png?lock=720x540",
+   "category": "news",
+   "language": "ar",
+   "country": "FR",
+   "website": "https://www.france24.com/",
+   "owner": "France Médias Monde",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live.france24.com/hls/live/2037222-b/F24_AR_HI_HLS/master_5000.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live.france24.com/hls/live/2037222/F24_AR_HI_HLS/master_5000.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live.france24.com/hls/live/2037222-b/F24_AR_HI_HLS/master_2300.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "France24.fr@English",
+   "name": "France 24 English",
+   "logo": "https://dtil.tmsimg.com/assets/s159111_ld_h15_aa.png?lock=720x540",
+   "category": "news",
+   "language": "en",
+   "country": "FR",
+   "website": "https://www.france24.com/",
+   "owner": "France Médias Monde",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live.france24.com/hls/live/2037218-b/F24_EN_HI_HLS/master_5000.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live.france24.com/hls/live/2037218/F24_EN_HI_HLS/master_5000.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live.france24.com/hls/live/2037218-b/F24_EN_HI_HLS/master_2300.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "EuronewsFrench.fr@SD",
+   "name": "Euronews French",
+   "logo": "https://i.imgur.com/5A0Wnrv.png",
+   "category": "news",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://fr.euronews.com/",
+   "owner": "Euronews",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://cdn-euronews.akamaized.net/live/eds/euronews-fr/25026/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "EuronewsEnglish.fr@SD",
+   "name": "Euronews English",
+   "logo": "https://a.jsrdn.com/hls/22886/euronews/extras/1080_logo.png",
+   "category": "news",
+   "language": "en",
+   "country": "FR",
+   "website": "https://www.euronews.com/",
+   "owner": "Euronews",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://cdn-euronews.akamaized.net/live/eds/euronews-en/25002/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AfricanewsFrench.fr@SD",
+   "name": "Africanews French",
+   "logo": "https://i.imgur.com/5UxU4zc.png",
+   "category": "news",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://fr.africanews.com",
+   "owner": "Africanews (Euronews)",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://cdn-euronews.akamaized.net/live/eds/africanews-fr/25050/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "Africa24.fr@SD",
+   "name": "Africa 24",
+   "logo": "https://africa24tv.com/wp-content/uploads/2021/09/logo.png",
+   "category": "news",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://africa24tv.com/",
+   "owner": "Africa 24",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://africa24.vedge.infomaniak.com/livecast/ik:africa24/manifest.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "BFMTV.fr@SD",
+   "name": "BFM TV",
+   "logo": "https://i.imgur.com/YJCcczD.png",
+   "category": "news",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://www.bfmtv.com/",
+   "owner": "NextRadioTV / BFM",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live-cdn-stream-euw1.bfmtv.bct.nextradiotv.com/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 576,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "BFMBusiness.fr@SD",
+   "name": "BFM Business",
+   "logo": "https://i.imgur.com/psqIHn4.png",
+   "category": "news",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://www.bfmtv.com/economie/",
+   "owner": "NextRadioTV / BFM",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live-cdn-stream-euw1.bfmb.bct.nextradiotv.com/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 576,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "20MinutesTV.fr@SD",
+   "name": "20 Minutes TV",
+   "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/20_Minutes_TV_IDF_logo_%282023%29.png/960px-20_Minutes_TV_IDF_logo_%282023%29.png",
+   "category": "news",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://20minutes.tv",
+   "owner": "20 Minutes",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live-20minutestv.digiteka.com/1961167769/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "LeFigaroTVIledeFrance.fr@SD",
+   "name": "Le Figaro IDF",
+   "logo": "https://i.imgur.com/a8RuRUQ.png",
+   "category": "news",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://video.lefigaro.fr/",
+   "owner": "Le Figaro",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://figarotv-live.freecaster.com/live/freecaster/figarotv.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://static.lefigaro.fr/secom/tnt.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "TV5MondeInfo.fr@SD",
+   "name": "TV5Monde Info",
+   "logo": "https://i.imgur.com/AJx5Fy2.png",
+   "category": "news",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://maghreb-orient.tv5monde.com/en/direct-tv5monde-info",
+   "owner": "TV5MONDE",
+   "geo": "restricted",
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://ott.tv5monde.com/Content/HLS/Live/channel(info)/variant.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "arte.fr@SD",
+   "name": "Arte",
+   "logo": "https://i.imgur.com/ecXMjNl.png",
+   "category": "entertainment",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://www.arte.tv/",
+   "owner": "ARTE",
+   "geo": "FR",
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://artesimulcast.akamaized.net/hls/live/2031003/artelive_fr/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "TV5MondeFranceBelgiumSwitzerlandMonaco.fr@SD",
+   "name": "TV5Monde France Belgique Suisse Monaco",
+   "logo": "https://i.imgur.com/WmRbudc.png",
+   "category": "entertainment",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://live.tv5monde.com/fbs.html",
+   "owner": "TV5MONDE",
+   "geo": "FR/BE/CH/MC",
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://ott.tv5monde.com/Content/HLS/Live/channel(fbs)/variant.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "TV5MondeEurope.fr@SD",
+   "name": "TV5Monde Europe",
+   "logo": "https://i.imgur.com/rPAbMSu.png",
+   "category": "entertainment",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://europe.tv5monde.com/",
+   "owner": "TV5MONDE",
+   "geo": "restricted",
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://ott.tv5monde.com/Content/HLS/Live/channel(europe)/variant.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "TV5MONDEChefs.fr@SD",
+   "name": "TV5MONDE Chefs",
+   "logo": "https://provider-static.plex.tv/epg/cms/production/9adadebc-556e-4510-a632-ee532eb5863b/LOGO_PLEX_CHEFS_1500X1000_WHITE.png",
+   "category": "entertainment",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://www.tv5mondeplus.com/en/direct?channelid=32",
+   "owner": "TV5MONDE (FAST)",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://tvf-tv5ch.otteravision.com/tvf/tv5ch/tv5ch.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "KTO.fr@SD",
+   "name": "KTO",
+   "logo": "https://i.imgur.com/EY6TsdV.png",
+   "category": "entertainment",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://www.ktotv.com/",
+   "owner": "KTO",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live-kto.akamaized.net/hls/live/2033284/KTO/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 404,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlJazeera.qa@Arabic",
+   "name": "Al Jazeera",
+   "logo": "https://dtil.tmsimg.com/assets/s159135_ld_h15_aa.png?lock=720x540",
+   "category": "news",
+   "language": "ar",
+   "country": "QA",
+   "website": "https://www.aljazeera.net/",
+   "owner": "Al Jazeera Media Network",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live-hls-apps-aja-fa.getaj.net/AJA/01.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live-hls-apps-aja-fa.getaj.net/AJA/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live-hls-apps-aja-v3-fa.getaj.net/AJA/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlJazeera.qa@English",
+   "name": "Al Jazeera English",
+   "logo": "https://dtil.tmsimg.com/assets/s159135_ld_h15_aa.png?lock=720x540",
+   "category": "news",
+   "language": "en",
+   "country": "QA",
+   "website": "https://www.aljazeera.net/",
+   "owner": "Al Jazeera Media Network",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live-hls-apps-aje-v3-fa.getaj.net/AJE/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlJazeeraMubasher.qa@SD",
+   "name": "Al Jazeera Mubasher",
+   "logo": "https://i.imgur.com/X80DQvF.png",
+   "category": "news",
+   "language": "ar",
+   "country": "QA",
+   "website": "http://mubasher.aljazeera.net/",
+   "owner": "Al Jazeera Media Network",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live-hls-apps-ajm-fa.getaj.net/AJM/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live-hls-apps-ajm-v3-fa.getaj.net/AJM/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live-hls-web-ajm.getaj.net/AJM/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlJazeeraDocumentary.qa@SD",
+   "name": "Al Jazeera Documentary",
+   "logo": "https://i.imgur.com/5dNJlLo.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "QA",
+   "website": "http://doc.aljazeera.net/",
+   "owner": "Al Jazeera Media Network",
+   "geo": "restricted",
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live-hls-apps-ajd-fa.getaj.net/AJD/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live-hls-apps-ajd-v3-fa.getaj.net/AJD/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live-hls-web-ajd.getaj.net/AJD/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "Alarabiya.ae@SD",
+   "name": "Al Arabiya",
+   "logo": "https://i.imgur.com/NXFkYFj.png",
+   "category": "news",
+   "language": "ar",
+   "country": "AE",
+   "website": "https://www.alarabiya.net/",
+   "owner": "Al Arabiya",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live.alarabiya.net/alarabiapublish/alarabiya.smil/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live.alarabiya.net/alarabiapublish/alarabiya.smil/alarabiapublish/alarabiya_1080p/chunks.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlHadath.sa@SD",
+   "name": "Al Arabiya Al Hadath",
+   "logo": "https://i.imgur.com/De4SEWE.png",
+   "category": "news",
+   "language": "ar",
+   "country": "SA",
+   "website": "https://www.alhadath.net/",
+   "owner": "Al Arabiya",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://av.alarabiya.net/alarabiapublish/alhadath.smil/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://live.alarabiya.net/alarabiapublish/alhadath.smil/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlArabiyaBusiness.ae@SD",
+   "name": "Al Arabiya Business",
+   "logo": "https://i.imgur.com/eEV4r6J.jpg",
+   "category": "news",
+   "language": "ar",
+   "country": "AE",
+   "website": "https://www.alarabiya.net/aswaq",
+   "owner": "Al Arabiya",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live.alarabiya.net/alarabiapublish/aswaaq.smil/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "SkyNewsArabia.ae@HD",
+   "name": "Sky News Arabia",
+   "logo": "https://i.imgur.com/SvjU4h6.png",
+   "category": "news",
+   "language": "ar",
+   "country": "AE",
+   "website": "https://www.skynewsarabia.com/",
+   "owner": "Sky News Arabia",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live-stream.skynewsarabia.com/c-horizontal-channel/horizontal-stream/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AsharqNews.sa@SD",
+   "name": "Asharq News",
+   "logo": "https://i.imgur.com/bqRC3sl.png",
+   "category": "news",
+   "language": "ar",
+   "country": "SA",
+   "website": "https://asharq.com/",
+   "owner": "Asharq News",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live-news.asharq.com/asharq.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "DW.de@Arabic",
+   "name": "DW Arabic",
+   "logo": "https://i.imgur.com/MNKkgfa.png",
+   "category": "news",
+   "language": "ar",
+   "country": "DE",
+   "website": "https://www.dw.com/",
+   "owner": "Deutsche Welle",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://dwamdstream103.akamaized.net/hls/live/2015526/dwstream103/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "DW.de@English",
+   "name": "DW English",
+   "logo": "https://i.imgur.com/MNKkgfa.png",
+   "category": "news",
+   "language": "en",
+   "country": "DE",
+   "website": "https://www.dw.com/",
+   "owner": "Deutsche Welle",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "TRTArabi.tr@SD",
+   "name": "TRT Arabi",
+   "logo": "https://i.imgur.com/dEfI2M9.png",
+   "category": "news",
+   "language": "ar",
+   "country": "TR",
+   "website": "https://www.trtarabi.com/",
+   "owner": "TRT",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://tv-trtarabi.medya.trt.com.tr/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "TRTWorld.tr@SD",
+   "name": "TRT World",
+   "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/TRT_World.svg/960px-TRT_World.svg.png",
+   "category": "news",
+   "language": "en",
+   "country": "TR",
+   "website": "https://www.trtworld.com/",
+   "owner": "TRT",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://tv-trtworld.medya.trt.com.tr/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlMayadeenTV.lb@SD",
+   "name": "Al Mayadeen",
+   "logo": "https://i.imgur.com/GtQOKeW.png",
+   "category": "news",
+   "language": "ar",
+   "country": "LB",
+   "website": "https://www.almayadeen.net/",
+   "owner": "Al Mayadeen",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://mdnlv.cdn.octivid.com/almdn/smil:mpegts.stream.smil/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 576,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "KTVNews.kw@SD",
+   "name": "KTV News",
+   "logo": "https://i.imgur.com/erZ0Ol1.png",
+   "category": "news",
+   "language": "ar",
+   "country": "KW",
+   "website": "https://media.gov.kw/",
+   "owner": "Kuwait TV (Ministry of Information)",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://kwtkbta.cdn.mangomolo.com/kb/smil:kb.stream.smil/chunklist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "NHKWorldJapan.jp@SD",
+   "name": "NHK World-Japan",
+   "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/PBS_Kids_logo_%282022%29.svg/960px-PBS_Kids_logo_%282022%29.svg.png",
+   "category": "news",
+   "language": "en",
+   "country": "JP",
+   "website": "https://www3.nhk.or.jp/nhkworld/",
+   "owner": "NHK",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://masterpl.hls.nhkworld.jp/hls/w/live/smarttv.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://media-osa.hls.nhkworld.jp/hls/w/live/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://media-tyo.hls.nhkworld.jp/hls/w/live/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "CGTN.cn@SD",
+   "name": "CGTN",
+   "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Estrella_TV_Logo_2020.png/500px-Estrella_TV_Logo_2020.png",
+   "category": "news",
+   "language": "en",
+   "country": "CN",
+   "website": "https://www.cgtn.com/tv",
+   "owner": "CGTN",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://english-livebkali.cgtn.com/live/encgtn.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "BloombergTV.us@US",
+   "name": "Bloomberg TV US",
+   "logo": "https://i.imgur.com/OuogLHx.png",
+   "category": "news",
+   "language": "en",
+   "country": "US",
+   "website": "https://www.bloomberg.com/live/us/btv",
+   "owner": "Bloomberg",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://bloomberg.com/media-manifest/streams/us.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "QatarTelevision.qa@SD",
+   "name": "Qatar Television",
+   "logo": "https://i.imgur.com/N5RB4sp.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "QA",
+   "website": "http://www.qtv.qa/",
+   "owner": "Qatar Media Corporation",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://qatartv.akamaized.net/hls/live/20000609/qtv1/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlRayyanTV.qa@SD",
+   "name": "Al Rayyan",
+   "logo": "https://i.imgur.com/Ts3RjTV.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "QA",
+   "website": "https://www.alrayyan.tv/",
+   "owner": "Al Rayyan TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://alrayyancdn.vidgyor.com/pub-noalrayy3pwz0l/liveabr/playlist_dvr.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "KTV1.kw@SD",
+   "name": "KTV 1",
+   "logo": "https://i.imgur.com/kG0d8Ay.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "KW",
+   "website": "https://media.gov.kw/",
+   "owner": "Kuwait TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://kwtktv1ta.cdn.mangomolo.com/ktv1/smil:ktv1.stream.smil/chunklist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "KTV2.kw@SD",
+   "name": "KTV 2",
+   "logo": "https://i.imgur.com/hB57mNh.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "KW",
+   "website": "https://media.gov.kw/",
+   "owner": "Kuwait TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://kwtktv2ta.cdn.mangomolo.com/ktv2/smil:ktv2.stream.smil/chunklist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "KTVArabe.kw@SD",
+   "name": "KTV Arabe",
+   "logo": "https://i.imgur.com/jg3VAxO.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "KW",
+   "website": "https://media.gov.kw/",
+   "owner": "Kuwait TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://kwtktvata.cdn.mangomolo.com/ktva/smil:tktva.stream.smil/chunklist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "OmanTV.om@SD",
+   "name": "Oman TV",
+   "logo": "https://i.imgur.com/rBftT9x.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "OM",
+   "website": "http://part.gov.om/part/",
+   "owner": "Oman TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://partneta.cdn.mgmlcdn.com/omantv/smil:omantv.stream.smil/chunklist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "JordanTV.jo@SD",
+   "name": "Jordan Satellite Channel",
+   "logo": "https://i.imgur.com/0XozB5N.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "JO",
+   "website": "https://www.jrtv.gov.jo/",
+   "owner": "Jordan Radio & Television",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://jrtv-live.ercdn.net/jordanhd/jordanhd.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "RoyaTV.jo@SD",
+   "name": "Roya TV",
+   "logo": "https://i.imgur.com/WX80rty.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "JO",
+   "website": "https://www.roya.tv/",
+   "owner": "Roya TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live.kwikmotion.com/royatvpublic/royatv.smil/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlArabyTV.qa@SD",
+   "name": "Al Araby TV",
+   "logo": "https://i.imgur.com/YMqWEe4.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "QA",
+   "website": "https://www.alaraby.com/",
+   "owner": "Al Araby TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://live.kwikmotion.com/alaraby1live/alaraby_abr/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "2MMonde.ma@SD",
+   "name": "2M Monde",
+   "logo": "https://i.imgur.com/MvpntzA.png",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "MA",
+   "website": "https://2m.ma/",
+   "owner": "SOREAD 2M (via Globecast)",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://cdn-globecast.akamaized.net/live/eds/2m_monde/hls_video_ts_tuhawxpiemz257adfc/2m_monde.m3u8",
+     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0",
+     "referrer": "http://www.radio2m.ma/",
+     "quality": 360,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "Medi1TVMaghreb.ma@SD",
+   "name": "Medi 1 TV Maghreb",
+   "logo": "https://i.imgur.com/F5OFQsp.jpeg",
+   "category": "news",
+   "language": "ar",
+   "country": "MA",
+   "website": "https://medi1tv.com/",
+   "owner": "Medi1 TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://cdn.live.easybroadcast.io/abr_corp/83_medi1tv-maghreb_jnbspmg/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://cdn.live.easybroadcast.io/abr_corp/83_medi1tv-maghreb_jnbspmg/playlist_dvr.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "Medi1TVArabic.ma@SD",
+   "name": "Medi 1 TV Arabic",
+   "logo": "https://i.imgur.com/3YsZPY6.jpeg",
+   "category": "news",
+   "language": "ar",
+   "country": "MA",
+   "website": "https://medi1tv.com/",
+   "owner": "Medi1 TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://cdn.live.easybroadcast.io/abr_corp/83_medi1tv-arabic_g90v4ec/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://cdn.live.easybroadcast.io/abr_corp/83_medi1tv-arabic_g90v4ec/playlist_dvr.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlIraqia.iq@SD",
+   "name": "Al Iraqia",
+   "logo": "https://i.imgur.com/8qQouTW.jpg",
+   "category": "entertainment",
+   "language": "ar",
+   "country": "IQ",
+   "website": "http://imn.iq/",
+   "owner": "Iraqi Media Network",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://imn-live.esite-lab.com/hls/iraqia-general.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "BloombergOriginals.us@US",
+   "name": "Bloomberg Originals",
+   "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Bloomberg_Originals.png",
+   "category": "entertainment",
+   "language": "en",
+   "country": "US",
+   "website": "https://www.bloomberg.com/originals/live",
+   "owner": "Bloomberg",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://bloomberg.com/media-manifest/streams/qt.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "FIFAPlus.uk@French",
+   "name": "FIFA+ French",
+   "logo": "https://upload.wikimedia.org/wikipedia/commons/9/9c/FIFA%2B_%282025%29.svg",
+   "category": "sports",
+   "language": "fr",
+   "country": "UK",
+   "website": "https://www.plus.fifa.com/",
+   "owner": "FIFA+ (FAST, distributed by Wurl)",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://37b4c228.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWZyX0ZJRkFQbHVzRnJlbmNoX0hMUw/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "FIFAPlus.uk@English",
+   "name": "FIFA+",
+   "logo": "https://upload.wikimedia.org/wikipedia/commons/9/9c/FIFA%2B_%282025%29.svg",
+   "category": "sports",
+   "language": "en",
+   "country": "UK",
+   "website": "https://www.plus.fifa.com/",
+   "owner": "FIFA+ (FAST, distributed by Wurl)",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://a62dad94.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0ZJRkFQbHVzRW5nbGlzaF9ITFM/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "beINSPORTSXTRA.us@SD",
+   "name": "beIN SPORTS XTRA",
+   "logo": "https://i.ibb.co/HT49GPmB/XTRA-2.png",
+   "category": "sports",
+   "language": "en",
+   "country": "US",
+   "website": "https://www.beinsportsxtra.com/",
+   "owner": "beIN SPORTS XTRA (free FAST)",
+   "geo": "US",
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://bein-xtra-bein.amagi.tv/playlist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "FuboSportsNetwork.us@SD",
+   "name": "Fubo Sports Network",
+   "logo": "https://i.imgur.com/qFNRJLb.png",
+   "category": "sports",
+   "language": "en",
+   "country": "US",
+   "website": "https://www.fubo.tv/news/uncategorized/contact-us/",
+   "owner": "Fubo Sports Network (free, via Tubi)",
+   "geo": "US",
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://aegis-cloudfront-1.tubi.video/c2ac89da-5c69-439e-b85d-d87de0548b54/5.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "RealMadridTV.es@SD",
+   "name": "Real Madrid TV",
+   "logo": "https://i.imgur.com/5pMo7dL.png",
+   "category": "sports",
+   "language": "es",
+   "country": "ES",
+   "website": "https://www.realmadrid.com/real-madrid-tv",
+   "owner": "Real Madrid CF",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://rmtv.akamaized.net/hls/live/2043153/rmtv-es-web/master.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 726,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "TraceSportStars.fr@SD",
+   "name": "Trace Sport Stars SD",
+   "logo": "https://i.imgur.com/FabFP5A.png",
+   "category": "sports",
+   "language": "fr",
+   "country": "FR",
+   "website": "http://www.trace.tv/fr/tv/sport",
+   "owner": "Trace",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://channels.trace.plus/Traceprod/TRACE_SPORT_STARS_sd/index.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 0,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "Africa24Sport.fr@SD",
+   "name": "Africa 24 Sport",
+   "logo": "https://i0.wp.com/africa24tv.com/wp-content/uploads/2023/12/LOGO-AFRICASPORT-4-HD-sans-fond.png?fit=512%2C107&ssl=1",
+   "category": "sports",
+   "language": "fr",
+   "country": "FR",
+   "website": "https://africa24tv.com/sport",
+   "owner": "Africa 24",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://africa24.vedge.infomaniak.com/livecast/ik:africa24sport/manifest.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "KTVSport.kw@SD",
+   "name": "KTV Sport",
+   "logo": "https://i.imgur.com/R1hGX1d.png",
+   "category": "sports",
+   "language": "ar",
+   "country": "KW",
+   "website": "https://media.gov.kw/",
+   "owner": "Kuwait TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://kwtspta.cdn.mangomolo.com/sp/smil:sp.stream.smil/chunklist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "KTVSportPlus.kw@SD",
+   "name": "KTV Sport Plus",
+   "logo": "https://i.imgur.com/l4oX0gf.png",
+   "category": "sports",
+   "language": "ar",
+   "country": "KW",
+   "website": "",
+   "owner": "Kuwait TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://kwtsplta.cdn.mangomolo.com/spl/smil:spl.stream.smil/chunklist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "OmanSportsTV.om@SD",
+   "name": "Oman Sports TV",
+   "logo": "https://i.imgur.com/1omi7p8.png",
+   "category": "sports",
+   "language": "ar",
+   "country": "OM",
+   "website": "http://part.gov.om/omantvsport/",
+   "owner": "Oman TV",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://partneta.cdn.mgmlcdn.com/omsport/smil:omsport.stream.smil/chunklist.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "JordanSport.jo@SD",
+   "name": "Jordan Sport",
+   "logo": "https://i.imgur.com/2EmrZPQ.png",
+   "category": "sports",
+   "language": "ar",
+   "country": "JO",
+   "website": "",
+   "owner": "Jordan Radio & Television",
+   "geo": "JO",
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://jrtv-live.ercdn.net/jordansporthd/jordansporthd.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "AlIraqiaSport.iq@SD",
+   "name": "Al Iraqia Sport",
+   "logo": "https://i.imgur.com/DrrlxTO.png",
+   "category": "sports",
+   "language": "ar",
+   "country": "IQ",
+   "website": "http://imn.iq/",
+   "owner": "Iraqi Media Network",
+   "geo": null,
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://imn-live.esite-lab.com/hls/iraqia-sports-1.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  },
+  {
+   "id": "OlympicChannel.es@SD",
+   "name": "Olympics Channel",
+   "logo": "https://i.imgur.com/wPQVVtj.png",
+   "category": "sports",
+   "language": "en",
+   "country": "ES",
+   "website": "https://olympics.com/",
+   "owner": "Olympic Channel (IOC)",
+   "geo": "restricted",
+   "status": "unchecked",
+   "streams": [
+    {
+     "url": "https://ocshls-2-olympicchannel.akamaized.net/ocshls/OCTV_1.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 1080,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://ocshls-2-olympicchannel.akamaized.net/ocshls/OCTV_2.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 720,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    },
+    {
+     "url": "https://ocshls-2-olympicchannel.akamaized.net/ocshls/OCTV_32.m3u8",
+     "userAgent": null,
+     "referrer": null,
+     "quality": 0,
+     "status": "unchecked",
+     "detail": "",
+     "checkedAt": 0
+    }
+   ]
+  }
+ ]
+}

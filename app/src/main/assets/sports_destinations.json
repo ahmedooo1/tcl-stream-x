@@ -1,0 +1,41 @@
+{
+  "reviewedAt": "2026-10-21",
+  "note": "Official rights holders only. Entries with verified=false come from press reports and must be checked locally. TCL Stream X never plays these competitions itself: it opens the official service.",
+  "regions": {
+    "FR": [
+      {"league": "fra.1", "name": "Ligue 1", "destinations": ["Ligue 1+"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},
+      {"league": "fra.2", "name": "Ligue 2", "destinations": ["beIN SPORTS"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},
+      {"league": "uefa.champions", "name": "Ligue des champions", "destinations": ["CANAL+"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},
+      {"league": "uefa.europa", "name": "Ligue Europa", "destinations": ["CANAL+"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},
+      {"league": "uefa.europa.conf", "name": "Ligue Conférence", "destinations": ["CANAL+"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},
+      {"league": "eng.1", "name": "Premier League", "destinations": ["CANAL+"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},
+      {"league": "esp.1", "name": "LaLiga", "destinations": ["DAZN", "Disney+"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},
+      {"league": "ita.1", "name": "Serie A", "destinations": ["DAZN"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},
+      {"league": "ger.1", "name": "Bundesliga", "destinations": ["beIN SPORTS"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},
+      {"league": "fra.coupe_de_france", "name": "Coupe de France", "destinations": ["beIN SPORTS"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},
+      {"league": "uefa.nations", "name": "Ligue des nations", "destinations": ["TF1 (matchs de la France)", "L'Équipe (autres matchs)"], "free": true, "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"}
+    ],
+    "MENA": [
+      {"league": "esp.1", "name": "LaLiga", "destinations": ["beIN SPORTS"], "verified": true, "source": "https://www.sportcal.com/media/bein-and-laliga-make-up-renew-across-apac-and-mena/"},
+      {"league": "eng.1", "name": "Premier League", "destinations": ["beIN SPORTS"], "verified": false, "source": ""},
+      {"league": "uefa.champions", "name": "دوري أبطال أوروبا", "destinations": ["beIN SPORTS"], "verified": false, "source": ""},
+      {"league": "ksa.1", "name": "دوري روشن السعودي", "destinations": ["Thmanyah", "SSC"], "verified": false, "source": ""}
+    ]
+  },
+  "freeLegal": [
+    {"name": "FIFA+", "kind": "channel", "channelKey": "b:FIFAPlus.uk@French"},
+    {"name": "L'Équipe", "kind": "service", "query": "L'Équipe"},
+    {"name": "france.tv sport", "kind": "service", "query": "france.tv"}
+  ],
+  "leagues": [
+    {"id": "fra.1", "sport": "soccer"},
+    {"id": "uefa.champions", "sport": "soccer"},
+    {"id": "uefa.europa", "sport": "soccer"},
+    {"id": "eng.1", "sport": "soccer"},
+    {"id": "esp.1", "sport": "soccer"},
+    {"id": "ita.1", "sport": "soccer"},
+    {"id": "ger.1", "sport": "soccer"},
+    {"id": "ksa.1", "sport": "soccer"},
+    {"id": "fra.2", "sport": "soccer"}
+  ]
+}

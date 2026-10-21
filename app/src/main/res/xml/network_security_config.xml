@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Many IPTV playlists and broadcaster streams are plain HTTP; media playback needs cleartext.
+     TLS is still used whenever the source offers it, and user CAs are not trusted. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
