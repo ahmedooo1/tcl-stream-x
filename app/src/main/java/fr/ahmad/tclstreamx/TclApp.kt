@@ -27,11 +27,17 @@ class TclApp : Application(), ImageLoaderFactory {
     @androidx.annotation.OptIn(UnstableApi::class)
     private fun installRedactingPlayerLog() {
         Log.setLogger(object : Log.Logger {
-            override fun d(tag: String, message: String) { android.util.Log.d(tag, Redactor.redact(message)) }
-            override fun i(tag: String, message: String) { android.util.Log.i(tag, Redactor.redact(message)) }
-            override fun w(tag: String, message: String) { android.util.Log.w(tag, Redactor.redact(message)) }
-            override fun e(tag: String, message: String) { android.util.Log.e(tag, Redactor.redact(message)) }
+            override fun d(tag: String, message: String, throwable: Throwable?) { android.util.Log.d(tag, line(message, throwable)) }
+            override fun i(tag: String, message: String, throwable: Throwable?) { android.util.Log.i(tag, line(message, throwable)) }
+            override fun w(tag: String, message: String, throwable: Throwable?) { android.util.Log.w(tag, line(message, throwable)) }
+            override fun e(tag: String, message: String, throwable: Throwable?) { android.util.Log.e(tag, line(message, throwable)) }
         })
+    }
+
+    /** Message and exception, both redacted; the stack trace is reduced to the exception chain's types and messages. */
+    private fun line(message: String, t: Throwable?): String {
+        val chain = generateSequence(t) { it.cause }.take(5).joinToString(" <- ") { "${it.javaClass.simpleName}: ${it.message.orEmpty()}" }
+        return Redactor.redact(if (chain.isEmpty()) message else "$message | $chain")
     }
 
     /** Channel logos: bounded caches so thousands of logos never exhaust a 2 GB TV. */
