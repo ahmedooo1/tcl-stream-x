@@ -271,8 +271,6 @@ private fun Schedule(r: SportsResult, region: String, compact: Boolean, onSelect
                         }
                     }
                 }
-                    }
-                }
             }
         }
     }
