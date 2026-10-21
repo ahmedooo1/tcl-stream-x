@@ -261,8 +261,12 @@ private fun Rail(current: String, onSelect: (String) -> Unit) {
             .padding(vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Row(Modifier.padding(start = 24.dp, bottom = 22.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(16.dp).background(Palette.Tally))
+        Row(Modifier.padding(start = 18.dp, bottom = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(R.drawable.logo_mark),
+                contentDescription = null,
+                modifier = Modifier.size(30.dp),
+            )
             if (expanded) {
                 Spacer(Modifier.width(12.dp))
                 Text(stringResource(R.string.app_name), style = type.title, maxLines = 1)
