@@ -55,7 +55,8 @@ class RemoteHub(private val context: Context, http: OkHttpClient) {
 
     @Synchronized
     fun startReceiver(deviceName: String) {
-        if (server != null || nsd == null) return
+        val manager = nsd ?: return
+        if (server != null) return
         val s = RemotePlayServer(deviceName, tokenStore, { _pairingCode.value = it }, { _incoming.tryEmit(it) })
         val port = try { s.start() } catch (e: IOException) { return }
         server = s
@@ -71,7 +72,7 @@ class RemoteHub(private val context: Context, http: OkHttpClient) {
             override fun onUnregistrationFailed(info: NsdServiceInfo, errorCode: Int) = Unit
         }
         registration = listener
-        runCatching { nsd.registerService(info, NsdManager.PROTOCOL_DNS_SD, listener) }
+        runCatching { manager.registerService(info, NsdManager.PROTOCOL_DNS_SD, listener) }
     }
 
     @Synchronized
@@ -93,7 +94,8 @@ class RemoteHub(private val context: Context, http: OkHttpClient) {
 
     @Synchronized
     fun startDiscovery() {
-        if (discovery != null || nsd == null) return
+        val manager = nsd ?: return
+        if (discovery != null) return
         _tvs.value = emptyList()
         val listener = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(serviceType: String) = Unit
@@ -106,7 +108,7 @@ class RemoteHub(private val context: Context, http: OkHttpClient) {
             }
         }
         discovery = listener
-        runCatching { nsd.discoverServices(RemotePlayServer.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener) }
+        runCatching { manager.discoverServices(RemotePlayServer.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener) }
     }
 
     @Synchronized
@@ -127,13 +129,14 @@ class RemoteHub(private val context: Context, http: OkHttpClient) {
     @Synchronized
     private fun resolveNext() {
         val next = resolveQueue.removeFirstOrNull()
-        if (next == null || nsd == null) {
+        val manager = nsd
+        if (next == null || manager == null) {
             resolving = false
             return
         }
         resolving = true
         @Suppress("DEPRECATION")
-        nsd.resolveService(next, object : NsdManager.ResolveListener {
+        manager.resolveService(next, object : NsdManager.ResolveListener {
             override fun onResolveFailed(info: NsdServiceInfo, errorCode: Int) = resolveNext()
             override fun onServiceResolved(info: NsdServiceInfo) {
                 val host = info.host?.hostAddress
