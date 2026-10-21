@@ -243,4 +243,26 @@
     <string name="search_live">Chaînes</string>
     <string name="search_movies">Films</string>
     <string name="search_series">Séries</string>
+    <string name="cat_movies">Chaînes films</string>
+    <string name="cat_series">Chaînes séries</string>
+    <string name="section_free_channels">Chaînes gratuites 24 h/24</string>
+    <string name="section_free_channels_note">Chaînes officielles gratuites, en direct. Certaines ne sont disponibles que dans leur pays.</string>
+    <string name="cast_title">Diffuser sur un écran</string>
+    <string name="cast_tv_app">TCL Stream X sur la TV (Wi‑Fi)</string>
+    <string name="cast_tv_app_empty">Ouvrez TCL Stream X sur la TV, connectée au même Wi‑Fi.</string>
+    <string name="cast_pair_needed">à associer</string>
+    <string name="cast_code_hint">Code affiché sur la TV</string>
+    <string name="cast_sent">Envoyé à %1$s</string>
+    <string name="cast_bad_code">Code incorrect</string>
+    <string name="cast_network">Appareil injoignable</string>
+    <string name="cast_chromecast">Chromecast / Google TV</string>
+    <string name="cast_unavailable">Chromecast indisponible sur cet appareil (services Google Play absents).</string>
+    <string name="cast_searching">Recherche des appareils…</string>
+    <string name="cast_playing_on">En cours sur %1$s · arrêter</string>
+    <string name="cast_other">Autres applications</string>
+    <string name="cast_open_with">Ouvrir avec une autre application</string>
+    <string name="cast_share">Partager le lien</string>
+    <string name="cast_note">Certaines chaînes exigent des en-têtes particuliers ou une région : elles peuvent ne pas passer par Chromecast.</string>
+    <string name="remote_pair_title">Associer un téléphone</string>
+    <string name="remote_pair_hint">Saisissez ce code dans TCL Stream X sur le téléphone.</string>
 </resources>

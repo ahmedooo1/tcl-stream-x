@@ -243,4 +243,26 @@
     <string name="search_live">القنوات</string>
     <string name="search_movies">الأفلام</string>
     <string name="search_series">المسلسلات</string>
+    <string name="cat_movies">قنوات أفلام</string>
+    <string name="cat_series">قنوات مسلسلات</string>
+    <string name="section_free_channels">قنوات مجانية على مدار الساعة</string>
+    <string name="section_free_channels_note">قنوات رسمية مجانية بث مباشر. بعضها متاح في بلده فقط.</string>
+    <string name="cast_title">العرض على شاشة</string>
+    <string name="cast_tv_app">TCL Stream X على التلفاز (واي فاي)</string>
+    <string name="cast_tv_app_empty">افتح TCL Stream X على التلفاز المتصل بنفس شبكة الواي فاي.</string>
+    <string name="cast_pair_needed">يحتاج إلى ربط</string>
+    <string name="cast_code_hint">الرمز الظاهر على التلفاز</string>
+    <string name="cast_sent">أُرسلت إلى %1$s</string>
+    <string name="cast_bad_code">رمز غير صحيح</string>
+    <string name="cast_network">تعذّر الوصول إلى الجهاز</string>
+    <string name="cast_chromecast">Chromecast / Google TV</string>
+    <string name="cast_unavailable">Chromecast غير متاح على هذا الجهاز (خدمات Google Play غير موجودة).</string>
+    <string name="cast_searching">جارٍ البحث عن الأجهزة…</string>
+    <string name="cast_playing_on">يُعرض على %1$s · إيقاف</string>
+    <string name="cast_other">تطبيقات أخرى</string>
+    <string name="cast_open_with">فتح بتطبيق آخر</string>
+    <string name="cast_share">مشاركة الرابط</string>
+    <string name="cast_note">بعض القنوات تتطلب ترويسات خاصة أو منطقة جغرافية معيّنة، فقد لا تعمل عبر Chromecast.</string>
+    <string name="remote_pair_title">ربط هاتف</string>
+    <string name="remote_pair_hint">أدخل هذا الرمز في TCL Stream X على الهاتف.</string>
 </resources>

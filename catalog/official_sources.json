@@ -1,499 +1,579 @@
 {
-  "_doc": "Allowlist of free channels whose live stream is published by the broadcaster itself (own domain or a CDN hostname carrying the broadcaster's name), without login, subscription or DRM. Each rule matches iptv-org entries by tvg-id AND url regex; anything else (restreams, raw IPs, pirate hosts) is rejected by construction. 'geo' documents a known territorial restriction; the app never tries to circumvent it. In addition, any stream served from the same registrable domain as the channel's official website (iptv-org database) is accepted automatically, but only shipped if the CI check reaches it.",
-  "upstream": "https://github.com/iptv-org/iptv (streams/*.m3u) used only as an index of URLs; ownership is enforced by url_regex below.",
-  "countries": [
-    "fr",
-    "be",
-    "ch",
-    "ca",
-    "lu",
-    "mc",
-    "ma",
-    "dz",
-    "tn",
-    "eg",
-    "sa",
-    "ae",
-    "qa",
-    "kw",
-    "om",
-    "bh",
-    "jo",
-    "lb",
-    "sy",
-    "iq",
-    "ps",
-    "ly",
-    "sd",
-    "ye",
-    "mr",
-    "uk",
-    "us",
-    "de",
-    "tr",
-    "es",
-    "it",
-    "jp",
-    "cn"
-  ],
-  "rules": [
-    {
-      "id": "France24.fr@French",
-      "url_regex": "^https://live\\.france24\\.com/",
-      "cat": "news",
-      "lang": "fr",
-      "owner": "France Médias Monde"
-    },
-    {
-      "id": "France24.fr@Arabic",
-      "url_regex": "^https://live\\.france24\\.com/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "France Médias Monde"
-    },
-    {
-      "id": "France24.fr@English",
-      "url_regex": "^https://live\\.france24\\.com/",
-      "cat": "news",
-      "lang": "en",
-      "owner": "France Médias Monde"
-    },
-    {
-      "id": "EuronewsFrench.fr@SD",
-      "url_regex": "^https://cdn-euronews\\.akamaized\\.net/",
-      "cat": "news",
-      "lang": "fr",
-      "owner": "Euronews"
-    },
-    {
-      "id": "EuronewsEnglish.fr@SD",
-      "url_regex": "^https://cdn-euronews\\.akamaized\\.net/",
-      "cat": "news",
-      "lang": "en",
-      "owner": "Euronews"
-    },
-    {
-      "id": "AfricanewsFrench.fr@SD",
-      "url_regex": "^https://cdn-euronews\\.akamaized\\.net/",
-      "cat": "news",
-      "lang": "fr",
-      "owner": "Africanews (Euronews)"
-    },
-    {
-      "id": "Africa24.fr@SD",
-      "url_regex": "^https://africa24\\.vedge\\.infomaniak\\.com/",
-      "cat": "news",
-      "lang": "fr",
-      "owner": "Africa 24"
-    },
-    {
-      "id": "BFMTV.fr@SD",
-      "url_regex": "^https://[a-z0-9-]+\\.bfmtv\\.bct\\.nextradiotv\\.com/",
-      "cat": "news",
-      "lang": "fr",
-      "owner": "NextRadioTV / BFM"
-    },
-    {
-      "id": "BFMBusiness.fr@SD",
-      "url_regex": "^https://[a-z0-9-]+\\.bfmb\\.bct\\.nextradiotv\\.com/",
-      "cat": "news",
-      "lang": "fr",
-      "owner": "NextRadioTV / BFM"
-    },
-    {
-      "id": "20MinutesTV.fr@SD",
-      "url_regex": "^https://live-20minutestv\\.digiteka\\.com/",
-      "cat": "news",
-      "lang": "fr",
-      "owner": "20 Minutes"
-    },
-    {
-      "id": "LeFigaroTVIledeFrance.fr@SD",
-      "url_regex": "^https://(static\\.lefigaro\\.fr|figarotv-live\\.freecaster\\.com)/",
-      "cat": "news",
-      "lang": "fr",
-      "owner": "Le Figaro"
-    },
-    {
-      "id": "TV5MondeInfo.fr@SD",
-      "url_regex": "^https://ott\\.tv5monde\\.com/",
-      "cat": "news",
-      "lang": "fr",
-      "owner": "TV5MONDE",
-      "geo": "restricted"
-    },
-    {
-      "id": "arte.fr@SD",
-      "url_regex": "^https://artesimulcast\\.akamaized\\.net/",
-      "cat": "entertainment",
-      "lang": "fr",
-      "owner": "ARTE",
-      "geo": "FR"
-    },
-    {
-      "id": "TV5MondeFranceBelgiumSwitzerlandMonaco.fr@SD",
-      "url_regex": "^https://ott\\.tv5monde\\.com/",
-      "cat": "entertainment",
-      "lang": "fr",
-      "owner": "TV5MONDE",
-      "geo": "FR/BE/CH/MC"
-    },
-    {
-      "id": "TV5MondeEurope.fr@SD",
-      "url_regex": "^https://ott\\.tv5monde\\.com/",
-      "cat": "entertainment",
-      "lang": "fr",
-      "owner": "TV5MONDE",
-      "geo": "restricted"
-    },
-    {
-      "id": "TV5MONDEChefs.fr@SD",
-      "url_regex": "^https://tvf-tv5ch\\.otteravision\\.com/",
-      "cat": "entertainment",
-      "lang": "fr",
-      "owner": "TV5MONDE (FAST)"
-    },
-    {
-      "id": "KTO.fr@SD",
-      "url_regex": "^https://live-kto\\.akamaized\\.net/",
-      "cat": "entertainment",
-      "lang": "fr",
-      "owner": "KTO"
-    },
-    {
-      "id": "AlJazeera.qa@Arabic",
-      "url_regex": "^https://[a-z0-9-]+\\.getaj\\.net/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Al Jazeera Media Network"
-    },
-    {
-      "id": "AlJazeera.qa@English",
-      "url_regex": "^https://[a-z0-9-]+\\.getaj\\.net/",
-      "cat": "news",
-      "lang": "en",
-      "owner": "Al Jazeera Media Network"
-    },
-    {
-      "id": "AlJazeeraMubasher.qa@SD",
-      "url_regex": "^https://[a-z0-9-]+\\.getaj\\.net/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Al Jazeera Media Network"
-    },
-    {
-      "id": "AlJazeeraDocumentary.qa@SD",
-      "url_regex": "^https://[a-z0-9-]+\\.getaj\\.net/",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Al Jazeera Media Network",
-      "geo": "restricted"
-    },
-    {
-      "id": "Alarabiya.ae@SD",
-      "url_regex": "^https://live\\.alarabiya\\.net/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Al Arabiya"
-    },
-    {
-      "id": "AlHadath.sa@SD",
-      "url_regex": "^https://(live|av)\\.alarabiya\\.net/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Al Arabiya"
-    },
-    {
-      "id": "AlArabiyaBusiness.ae@SD",
-      "url_regex": "^https://live\\.alarabiya\\.net/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Al Arabiya"
-    },
-    {
-      "id": "SkyNewsArabia.ae@HD",
-      "url_regex": "^https://live-stream\\.skynewsarabia\\.com/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Sky News Arabia"
-    },
-    {
-      "id": "AsharqNews.sa@SD",
-      "url_regex": "^https://live-news\\.asharq\\.com/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Asharq News"
-    },
-    {
-      "id": "DW.de@Arabic",
-      "url_regex": "^https://dwamdstream\\d+\\.akamaized\\.net/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Deutsche Welle"
-    },
-    {
-      "id": "DW.de@English",
-      "url_regex": "^https://dwamdstream\\d+\\.akamaized\\.net/",
-      "cat": "news",
-      "lang": "en",
-      "owner": "Deutsche Welle"
-    },
-    {
-      "id": "TRTArabi.tr@SD",
-      "url_regex": "^https://tv-trtarabi\\.medya\\.trt\\.com\\.tr/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "TRT"
-    },
-    {
-      "id": "TRTWorld.tr@SD",
-      "url_regex": "^https://tv-trtworld\\.medya\\.trt\\.com\\.tr/",
-      "cat": "news",
-      "lang": "en",
-      "owner": "TRT"
-    },
-    {
-      "id": "AlMayadeenTV.lb@SD",
-      "url_regex": "^https://mdnlv\\.cdn\\.octivid\\.com/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Al Mayadeen"
-    },
-    {
-      "id": "KTVNews.kw@SD",
-      "url_regex": "^https://kwtkbta\\.cdn\\.mangomolo\\.com/",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Kuwait TV (Ministry of Information)"
-    },
-    {
-      "id": "NHKWorldJapan.jp@SD",
-      "url_regex": "^https://[a-z0-9-]+\\.hls\\.nhkworld\\.jp/",
-      "cat": "news",
-      "lang": "en",
-      "owner": "NHK"
-    },
-    {
-      "id": "CGTN.cn@SD",
-      "url_regex": "^https://[a-z0-9-]+\\.cgtn\\.com/",
-      "cat": "news",
-      "lang": "en",
-      "owner": "CGTN"
-    },
-    {
-      "id": "BloombergTV.us@US",
-      "url_regex": "^https://([a-z0-9-]+\\.)?bloomberg\\.com/",
-      "cat": "news",
-      "lang": "en",
-      "owner": "Bloomberg"
-    },
-    {
-      "id": "QatarTelevision.qa@SD",
-      "url_regex": "^https://qatartv\\.akamaized\\.net/",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Qatar Media Corporation"
-    },
-    {
-      "id": "AlRayyanTV.qa@SD",
-      "url_regex": "^https://alrayyancdn\\.vidgyor\\.com/",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Al Rayyan TV"
-    },
-    {
-      "id": "KTV1.kw@SD",
-      "url_regex": "^https://kwtktv1ta\\.cdn\\.mangomolo\\.com/",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Kuwait TV"
-    },
-    {
-      "id": "KTV2.kw@SD",
-      "url_regex": "^https://kwtktv2ta\\.cdn\\.mangomolo\\.com/",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Kuwait TV"
-    },
-    {
-      "id": "KTVArabe.kw@SD",
-      "url_regex": "^https://kwtktvata\\.cdn\\.mangomolo\\.com/",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Kuwait TV"
-    },
-    {
-      "id": "OmanTV.om@SD",
-      "url_regex": "^https://part[a-z]+\\.cdn\\.mgmlcdn\\.com/",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Oman TV"
-    },
-    {
-      "id": "JordanTV.jo@SD",
-      "url_regex": "^https://jrtv-live\\.ercdn\\.net/",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Jordan Radio & Television"
-    },
-    {
-      "id": "RoyaTV.jo@SD",
-      "url_regex": "^https://live\\.kwikmotion\\.com/[^?]*roya",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Roya TV"
-    },
-    {
-      "id": "AlArabyTV.qa@SD",
-      "url_regex": "^https://live\\.kwikmotion\\.com/[^?]*alaraby",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Al Araby TV"
-    },
-    {
-      "id": "SharjahTV.ae@SD",
-      "url_regex": "^https://live\\.kwikmotion\\.com/[^?]*sharjah",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Sharjah Broadcasting Authority"
-    },
-    {
-      "id": "2MMonde.ma@SD",
-      "url_regex": "^https://cdn-globecast\\.akamaized\\.net/[^?]*2m",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "SOREAD 2M (via Globecast)"
-    },
-    {
-      "id": "Medi1TVMaghreb.ma@SD",
-      "url_regex": "^https://cdn\\.live\\.easybroadcast\\.io/[^?]*medi",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Medi1 TV"
-    },
-    {
-      "id": "Medi1TVArabic.ma@SD",
-      "url_regex": "^https://cdn\\.live\\.easybroadcast\\.io/[^?]*medi",
-      "cat": "news",
-      "lang": "ar",
-      "owner": "Medi1 TV"
-    },
-    {
-      "id": "AlIraqia.iq@SD",
-      "url_regex": "^https://imn-live\\.esite-lab\\.com/",
-      "cat": "entertainment",
-      "lang": "ar",
-      "owner": "Iraqi Media Network"
-    },
-    {
-      "id": "BloombergOriginals.us@US",
-      "url_regex": "^https://([a-z0-9-]+\\.)?bloomberg\\.com/",
-      "cat": "entertainment",
-      "lang": "en",
-      "owner": "Bloomberg"
-    },
-    {
-      "id": "FIFAPlus.uk@French",
-      "url_regex": "^https://[a-z0-9]+\\.wurl\\.com/",
-      "cat": "sports",
-      "lang": "fr",
-      "owner": "FIFA+ (FAST, distributed by Wurl)"
-    },
-    {
-      "id": "FIFAPlus.uk@English",
-      "url_regex": "^https://[a-z0-9]+\\.wurl\\.com/",
-      "cat": "sports",
-      "lang": "en",
-      "owner": "FIFA+ (FAST, distributed by Wurl)"
-    },
-    {
-      "id": "beINSPORTSXTRA.us@SD",
-      "url_regex": "^https://bein-xtra-bein\\.amagi\\.tv/",
-      "cat": "sports",
-      "lang": "en",
-      "owner": "beIN SPORTS XTRA (free FAST)",
-      "geo": "US"
-    },
-    {
-      "id": "FuboSportsNetwork.us@SD",
-      "url_regex": "^https://[a-z0-9-]+\\.tubi\\.video/",
-      "cat": "sports",
-      "lang": "en",
-      "owner": "Fubo Sports Network (free, via Tubi)",
-      "geo": "US"
-    },
-    {
-      "id": "RealMadridTV.es@SD",
-      "url_regex": "^https://rmtv\\.akamaized\\.net/",
-      "cat": "sports",
-      "lang": "es",
-      "owner": "Real Madrid CF"
-    },
-    {
-      "id": "TraceSportStars.fr@SD",
-      "url_regex": "^https://channels\\.trace\\.plus/",
-      "cat": "sports",
-      "lang": "fr",
-      "owner": "Trace"
-    },
-    {
-      "id": "Africa24Sport.fr@SD",
-      "url_regex": "^https://africa24\\.vedge\\.infomaniak\\.com/",
-      "cat": "sports",
-      "lang": "fr",
-      "owner": "Africa 24"
-    },
-    {
-      "id": "KTVSport.kw@SD",
-      "url_regex": "^https://kwtspta\\.cdn\\.mangomolo\\.com/",
-      "cat": "sports",
-      "lang": "ar",
-      "owner": "Kuwait TV"
-    },
-    {
-      "id": "KTVSportPlus.kw@SD",
-      "url_regex": "^https://kwtsplta\\.cdn\\.mangomolo\\.com/",
-      "cat": "sports",
-      "lang": "ar",
-      "owner": "Kuwait TV"
-    },
-    {
-      "id": "OmanSportsTV.om@SD",
-      "url_regex": "^https://part[a-z]+\\.cdn\\.mgmlcdn\\.com/",
-      "cat": "sports",
-      "lang": "ar",
-      "owner": "Oman TV"
-    },
-    {
-      "id": "JordanSport.jo@SD",
-      "url_regex": "^https://jrtv-live\\.ercdn\\.net/",
-      "cat": "sports",
-      "lang": "ar",
-      "owner": "Jordan Radio & Television",
-      "geo": "JO"
-    },
-    {
-      "id": "AlIraqiaSport.iq@SD",
-      "url_regex": "^https://imn-live\\.esite-lab\\.com/",
-      "cat": "sports",
-      "lang": "ar",
-      "owner": "Iraqi Media Network"
-    },
-    {
-      "id": "SharjahSports.ae@SD",
-      "url_regex": "^https://svs\\.itworkscdn\\.net/[^?]*sharjah",
-      "cat": "sports",
-      "lang": "ar",
-      "owner": "Sharjah Broadcasting Authority",
-      "geo": "restricted"
-    },
-    {
-      "id": "OlympicChannel.es@SD",
-      "url_regex": "^https://[a-z0-9-]+olympicchannel\\.akamaized\\.net/",
-      "cat": "sports",
-      "lang": "en",
-      "owner": "Olympic Channel (IOC)",
-      "geo": "restricted"
-    }
-  ]
+ "_doc": "Allowlist of free channels whose live stream is published by the broadcaster itself (own domain or a CDN hostname carrying the broadcaster's name), without login, subscription or DRM. Each rule matches iptv-org entries by tvg-id AND url regex; anything else (restreams, raw IPs, pirate hosts) is rejected by construction. 'geo' documents a known territorial restriction; the app never tries to circumvent it. In addition, any stream served from the same registrable domain as the channel's official website (iptv-org database) is accepted automatically, but only shipped if the CI check reaches it. Free ad-supported platforms (Pluto TV, Plex, Rakuten TV, Tubi, Xumo, Stirr, Roku) count as official distributors of their own channels.",
+ "upstream": "https://github.com/iptv-org/iptv (streams/*.m3u) used only as an index of URLs; ownership is enforced by url_regex below.",
+ "countries": [
+  "fr",
+  "be",
+  "ch",
+  "ca",
+  "lu",
+  "mc",
+  "ma",
+  "dz",
+  "tn",
+  "eg",
+  "sa",
+  "ae",
+  "qa",
+  "kw",
+  "om",
+  "bh",
+  "jo",
+  "lb",
+  "sy",
+  "iq",
+  "ps",
+  "ly",
+  "sd",
+  "ye",
+  "mr",
+  "uk",
+  "us",
+  "de",
+  "tr",
+  "es",
+  "it",
+  "jp",
+  "cn",
+  "ir",
+  "se",
+  "nl",
+  "at",
+  "dk",
+  "no",
+  "fi",
+  "pt",
+  "br",
+  "mx",
+  "ar",
+  "co",
+  "cl",
+  "in",
+  "pk",
+  "bd",
+  "au",
+  "nz",
+  "ie",
+  "gr",
+  "cy",
+  "ro",
+  "pl",
+  "hu",
+  "cz",
+  "rs",
+  "hr",
+  "ba",
+  "al",
+  "mk",
+  "am",
+  "az",
+  "ge",
+  "ru",
+  "ua",
+  "kr",
+  "ph",
+  "id",
+  "my",
+  "sg",
+  "th",
+  "vn",
+  "za",
+  "ng",
+  "gh",
+  "ke",
+  "et",
+  "so",
+  "sn",
+  "ci",
+  "cm",
+  "cd",
+  "ml",
+  "bf",
+  "ht"
+ ],
+ "rules": [
+  {
+   "id": "France24.fr@French",
+   "url_regex": "^https://live\\.france24\\.com/",
+   "cat": "news",
+   "lang": "fr",
+   "owner": "France Médias Monde"
+  },
+  {
+   "id": "France24.fr@Arabic",
+   "url_regex": "^https://live\\.france24\\.com/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "France Médias Monde"
+  },
+  {
+   "id": "France24.fr@English",
+   "url_regex": "^https://live\\.france24\\.com/",
+   "cat": "news",
+   "lang": "en",
+   "owner": "France Médias Monde"
+  },
+  {
+   "id": "EuronewsFrench.fr@SD",
+   "url_regex": "^https://cdn-euronews\\.akamaized\\.net/",
+   "cat": "news",
+   "lang": "fr",
+   "owner": "Euronews"
+  },
+  {
+   "id": "EuronewsEnglish.fr@SD",
+   "url_regex": "^https://cdn-euronews\\.akamaized\\.net/",
+   "cat": "news",
+   "lang": "en",
+   "owner": "Euronews"
+  },
+  {
+   "id": "AfricanewsFrench.fr@SD",
+   "url_regex": "^https://cdn-euronews\\.akamaized\\.net/",
+   "cat": "news",
+   "lang": "fr",
+   "owner": "Africanews (Euronews)"
+  },
+  {
+   "id": "Africa24.fr@SD",
+   "url_regex": "^https://africa24\\.vedge\\.infomaniak\\.com/",
+   "cat": "news",
+   "lang": "fr",
+   "owner": "Africa 24"
+  },
+  {
+   "id": "BFMTV.fr@SD",
+   "url_regex": "^https://[a-z0-9-]+\\.bfmtv\\.bct\\.nextradiotv\\.com/",
+   "cat": "news",
+   "lang": "fr",
+   "owner": "NextRadioTV / BFM"
+  },
+  {
+   "id": "BFMBusiness.fr@SD",
+   "url_regex": "^https://[a-z0-9-]+\\.bfmb\\.bct\\.nextradiotv\\.com/",
+   "cat": "news",
+   "lang": "fr",
+   "owner": "NextRadioTV / BFM"
+  },
+  {
+   "id": "20MinutesTV.fr@SD",
+   "url_regex": "^https://live-20minutestv\\.digiteka\\.com/",
+   "cat": "news",
+   "lang": "fr",
+   "owner": "20 Minutes"
+  },
+  {
+   "id": "LeFigaroTVIledeFrance.fr@SD",
+   "url_regex": "^https://(static\\.lefigaro\\.fr|figarotv-live\\.freecaster\\.com)/",
+   "cat": "news",
+   "lang": "fr",
+   "owner": "Le Figaro"
+  },
+  {
+   "id": "TV5MondeInfo.fr@SD",
+   "url_regex": "^https://ott\\.tv5monde\\.com/",
+   "cat": "news",
+   "lang": "fr",
+   "owner": "TV5MONDE",
+   "geo": "restricted"
+  },
+  {
+   "id": "arte.fr@SD",
+   "url_regex": "^https://artesimulcast\\.akamaized\\.net/",
+   "cat": "entertainment",
+   "lang": "fr",
+   "owner": "ARTE",
+   "geo": "FR"
+  },
+  {
+   "id": "TV5MondeFranceBelgiumSwitzerlandMonaco.fr@SD",
+   "url_regex": "^https://ott\\.tv5monde\\.com/",
+   "cat": "entertainment",
+   "lang": "fr",
+   "owner": "TV5MONDE",
+   "geo": "FR/BE/CH/MC"
+  },
+  {
+   "id": "TV5MondeEurope.fr@SD",
+   "url_regex": "^https://ott\\.tv5monde\\.com/",
+   "cat": "entertainment",
+   "lang": "fr",
+   "owner": "TV5MONDE",
+   "geo": "restricted"
+  },
+  {
+   "id": "TV5MONDEChefs.fr@SD",
+   "url_regex": "^https://tvf-tv5ch\\.otteravision\\.com/",
+   "cat": "entertainment",
+   "lang": "fr",
+   "owner": "TV5MONDE (FAST)"
+  },
+  {
+   "id": "KTO.fr@SD",
+   "url_regex": "^https://live-kto\\.akamaized\\.net/",
+   "cat": "entertainment",
+   "lang": "fr",
+   "owner": "KTO"
+  },
+  {
+   "id": "AlJazeera.qa@Arabic",
+   "url_regex": "^https://[a-z0-9-]+\\.getaj\\.net/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Al Jazeera Media Network"
+  },
+  {
+   "id": "AlJazeera.qa@English",
+   "url_regex": "^https://[a-z0-9-]+\\.getaj\\.net/",
+   "cat": "news",
+   "lang": "en",
+   "owner": "Al Jazeera Media Network"
+  },
+  {
+   "id": "AlJazeeraMubasher.qa@SD",
+   "url_regex": "^https://[a-z0-9-]+\\.getaj\\.net/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Al Jazeera Media Network"
+  },
+  {
+   "id": "AlJazeeraDocumentary.qa@SD",
+   "url_regex": "^https://[a-z0-9-]+\\.getaj\\.net/",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Al Jazeera Media Network",
+   "geo": "restricted"
+  },
+  {
+   "id": "Alarabiya.ae@SD",
+   "url_regex": "^https://live\\.alarabiya\\.net/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Al Arabiya"
+  },
+  {
+   "id": "AlHadath.sa@SD",
+   "url_regex": "^https://(live|av)\\.alarabiya\\.net/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Al Arabiya"
+  },
+  {
+   "id": "AlArabiyaBusiness.ae@SD",
+   "url_regex": "^https://live\\.alarabiya\\.net/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Al Arabiya"
+  },
+  {
+   "id": "SkyNewsArabia.ae@HD",
+   "url_regex": "^https://live-stream\\.skynewsarabia\\.com/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Sky News Arabia"
+  },
+  {
+   "id": "AsharqNews.sa@SD",
+   "url_regex": "^https://live-news\\.asharq\\.com/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Asharq News"
+  },
+  {
+   "id": "DW.de@Arabic",
+   "url_regex": "^https://dwamdstream\\d+\\.akamaized\\.net/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Deutsche Welle"
+  },
+  {
+   "id": "DW.de@English",
+   "url_regex": "^https://dwamdstream\\d+\\.akamaized\\.net/",
+   "cat": "news",
+   "lang": "en",
+   "owner": "Deutsche Welle"
+  },
+  {
+   "id": "TRTArabi.tr@SD",
+   "url_regex": "^https://tv-trtarabi\\.medya\\.trt\\.com\\.tr/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "TRT"
+  },
+  {
+   "id": "TRTWorld.tr@SD",
+   "url_regex": "^https://tv-trtworld\\.medya\\.trt\\.com\\.tr/",
+   "cat": "news",
+   "lang": "en",
+   "owner": "TRT"
+  },
+  {
+   "id": "AlMayadeenTV.lb@SD",
+   "url_regex": "^https://mdnlv\\.cdn\\.octivid\\.com/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Al Mayadeen"
+  },
+  {
+   "id": "KTVNews.kw@SD",
+   "url_regex": "^https://kwtkbta\\.cdn\\.mangomolo\\.com/",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Kuwait TV (Ministry of Information)"
+  },
+  {
+   "id": "NHKWorldJapan.jp@SD",
+   "url_regex": "^https://[a-z0-9-]+\\.hls\\.nhkworld\\.jp/",
+   "cat": "news",
+   "lang": "en",
+   "owner": "NHK"
+  },
+  {
+   "id": "CGTN.cn@SD",
+   "url_regex": "^https://[a-z0-9-]+\\.cgtn\\.com/",
+   "cat": "news",
+   "lang": "en",
+   "owner": "CGTN"
+  },
+  {
+   "id": "BloombergTV.us@US",
+   "url_regex": "^https://([a-z0-9-]+\\.)?bloomberg\\.com/",
+   "cat": "news",
+   "lang": "en",
+   "owner": "Bloomberg"
+  },
+  {
+   "id": "QatarTelevision.qa@SD",
+   "url_regex": "^https://qatartv\\.akamaized\\.net/",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Qatar Media Corporation"
+  },
+  {
+   "id": "AlRayyanTV.qa@SD",
+   "url_regex": "^https://alrayyancdn\\.vidgyor\\.com/",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Al Rayyan TV"
+  },
+  {
+   "id": "KTV1.kw@SD",
+   "url_regex": "^https://kwtktv1ta\\.cdn\\.mangomolo\\.com/",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Kuwait TV"
+  },
+  {
+   "id": "KTV2.kw@SD",
+   "url_regex": "^https://kwtktv2ta\\.cdn\\.mangomolo\\.com/",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Kuwait TV"
+  },
+  {
+   "id": "KTVArabe.kw@SD",
+   "url_regex": "^https://kwtktvata\\.cdn\\.mangomolo\\.com/",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Kuwait TV"
+  },
+  {
+   "id": "OmanTV.om@SD",
+   "url_regex": "^https://part[a-z]+\\.cdn\\.mgmlcdn\\.com/",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Oman TV"
+  },
+  {
+   "id": "JordanTV.jo@SD",
+   "url_regex": "^https://jrtv-live\\.ercdn\\.net/",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Jordan Radio & Television"
+  },
+  {
+   "id": "RoyaTV.jo@SD",
+   "url_regex": "^https://live\\.kwikmotion\\.com/[^?]*roya",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Roya TV"
+  },
+  {
+   "id": "AlArabyTV.qa@SD",
+   "url_regex": "^https://live\\.kwikmotion\\.com/[^?]*alaraby",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Al Araby TV"
+  },
+  {
+   "id": "SharjahTV.ae@SD",
+   "url_regex": "^https://live\\.kwikmotion\\.com/[^?]*sharjah",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Sharjah Broadcasting Authority"
+  },
+  {
+   "id": "2MMonde.ma@SD",
+   "url_regex": "^https://cdn-globecast\\.akamaized\\.net/[^?]*2m",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "SOREAD 2M (via Globecast)"
+  },
+  {
+   "id": "Medi1TVMaghreb.ma@SD",
+   "url_regex": "^https://cdn\\.live\\.easybroadcast\\.io/[^?]*medi",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Medi1 TV"
+  },
+  {
+   "id": "Medi1TVArabic.ma@SD",
+   "url_regex": "^https://cdn\\.live\\.easybroadcast\\.io/[^?]*medi",
+   "cat": "news",
+   "lang": "ar",
+   "owner": "Medi1 TV"
+  },
+  {
+   "id": "AlIraqia.iq@SD",
+   "url_regex": "^https://imn-live\\.esite-lab\\.com/",
+   "cat": "entertainment",
+   "lang": "ar",
+   "owner": "Iraqi Media Network"
+  },
+  {
+   "id": "BloombergOriginals.us@US",
+   "url_regex": "^https://([a-z0-9-]+\\.)?bloomberg\\.com/",
+   "cat": "entertainment",
+   "lang": "en",
+   "owner": "Bloomberg"
+  },
+  {
+   "id": "FIFAPlus.uk@French",
+   "url_regex": "^https://[a-z0-9]+\\.wurl\\.com/",
+   "cat": "sports",
+   "lang": "fr",
+   "owner": "FIFA+ (FAST, distributed by Wurl)"
+  },
+  {
+   "id": "FIFAPlus.uk@English",
+   "url_regex": "^https://[a-z0-9]+\\.wurl\\.com/",
+   "cat": "sports",
+   "lang": "en",
+   "owner": "FIFA+ (FAST, distributed by Wurl)"
+  },
+  {
+   "id": "beINSPORTSXTRA.us@SD",
+   "url_regex": "^https://bein-xtra-bein\\.amagi\\.tv/",
+   "cat": "sports",
+   "lang": "en",
+   "owner": "beIN SPORTS XTRA (free FAST)",
+   "geo": "US"
+  },
+  {
+   "id": "FuboSportsNetwork.us@SD",
+   "url_regex": "^https://[a-z0-9-]+\\.tubi\\.video/",
+   "cat": "sports",
+   "lang": "en",
+   "owner": "Fubo Sports Network (free, via Tubi)",
+   "geo": "US"
+  },
+  {
+   "id": "RealMadridTV.es@SD",
+   "url_regex": "^https://rmtv\\.akamaized\\.net/",
+   "cat": "sports",
+   "lang": "es",
+   "owner": "Real Madrid CF"
+  },
+  {
+   "id": "TraceSportStars.fr@SD",
+   "url_regex": "^https://channels\\.trace\\.plus/",
+   "cat": "sports",
+   "lang": "fr",
+   "owner": "Trace"
+  },
+  {
+   "id": "Africa24Sport.fr@SD",
+   "url_regex": "^https://africa24\\.vedge\\.infomaniak\\.com/",
+   "cat": "sports",
+   "lang": "fr",
+   "owner": "Africa 24"
+  },
+  {
+   "id": "KTVSport.kw@SD",
+   "url_regex": "^https://kwtspta\\.cdn\\.mangomolo\\.com/",
+   "cat": "sports",
+   "lang": "ar",
+   "owner": "Kuwait TV"
+  },
+  {
+   "id": "KTVSportPlus.kw@SD",
+   "url_regex": "^https://kwtsplta\\.cdn\\.mangomolo\\.com/",
+   "cat": "sports",
+   "lang": "ar",
+   "owner": "Kuwait TV"
+  },
+  {
+   "id": "OmanSportsTV.om@SD",
+   "url_regex": "^https://part[a-z]+\\.cdn\\.mgmlcdn\\.com/",
+   "cat": "sports",
+   "lang": "ar",
+   "owner": "Oman TV"
+  },
+  {
+   "id": "JordanSport.jo@SD",
+   "url_regex": "^https://jrtv-live\\.ercdn\\.net/",
+   "cat": "sports",
+   "lang": "ar",
+   "owner": "Jordan Radio & Television",
+   "geo": "JO"
+  },
+  {
+   "id": "AlIraqiaSport.iq@SD",
+   "url_regex": "^https://imn-live\\.esite-lab\\.com/",
+   "cat": "sports",
+   "lang": "ar",
+   "owner": "Iraqi Media Network"
+  },
+  {
+   "id": "SharjahSports.ae@SD",
+   "url_regex": "^https://svs\\.itworkscdn\\.net/[^?]*sharjah",
+   "cat": "sports",
+   "lang": "ar",
+   "owner": "Sharjah Broadcasting Authority",
+   "geo": "restricted"
+  },
+  {
+   "id": "OlympicChannel.es@SD",
+   "url_regex": "^https://[a-z0-9-]+olympicchannel\\.akamaized\\.net/",
+   "cat": "sports",
+   "lang": "en",
+   "owner": "Olympic Channel (IOC)",
+   "geo": "restricted"
+  }
+ ],
+ "platform_lists": [
+  "us_pluto",
+  "fr_pluto",
+  "uk_pluto",
+  "de_pluto",
+  "es_pluto",
+  "it_pluto",
+  "us_plex",
+  "us_samsung",
+  "fr_samsung",
+  "uk_samsung",
+  "de_samsung",
+  "es_samsung",
+  "it_samsung",
+  "ca_samsung",
+  "us_roku",
+  "us_xumo",
+  "us_stirr",
+  "us_tubi",
+  "fr_rakuten",
+  "uk_rakuten",
+  "de_rakuten",
+  "es_rakuten",
+  "it_rakuten"
+ ]
 }

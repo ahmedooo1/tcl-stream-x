@@ -174,10 +174,22 @@ CATEGORY_MAP = {
     "religious": "religious",
     "documentary": "documentary", "education": "documentary", "science": "documentary", "culture": "documentary",
     "travel": "documentary",
+    "movies": "movies", "classic": "movies",
+    "series": "series", "comedy": "series",
 }
-LANG_MAP = {"ara": "ar", "fra": "fr", "eng": "en", "spa": "es", "tur": "tr", "por": "pt", "deu": "de", "ita": "it", "kur": "ku", "fas": "fa"}
-AUTO_LANGS = {"ar", "fr", "en"}
-MAX_AUTO_CHANNELS = 700
+LANG_MAP = {
+    "ara": "ar", "fra": "fr", "eng": "en", "spa": "es", "tur": "tr", "por": "pt", "deu": "de", "ita": "it",
+    # Kurdish in all its written forms (Kurmanji, Sorani, Southern) is one language section in the app.
+    "kur": "ku", "kmr": "ku", "ckb": "ku", "sdh": "ku",
+    "fas": "fa", "nld": "nl", "pol": "pl", "ron": "ro", "rus": "ru", "ukr": "uk", "ell": "el", "heb": "he",
+    "hin": "hi", "urd": "ur", "ben": "bn", "pan": "pa", "tam": "ta", "zho": "zh", "jpn": "ja", "kor": "ko",
+    "swe": "sv", "nor": "no", "dan": "da", "fin": "fi", "hun": "hu", "ces": "cs", "srp": "sr", "hrv": "hr",
+    "sqi": "sq", "bos": "bs", "aze": "az", "hye": "hy", "kat": "ka", "ind": "id", "msa": "ms", "tgl": "tl",
+    "vie": "vi", "tha": "th", "swa": "sw", "hau": "ha", "amh": "am", "som": "so", "ber": "ber", "tzm": "ber",
+}
+# Every language is accepted; this order decides which channels come first when the cap is reached.
+LANG_PRIORITY = ["ar", "ku", "fr", "en", "tr", "fa", "es", "de", "it", "pt", "nl", "ber", "ur", "hi"]
+MAX_AUTO_CHANNELS = 2500
 # Paid CDNs operated for broadcasters and FAST distributors. Restreams of pay-TV channels are not
 # hosted there in practice; raw IPs, free workers and throwaway domains never match these suffixes.
 TRUSTED_CDN_SUFFIXES = (
@@ -185,11 +197,13 @@ TRUSTED_CDN_SUFFIXES = (
     "amagi.tv", "wurl.com", "cdn-globecast.akamaized.net", "vedge.infomaniak.com", "easybroadcast.io",
     "itworkscdn.net", "cloudfront.net", "getaj.net", "thehlive.com", "brightcove.com", "jwplayer.com",
     "dailymotion.com", "dmcdn.net", "freecaster.com", "streamhub.io", "hlspackager.akamaized.net",
+    # Free ad-supported TV platforms (official distributors of their channels, no login).
+    "pluto.tv", "plex.tv", "rakuten.tv", "tubi.video", "stirr.com", "xumo.com", "xumo.tv", "roku.com",
 )
 # Subscription brands are never shipped, whatever the host.
 PAID_BRANDS = re.compile(
-    r"bein|osn|canal\+?|canalplus|rmc ?sport|dazn|ssc|starz|eurosport|sky ?sport|mbc|rotana|shahid|tod|"
-    r"art |showtime|hbo|cinemax|paramount|disney|netflix|prime video|ufc|wwe|nba tv|nfl",
+    r"bein|\bosn\b|canal\+?|canalplus|rmc ?sport|dazn|\bssc\b|starz|eurosport|sky ?sport|\bmbc\b|rotana|shahid|\btod\b|"
+    r"\bart\b|showtime|hbo|cinemax|paramount|disney|netflix|prime video|\bufc\b|\bwwe\b|nba tv|\bnfl\b",
     re.IGNORECASE,
 )
 
@@ -246,14 +260,12 @@ def main() -> int:
         lang = LANG_MAP.get(langs.split(";")[0], langs.split(";")[0])
         cats = [c for c in (db.get("categories") or "").split(";") if c]
         cat = next((CATEGORY_MAP[c] for c in cats if c in CATEGORY_MAP), "entertainment")
-        if lang not in AUTO_LANGS and cat != "sports":
-            return None
         return {"id": tvg_id, "url_regex": "", "cat": cat, "lang": lang or "en", "owner": db.get("name", base),
                 "source": source}
 
     found: dict[str, list[Candidate]] = {}
     meta: dict[str, dict] = {}
-    for cc in rules["countries"]:
+    for cc in rules["countries"] + rules.get("platform_lists", []):
         try:
             text = fetch_text(f"{RAW}/iptv/master/streams/{cc}.m3u")
         except RuntimeError as e:
@@ -279,7 +291,10 @@ def main() -> int:
                                  quality=int(q.group(1)) if q else 0, user_agent=ua, referrer=ref,
                                  labels=LABEL.findall(name)))
 
-    auto_ids = sorted((i for i in found if meta[i]["source"] != "manual"), key=lambda i: (meta[i]["cat"], meta[i]["lang"], i))
+    def rank(i: str) -> tuple:
+        lang = meta[i]["lang"]
+        return (LANG_PRIORITY.index(lang) if lang in LANG_PRIORITY else len(LANG_PRIORITY), meta[i]["cat"], i)
+    auto_ids = sorted((i for i in found if meta[i]["source"] != "manual"), key=rank)
     keep = [r["id"] for r in rules["rules"]] + auto_ids[:MAX_AUTO_CHANNELS]
     for tvg_id in found:
         found[tvg_id].sort(key=lambda c: -c.quality)
@@ -287,7 +302,7 @@ def main() -> int:
 
     if args.check:
         flat = [c for i in keep for c in found.get(i, [])]
-        with ThreadPoolExecutor(max_workers=24) as pool:
+        with ThreadPoolExecutor(max_workers=48) as pool:
             list(pool.map(probe, flat))
 
     out_channels, report = [], []

@@ -129,7 +129,7 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
                 }
                 if (compact) Spacer(Modifier.weight(1f))
                 else Text(title, style = type.headline, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                TallyRow(onClick = vm::checkCurrentLineup, modifier = Modifier.height(40.dp).widthIn(max = 220.dp)) {
+                TallyRow(onClick = vm::checkCurrentLineup, modifier = Modifier.height(40.dp).widthIn(max = 170.dp)) {
                     Text(
                         if (progress.running) stringResource(R.string.live_checking, progress.done, progress.total)
                         else if (progress.total > 0) stringResource(R.string.live_check_done, progress.online, progress.total)
@@ -202,7 +202,7 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
         }
         else -> Row(Modifier.fillMaxSize().padding(top = 28.dp)) {
             // ---- column 1: playlists + groups ----------------------------------------------
-            Column(Modifier.width(if (monitor) 232.dp else 200.dp).fillMaxHeight().padding(start = 12.dp)) {
+            Column(Modifier.width(if (monitor) 210.dp else 200.dp).fillMaxHeight().padding(start = 12.dp)) {
             val currentName = playlists.firstOrNull { it.id == playlistId }?.name ?: stringResource(R.string.group_all)
             TallyRow(
                 onClick = {
@@ -232,7 +232,7 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
             // ---- column 2: channels ---------------------------------------------------------
             channelColumn(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 18.dp))
             // ---- column 3: monitor (TV and large screens only) ------------------------------
-            if (monitor) Monitor(focused, vm, playback, Modifier.width(400.dp).fillMaxHeight().padding(end = 28.dp))
+            if (monitor) Monitor(focused, vm, playback, Modifier.width(340.dp).fillMaxHeight().padding(end = 28.dp))
         }
     }
 }

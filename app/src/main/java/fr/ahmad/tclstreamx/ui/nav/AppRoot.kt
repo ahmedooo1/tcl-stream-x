@@ -2,6 +2,7 @@ package fr.ahmad.tclstreamx.ui.nav
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -39,6 +43,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.tv.material3.Text
 import fr.ahmad.tclstreamx.R
+import fr.ahmad.tclstreamx.TclApp
+import fr.ahmad.tclstreamx.player.PlayItem
 import fr.ahmad.tclstreamx.data.vod.VodShelf
 import fr.ahmad.tclstreamx.player.PlaybackController
 import fr.ahmad.tclstreamx.ui.components.AppIcon
@@ -139,17 +145,54 @@ fun AppRoot(playback: PlaybackController) {
         }
     }
 
-    if (compact) {
-        // Phone: content on top, a bottom bar with the main sections (thumb reach), no rail.
-        Column(Modifier.fillMaxSize().background(Palette.Ink)) {
-            host(Modifier.weight(1f).fillMaxWidth())
-            if (route != Routes.PLAYER) BottomBar(current = route, onSelect = navigator::go)
+    // Channels sent from a phone (TV side): play at once, fullscreen.
+    val container = (LocalContext.current.applicationContext as TclApp).container
+    val pairingCode by container.remote.pairingCode.collectAsState()
+    LaunchedEffect(Unit) {
+        container.remote.incoming.collect { m ->
+            playback.play(
+                PlayItem(
+                    key = "remote:" + m.urls.first().hashCode().toUInt().toString(16),
+                    title = m.title,
+                    urls = m.urls,
+                    userAgent = m.userAgent,
+                    referrer = m.referrer,
+                    isLive = m.live,
+                    logo = m.logo,
+                )
+            )
+            navigator.openPlayer()
         }
-    } else {
-        Row(Modifier.fillMaxSize().background(Palette.Ink)) {
-            if (route != Routes.PLAYER) Rail(current = route, onSelect = navigator::go)
-            host(Modifier.weight(1f).fillMaxHeight())
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        if (compact) {
+            // Phone: content on top, a bottom bar with the main sections (thumb reach), no rail.
+            Column(Modifier.fillMaxSize().background(Palette.Ink)) {
+                host(Modifier.weight(1f).fillMaxWidth())
+                if (route != Routes.PLAYER) BottomBar(current = route, onSelect = navigator::go)
+            }
+        } else {
+            Row(Modifier.fillMaxSize().background(Palette.Ink)) {
+                if (route != Routes.PLAYER) Rail(current = route, onSelect = navigator::go)
+                host(Modifier.weight(1f).fillMaxHeight())
+            }
         }
+        pairingCode?.let { code -> PairingCode(code, Modifier.align(Alignment.TopEnd)) }
+    }
+}
+
+/** Shown on the TV while a phone pairs: the user types this code on the phone. */
+@Composable
+private fun PairingCode(code: String, modifier: Modifier) {
+    val type = LocalTallyType.current
+    Column(
+        modifier.padding(28.dp).background(Palette.Graphite).border(2.dp, Palette.Tally).padding(horizontal = 28.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(stringResource(R.string.remote_pair_title), style = type.title)
+        Text(code.toCharArray().joinToString("  "), style = type.display.copy(color = Palette.Tally))
+        Text(stringResource(R.string.remote_pair_hint), style = type.bodySmall)
     }
 }
 

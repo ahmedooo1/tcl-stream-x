@@ -22,6 +22,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TCLStreamX">
 
+        <!-- Chromecast: Google's Default Media Receiver, see player/cast/ChromecastController. -->
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            android:value="fr.ahmad.tclstreamx.player.cast.CastOptionsProvider" />
+
         <activity
             android:name=".MainActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|screenSize|smallestScreenSize|screenLayout|orientation|uiMode"

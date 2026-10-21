@@ -198,6 +198,10 @@ class XtreamTest {
         assertNull(RegionTagger.tag("Sports").country)
         assertNull(RegionTagger.tag("TV - Docs").language)
         assertEquals("fr", RegionTagger.tag("x", "fr;be", "French").language)
+        assertEquals("ku", RegionTagger.tag("KURDISTAN | NEWS").language)
+        assertEquals("ku", RegionTagger.tag("KU| Rudaw").language)
+        assertEquals("ku", RegionTagger.tag("قنوات كوردي").language)
+        assertEquals("ku", RegionTagger.tag("x", null, "ckb").language)
     }
 
     // ---- large synthetic library (performance, generated data) ---------------------------

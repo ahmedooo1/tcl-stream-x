@@ -21,7 +21,7 @@ fun groupLabel(raw: String): String {
     return if (raw in BUILTIN_CATEGORIES) categoryLabel(raw) else raw.ifEmpty { stringResource(R.string.group_none) }
 }
 
-private val BUILTIN_CATEGORIES = setOf("news", "sports", "entertainment", "kids", "music", "religious", "documentary")
+private val BUILTIN_CATEGORIES = setOf("news", "sports", "entertainment", "kids", "music", "religious", "documentary", "movies", "series")
 
 @Composable
 private fun categoryLabel(c: String): String = stringResource(
@@ -32,6 +32,8 @@ private fun categoryLabel(c: String): String = stringResource(
         "music" -> R.string.cat_music
         "religious" -> R.string.cat_religious
         "documentary" -> R.string.cat_documentary
+        "movies" -> R.string.cat_movies
+        "series" -> R.string.cat_series
         else -> R.string.cat_entertainment
     }
 )
@@ -45,7 +47,9 @@ private fun languageLabel(code: String): String = when (code) {
     "it" -> "Italiano"
     "de" -> "Deutsch"
     "pt" -> "Português"
-    else -> code.uppercase()
+    "ku" -> "Kurdî · کوردی"
+    "fa" -> "فارسی"
+    else -> Locale(code).getDisplayLanguage(Locale(code)).replaceFirstChar { it.titlecase() }.ifBlank { code.uppercase() }
 }
 
 fun relativeTime(millis: Long): String =
@@ -90,6 +94,7 @@ fun importErrorText(e: ImportError): String = stringResource(
 @Composable
 fun regionLabel(code: String): String {
     val ui = LocalConfiguration.current.locales[0]
+    if (code == "ku") return "Kurdî · کوردی"
     val name = if (code.isNotEmpty() && code[0].isUpperCase()) Locale("", code).getDisplayCountry(ui) else Locale(code).getDisplayLanguage(ui)
     return name.ifBlank { code }.replaceFirstChar { it.titlecase(ui) }
 }

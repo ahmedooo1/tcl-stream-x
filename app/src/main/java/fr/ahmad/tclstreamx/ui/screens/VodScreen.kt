@@ -82,6 +82,8 @@ private sealed interface VodSection {
     /** A group-title of the user's own playlists (entries sorted into this section on import). */
     data class Playlist(val group: String, val kind: Int, val count: Int) : VodSection
     data class Archive(val genre: Genre) : VodSection
+    /** Free 24/7 film or series channels of the built-in catalog (official FAST channels). */
+    data class Channels(val category: String, val count: Int) : VodSection
     data object OpenFilms : VodSection
     data object Services : VodSection
 }
@@ -131,7 +133,14 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
         if ((!userPicked || region != null) && playlistSections.isNotEmpty() && selected !in playlistSections) selected = playlistSections.first()
     }
     val pickRegion: (String?) -> Unit = { region = it }
-    val sections: List<VodSection> = playlistSections + archiveSections +
+    val channelCategory = when (shelf) {
+        VodShelf.MOVIES -> "movies"
+        VodShelf.SERIES -> "series"
+        VodShelf.ANIMATION -> "kids"
+    }
+    val channelRows by remember(shelf) { c.db.channels().observeCategory(channelCategory) }.collectAsState(initial = emptyList())
+    val channelSections = if (channelRows.isEmpty()) emptyList() else listOf(VodSection.Channels(channelCategory, channelRows.size))
+    val sections: List<VodSection> = playlistSections + channelSections + archiveSections +
         (if (hasOpenFilms) listOf(VodSection.OpenFilms, VodSection.Services) else emptyList())
 
     val title = stringResource(
@@ -171,6 +180,10 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
                     item { SectionHeader(stringResource(R.string.section_my_playlists)) }
                     items(playlistSections, key = { sectionKey(it) }) { s -> SectionRow(s, s == selected) { pick(s) } }
                 }
+                if (channelSections.isNotEmpty()) {
+                    item { SectionHeader(stringResource(R.string.section_free_channels)) }
+                    items(channelSections, key = { sectionKey(it) }) { s -> SectionRow(s, s == selected) { pick(s) } }
+                }
                 item { SectionHeader(stringResource(R.string.section_public_domain)) }
                 items(archiveSections, key = { sectionKey(it) }) { s -> SectionRow(s, s == selected) { pick(s) } }
                 if (hasOpenFilms) {
@@ -190,6 +203,7 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
 private fun sectionKey(s: VodSection): String = when (s) {
     is VodSection.Playlist -> "p${s.kind}:${s.group}"
     is VodSection.Archive -> "a:${s.genre.name}"
+    is VodSection.Channels -> "c:${s.category}"
     VodSection.OpenFilms -> "open"
     VodSection.Services -> "svc"
 }
@@ -198,6 +212,7 @@ private fun sectionKey(s: VodSection): String = when (s) {
 private fun sectionLabel(s: VodSection): String = when (s) {
     is VodSection.Playlist -> s.group.ifBlank { stringResource(R.string.group_none) }
     is VodSection.Archive -> genreLabel(s.genre)
+    is VodSection.Channels -> groupLabel(s.category)
     VodSection.OpenFilms -> stringResource(R.string.section_open_films)
     VodSection.Services -> stringResource(R.string.vod_services)
 }
@@ -227,6 +242,7 @@ private fun SectionRow(s: VodSection, selected: Boolean, onClick: () -> Unit) {
                 modifier = Modifier.weight(1f),
             )
             if (s is VodSection.Playlist) Text("%,d".format(java.util.Locale.ROOT, s.count), style = type.mono)
+            if (s is VodSection.Channels) Text("%,d".format(java.util.Locale.ROOT, s.count), style = type.mono)
         }
     }
 }
@@ -239,6 +255,7 @@ private fun SectionContent(section: VodSection, shelf: VodShelf, region: String?
                 if (section.kind == ContentKind.SERIES) PlaylistShows(section.group, region, navigator, playback)
                 else PlaylistMovies(section.group, region, navigator, playback)
             is VodSection.Archive -> ArchiveGrid(shelf, section.genre, navigator, playback)
+            is VodSection.Channels -> CategoryChannels(section.category, navigator, playback)
             VodSection.OpenFilms -> OpenFilmsGrid(shelf, navigator, playback)
             VodSection.Services -> ServicesGrid()
         }
@@ -246,6 +263,29 @@ private fun SectionContent(section: VodSection, shelf: VodShelf, region: String?
 }
 
 private val GRID = GridCells.Adaptive(minSize = 156.dp)
+
+/** Live film or series channels, played like any channel (zapping stays inside the category). */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun CategoryChannels(category: String, navigator: Navigator, playback: PlaybackController) {
+    val c = (LocalContext.current.applicationContext as TclApp).container
+    val rows by remember(category) { c.db.channels().observeCategory(category) }.collectAsState(initial = emptyList())
+    LazyVerticalGrid(
+        columns = GRID,
+        modifier = Modifier.fillMaxSize().focusRestorer(),
+        contentPadding = GRID_PADDING,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        item(span = { GridItemSpan(maxLineSpan) }) { GridTitle(groupLabel(category), stringResource(R.string.section_free_channels_note)) }
+        items(rows, key = { it.id }) { ch ->
+            ChannelTile(ch) {
+                playback.play(PlayItem.fromChannel(ch, null))
+                navigator.openPlayer()
+            }
+        }
+    }
+}
 private val GRID_PADDING = PaddingValues(start = 16.dp, end = 24.dp, top = 8.dp, bottom = 40.dp)
 
 // ---- the user's playlists ----------------------------------------------------------------

@@ -55,6 +55,8 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import androidx.tv.material3.Text
 import fr.ahmad.tclstreamx.R
+import fr.ahmad.tclstreamx.ui.components.AppIcon
+import fr.ahmad.tclstreamx.ui.components.AppIcons
 import fr.ahmad.tclstreamx.player.PlayItem
 import fr.ahmad.tclstreamx.player.PlaybackController
 import fr.ahmad.tclstreamx.player.TrackOption
@@ -77,7 +79,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-private enum class Panel { NONE, CHANNELS, OPTIONS }
+private enum class Panel { NONE, CHANNELS, OPTIONS, CAST }
 
 @Composable
 fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveViewModel) {
@@ -228,6 +230,7 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
                 onRewind = { player?.let { it.seekTo((it.currentPosition - 10_000).coerceAtLeast(0)) }; touch() },
                 onForward = { player?.let { it.seekTo(it.currentPosition + 30_000) }; touch() },
                 onRotate = { landscape = !landscape; touch() },
+                onCast = { panel = Panel.CAST },
             )
         }
 
@@ -277,7 +280,8 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
 
         when (panel) {
             Panel.CHANNELS -> ChannelPanel(live, playback, Modifier.align(Alignment.CenterStart)) { panel = Panel.NONE; runCatching { rootFocus.requestFocus() } }
-            Panel.OPTIONS -> OptionsPanel(playback, Modifier.align(Alignment.CenterEnd))
+            Panel.OPTIONS -> OptionsPanel(playback, Modifier.align(Alignment.CenterEnd)) { panel = Panel.CAST }
+            Panel.CAST -> CastPanel(playback, Modifier.align(Alignment.CenterEnd))
             Panel.NONE -> Unit
         }
     }
@@ -301,6 +305,7 @@ private fun TouchBar(
     onRewind: () -> Unit,
     onForward: () -> Unit,
     onRotate: () -> Unit,
+    onCast: () -> Unit,
 ) {
     Row(
         modifier
@@ -322,7 +327,22 @@ private fun TouchBar(
             TouchButton("+30", onForward)
         }
         TouchButton("⟳", onRotate)
+        TouchIconButton(AppIcons.Cast, onCast)
         TouchButton("⚙", onOptions)
+    }
+}
+
+@Composable
+private fun TouchIconButton(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(48.dp)
+            .background(Palette.Graphite.copy(alpha = 0.8f))
+            .focusProperties { canFocus = false }
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        AppIcon(icon, Palette.Text, size = 24.dp)
     }
 }
 
@@ -441,7 +461,7 @@ private fun ChannelPanel(live: LiveViewModel, playback: PlaybackController, modi
 }
 
 @Composable
-private fun OptionsPanel(playback: PlaybackController, modifier: Modifier) {
+private fun OptionsPanel(playback: PlaybackController, modifier: Modifier, onCast: () -> Unit) {
     val ui by playback.ui.collectAsState()
     val type = LocalTallyType.current
     val first = remember { FocusRequester() }
@@ -465,6 +485,15 @@ private fun OptionsPanel(playback: PlaybackController, modifier: Modifier) {
                     style = type.title,
                     modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 18.dp),
                 )
+            }
+        }
+        item {
+            TallyRow(onClick = onCast, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    AppIcon(AppIcons.Cast, Palette.Text, size = 22.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text(stringResource(R.string.cast_title), style = type.title)
+                }
             }
         }
         item {

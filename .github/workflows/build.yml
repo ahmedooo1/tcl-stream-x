@@ -16,7 +16,7 @@ jobs:
   build:
     # Pinned: the ubuntu-latest migration to Ubuntu 26 broke emulator boots (builds 3 and 4).
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 120
     env:
       BUILD_NUMBER: ${{ github.run_number }}
     steps:

@@ -27,6 +27,9 @@ object RegionTagger {
         "ARB" to Region(null, "ar"),
         "ARAB" to Region(null, "ar"),
         "EN" to Region(null, "en"),
+        "KU" to Region(null, "ku"),
+        "KRD" to Region(null, "ku"),
+        "KURD" to Region(null, "ku"),
         "ENG" to Region(null, "en"),
         "FRA" to Region("FR", "fr"),
         "FRE" to Region(null, "fr"),
@@ -91,6 +94,9 @@ object RegionTagger {
         "netherlands" to Region("NL", "nl"), "nederland" to Region("NL", "nl"), "pays-bas" to Region("NL", "nl"),
         "poland" to Region("PL", "pl"), "polska" to Region("PL", "pl"), "romania" to Region("RO", "ro"),
         "india" to Region("IN", "hi"), "pakistan" to Region("PK", "ur"), "iran" to Region("IR", "fa"),
+        "kurdistan" to Region(null, "ku"), "kurdish" to Region(null, "ku"), "kurde" to Region(null, "ku"),
+        "kurdi" to Region(null, "ku"), "kurd" to Region(null, "ku"), "کوردی" to Region(null, "ku"),
+        "كوردي" to Region(null, "ku"), "كردي" to Region(null, "ku"), "كردستان" to Region(null, "ku"), "کوردستان" to Region(null, "ku"),
         "afrique" to Region(null, null), "africa" to Region(null, null),
     )
 
@@ -105,7 +111,8 @@ object RegionTagger {
         "turkish" to "tr", "turkce" to "tr", "tur" to "tr",
         "dutch" to "nl", "nederlands" to "nl", "nld" to "nl",
         "russian" to "ru", "rus" to "ru", "persian" to "fa", "farsi" to "fa", "hindi" to "hi", "urdu" to "ur",
-        "kurdish" to "ku", "berber" to "ber", "amazigh" to "ber", "tamazight" to "ber",
+        "kurdish" to "ku", "kurdi" to "ku", "kurmanji" to "ku", "sorani" to "ku", "kmr" to "ku", "ckb" to "ku", "kur" to "ku",
+        "berber" to "ber", "amazigh" to "ber", "tamazight" to "ber",
     )
 
     private val PREFIX = Regex("^[\\s|\\[(]*([A-Za-z]{2,6})\\s*(?:[|\\]):\\-]|\\s+-\\s)")

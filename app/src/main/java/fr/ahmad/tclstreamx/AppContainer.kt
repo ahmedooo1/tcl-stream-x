@@ -9,7 +9,9 @@ import fr.ahmad.tclstreamx.data.epg.EpgRepository
 import fr.ahmad.tclstreamx.data.m3u.PlaylistImporter
 import fr.ahmad.tclstreamx.data.settings.SettingsStore
 import fr.ahmad.tclstreamx.data.sports.SportsRepository
+import fr.ahmad.tclstreamx.data.remote.RemoteHub
 import fr.ahmad.tclstreamx.data.vod.VodRepository
+import fr.ahmad.tclstreamx.player.cast.ChromecastController
 import fr.ahmad.tclstreamx.data.xtream.KeystoreSecretBox
 import fr.ahmad.tclstreamx.data.xtream.Redactor
 import fr.ahmad.tclstreamx.data.xtream.XtreamClient
@@ -71,6 +73,10 @@ class AppContainer(private val context: Context) {
     val epg = EpgRepository(db, http) { xtream.resolve(it) }
     val sports = SportsRepository(context, http)
     val vod = VodRepository(context, http)
+    /** Phone to TV over Wi-Fi between two copies of the app. */
+    val remote = RemoteHub(context, http)
+    /** Chromecast / Google TV sender (lazy: needs the main thread and Google Play services). */
+    val chromecast = ChromecastController(context)
 
     fun startup() {
         appScope.launch {
