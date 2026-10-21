@@ -231,7 +231,7 @@ private fun Schedule(r: SportsResult, region: String, compact: Boolean, onSelect
             }
             items(byDay.getValue(day), key = { it.leagueId + it.id }) { m ->
                 val rights = c.sports.rightsFor(region, m.leagueId)
-                TallyRow(onClick = { onSelect(m) }, modifier = Modifier.fillMaxWidth().height(if (compact) 84.dp else 64.dp)) {
+                TallyRow(onClick = { onSelect(m) }, modifier = Modifier.fillMaxWidth().height(if (compact) 92.dp else 64.dp)) {
                     Column(Modifier.fillMaxSize().padding(horizontal = if (compact) 8.dp else 14.dp), verticalArrangement = Arrangement.Center) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.width(if (compact) 52.dp else 72.dp)) {
@@ -241,13 +241,13 @@ private fun Schedule(r: SportsResult, region: String, compact: Boolean, onSelect
                                     MatchState.SCHEDULED -> Text(clockTime(m.start.toEpochMilli()), style = type.numeralSmall.copy(color = Palette.Text))
                                 }
                             }
-                            TeamCell(m.home.name, m.home.logo, Modifier.weight(1f), alignEnd = true)
+                            TeamCell(m.home.name, m.home.logo, Modifier.weight(1f), alignEnd = true, stacked = compact)
                             Text(
                                 if (m.state == MatchState.SCHEDULED) "vs" else "${m.home.score ?: "0"} : ${m.away.score ?: "0"}",
                                 style = type.numeralSmall.copy(color = Palette.Text),
                                 modifier = Modifier.padding(horizontal = if (compact) 6.dp else 14.dp),
                             )
-                            TeamCell(m.away.name, m.away.logo, Modifier.weight(1f), alignEnd = false)
+                            TeamCell(m.away.name, m.away.logo, Modifier.weight(1f), alignEnd = false, stacked = compact)
                             if (!compact) {
                                 Column(Modifier.width(190.dp).padding(start = 12.dp)) {
                                     Text(m.leagueName, style = type.mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -277,8 +277,16 @@ private fun Schedule(r: SportsResult, region: String, compact: Boolean, onSelect
 }
 
 @Composable
-private fun TeamCell(name: String, logo: String?, modifier: Modifier, alignEnd: Boolean) {
+private fun TeamCell(name: String, logo: String?, modifier: Modifier, alignEnd: Boolean, stacked: Boolean = false) {
     val type = LocalTallyType.current
+    if (stacked) {
+        // Phone: logo above the name, so short screens still show who plays.
+        Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+            TeamLogo(logo)
+            Text(name, style = type.bodySmall.copy(color = Palette.Text), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        return
+    }
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = if (alignEnd) Arrangement.End else Arrangement.Start) {
         if (!alignEnd) TeamLogo(logo)
         Text(name, style = type.body, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 8.dp).weight(1f, fill = false))

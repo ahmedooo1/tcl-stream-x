@@ -28,16 +28,20 @@ run_test() {
 }
 run_test ImportOnDeviceTest
 run_test PlaybackOnDeviceTest
-# Phone geometry (portrait, ~392 dp wide): touch tour with screenshots.
-adb shell wm size 1080x2340 || true
-adb shell wm density 440 || true
+# The default AVD panel is 320x640 px and refuses overrides much larger than 2x, so the logical
+# geometry is set with sizes it accepts and a density that gives the wanted width in dp.
+# Phone (portrait, 392 dp wide like a typical phone): 640x1306 px at 261 dpi.
+adb shell wm size 640x1306 || true
+adb shell wm density 261 || true
 sleep 3
 run_test PhoneTourTest
-# TV geometry (1920x1080 at 320 dpi = 960x540 dp): remote-only tour.
-adb shell wm size 1920x1080 || true
-adb shell wm density 320 || true
+adb shell wm size >> "$OUT/display.txt" 2>&1 || true
+# TV (960x540 dp like a 1080p Google TV): 1280x720 px at 213 dpi.
+adb shell wm size 1280x720 || true
+adb shell wm density 213 || true
 sleep 3
 run_test UiTourTest
+adb shell wm size >> "$OUT/display.txt" 2>&1 || true
 adb exec-out run-as "$PKG" sh -c 'cd files/ci && tar -cf - .' > "$OUT/device-files.tar" || true
 tar -xf "$OUT/device-files.tar" -C "$OUT" || true
 rm -f "$OUT/device-files.tar"

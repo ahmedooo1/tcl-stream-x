@@ -124,7 +124,8 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
                     GroupSel.Favorites -> stringResource(R.string.group_favorites)
                     is GroupSel.Named -> groupLabel(g.title)
                 }
-                Text(title, style = type.headline, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                if (compact) Spacer(Modifier.weight(1f))
+                else Text(title, style = type.headline, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 TallyRow(onClick = vm::checkCurrentLineup, modifier = Modifier.height(40.dp).widthIn(max = 220.dp)) {
                     Text(
                         if (progress.running) stringResource(R.string.live_checking, progress.done, progress.total)
@@ -274,16 +275,17 @@ private fun ChannelRow(
     onLongClick: () -> Unit,
 ) {
     val type = LocalTallyType.current
+    val compact = isCompactWidth()
     TallyRow(onClick = onClick, onLongClick = onLongClick, onFocus = onFocus, modifier = modifier.fillMaxWidth().height(ROW_HEIGHT)) { focused ->
-        Row(Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxSize().padding(horizontal = if (compact) 8.dp else 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 ch.position.toString(),
                 style = type.numeralSmall.copy(color = if (focused) Palette.Tally else Palette.TextFaint),
-                modifier = Modifier.width(52.dp),
+                modifier = Modifier.width(if (compact) 34.dp else 52.dp),
                 maxLines = 1,
             )
-            ChannelLogo(ch.logo, ch.name, Modifier.size(width = 62.dp, height = 38.dp))
-            Spacer(Modifier.width(14.dp))
+            ChannelLogo(ch.logo, ch.name, if (compact) Modifier.size(width = 52.dp, height = 32.dp) else Modifier.size(width = 62.dp, height = 38.dp))
+            Spacer(Modifier.width(if (compact) 10.dp else 14.dp))
             Column(Modifier.weight(1f)) {
                 Text(ch.name, style = type.title.copy(fontSize = type.body.fontSize), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

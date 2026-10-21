@@ -44,6 +44,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -69,6 +70,8 @@ import fr.ahmad.tclstreamx.ui.nav.Navigator
 import fr.ahmad.tclstreamx.ui.nav.Routes
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
 import fr.ahmad.tclstreamx.ui.theme.Palette
+import fr.ahmad.tclstreamx.ui.theme.isCompactWidth
+import fr.ahmad.tclstreamx.ui.theme.isTv
 import fr.ahmad.tclstreamx.data.db.StreamStatus
 import kotlinx.coroutines.delay
 import java.util.Locale
@@ -91,6 +94,17 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
     val errorFocus = remember { FocusRequester() }
 
     val keepPlayingOnExit = remember { navigator.previousRoute() == Routes.LIVE }
+    // Phones: the rotate button locks the player in landscape; leaving the player gives rotation back.
+    val activity = LocalContext.current as? android.app.Activity
+    var landscape by remember { mutableStateOf(false) }
+    LaunchedEffect(landscape) {
+        activity?.requestedOrientation =
+            if (landscape) android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            else android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    }
+    DisposableEffect(Unit) {
+        onDispose { activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    }
     LaunchedEffect(Unit) { runCatching { rootFocus.requestFocus() } }
     // Also fires on first composition: rebuilds the pipeline after standby or an input switch.
     LifecycleEventEffect(Lifecycle.Event.ON_START) { playback.ensurePrepared() }
@@ -209,6 +223,7 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
                 onPlayPause = { player?.let { if (it.isPlaying) it.pause() else it.play() }; touch() },
                 onRewind = { player?.let { it.seekTo((it.currentPosition - 10_000).coerceAtLeast(0)) }; touch() },
                 onForward = { player?.let { it.seekTo(it.currentPosition + 30_000) }; touch() },
+                onRotate = { landscape = !landscape; touch() },
             )
         }
 
@@ -259,6 +274,7 @@ private fun TouchBar(
     onPlayPause: () -> Unit,
     onRewind: () -> Unit,
     onForward: () -> Unit,
+    onRotate: () -> Unit,
 ) {
     Row(
         modifier
@@ -279,6 +295,7 @@ private fun TouchBar(
             TouchButton(if (playing) "❚❚" else "▶", onPlayPause)
             TouchButton("+30", onForward)
         }
+        TouchButton("⟳", onRotate)
         TouchButton("⚙", onOptions)
     }
 }
@@ -301,18 +318,23 @@ private fun TouchButton(label: String, onClick: () -> Unit) {
 private fun InfoBar(item: PlayItem, ui: fr.ahmad.tclstreamx.player.PlayerUi, live: LiveViewModel, position: Long, duration: Long, modifier: Modifier) {
     val type = LocalTallyType.current
     val epg by remember(item.tvgId) { live.epgFor(item.tvgId) }.collectAsState(initial = emptyList())
+    val compact = isCompactWidth()
+    val tv = isTv()
     Column(
         modifier
             .fillMaxWidth()
             .background(Brush.verticalGradient(listOf(Color.Transparent, Palette.Ink.copy(alpha = 0.92f), Palette.Ink)))
-            .padding(start = 48.dp, end = 48.dp, top = 64.dp, bottom = 32.dp),
+            .padding(
+                start = if (compact) 16.dp else 48.dp, end = if (compact) 16.dp else 48.dp,
+                top = if (compact) 32.dp else 64.dp, bottom = if (compact) 16.dp else 32.dp,
+            ),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             item.channel?.let {
-                Text(it.position.toString(), style = type.display.copy(color = Palette.Tally), modifier = Modifier.padding(end = 20.dp))
+                Text(it.position.toString(), style = (if (compact) type.headline else type.display).copy(color = Palette.Tally), modifier = Modifier.padding(end = if (compact) 10.dp else 20.dp))
             }
-            if (item.isLive) ChannelLogo(item.logo, item.title, Modifier.size(width = 96.dp, height = 58.dp))
+            if (item.isLive) ChannelLogo(item.logo, item.title, if (compact) Modifier.size(width = 56.dp, height = 34.dp) else Modifier.size(width = 96.dp, height = 58.dp))
             Spacer(Modifier.width(18.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -338,7 +360,7 @@ private fun InfoBar(item: PlayItem, ui: fr.ahmad.tclstreamx.player.PlayerUi, liv
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.now), style = type.mono.copy(color = Palette.Tally), modifier = Modifier.width(96.dp))
                     Text(p.title, style = type.title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    Text("${clockTime(p.start)}–${clockTime(p.stop)}", style = type.mono)
+                    Text("${clockTime(p.start)} - ${clockTime(p.stop)}", style = type.mono, maxLines = 1)
                 }
                 if (p.start <= now) ProgressLine((now - p.start).toFloat() / (p.stop - p.start).coerceAtLeast(1), Modifier.fillMaxWidth())
             }
@@ -348,7 +370,7 @@ private fun InfoBar(item: PlayItem, ui: fr.ahmad.tclstreamx.player.PlayerUi, liv
                     Text("${clockTime(p.start)}  ${p.title}", style = type.body.copy(color = Palette.TextDim), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
-            Text(stringResource(R.string.player_hint), style = type.mono)
+            if (tv) Text(stringResource(R.string.player_hint), style = type.mono)
         } else {
             if (duration > 0) {
                 ProgressLine(position.toFloat() / duration, Modifier.fillMaxWidth())
@@ -358,7 +380,7 @@ private fun InfoBar(item: PlayItem, ui: fr.ahmad.tclstreamx.player.PlayerUi, liv
                     Text(formatTime(duration), style = type.mono)
                 }
             }
-            Text(stringResource(R.string.player_hint_vod), style = type.mono)
+            if (tv) Text(stringResource(R.string.player_hint_vod), style = type.mono)
         }
     }
 }
