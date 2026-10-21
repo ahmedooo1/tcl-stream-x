@@ -14,14 +14,15 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Pinned: the ubuntu-latest migration to Ubuntu 26 broke emulator boots (builds 3 and 4).
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
       BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -85,6 +86,8 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Instrumented tests on an Android TV emulator (real streams, D-pad tour, 50k import)
+        id: emu1
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
@@ -92,6 +95,20 @@ jobs:
           arch: x86
           disable-animations: true
           emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: bash tools/ci_emulator_tests.sh
+
+      - name: Retry emulator tests once (boot can be flaky on hosted runners)
+        if: steps.emu1.outcome == 'failure' && hashFiles('ci-out/instrumented-status.txt') == ''
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: android-tv
+          arch: x86
+          disable-animations: true
+          force-avd-creation: true
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash tools/ci_emulator_tests.sh
 
       - name: Summarize
