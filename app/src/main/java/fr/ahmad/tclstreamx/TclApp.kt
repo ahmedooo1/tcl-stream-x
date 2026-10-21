@@ -6,6 +6,7 @@ import androidx.media3.common.util.UnstableApi
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
+import coil.decode.SvgDecoder
 import coil.memory.MemoryCache
 import fr.ahmad.tclstreamx.data.xtream.Redactor
 
@@ -43,6 +44,8 @@ class TclApp : Application(), ImageLoaderFactory {
     /** Channel logos: bounded caches so thousands of logos never exhaust a 2 GB TV. */
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
         .okHttpClient(container.http)
+        // Some channel logos are SVG files.
+        .components { add(SvgDecoder.Factory()) }
         .memoryCache { MemoryCache.Builder(this).maxSizePercent(0.12).build() }
         .diskCache { DiskCache.Builder().directory(cacheDir.resolve("logos")).maxSizeBytes(64L * 1024 * 1024).build() }
         .crossfade(false)

@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
 import fr.ahmad.tclstreamx.R
 import fr.ahmad.tclstreamx.data.db.StreamStatus
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
@@ -175,12 +177,15 @@ fun statusLabel(status: StreamStatus): String = stringResource(
 )
 
 /**
- * Channel logo shown as is, without a plate (a light plate hid white logos, a dark one dark logos);
- * without a logo, the initials on a dark plate.
+ * Channel logo on the dark background as is; only logos drawn in dark ink on transparency (made for
+ * white pages) get a soft light plate, decided from the logo's own pixels. Without a logo, or when it
+ * cannot be loaded, the initials of the channel.
  */
 @Composable
 fun ChannelLogo(url: String?, name: String, modifier: Modifier = Modifier) {
-    if (url.isNullOrBlank()) {
+    var failed by remember(url) { mutableStateOf(false) }
+    var darkInk by remember(url) { mutableStateOf(false) }
+    if (url.isNullOrBlank() || failed) {
         Box(modifier.clip(RoundedCornerShape(8.dp)).background(Palette.Lift), contentAlignment = Alignment.Center) {
             Text(
                 name.trim().split(' ').filter { it.isNotEmpty() }.take(2).joinToString("") { it.take(1) }.uppercase(),
@@ -189,12 +194,43 @@ fun ChannelLogo(url: String?, name: String, modifier: Modifier = Modifier) {
         }
         return
     }
-    AsyncImage(
-        model = url,
-        contentDescription = null,
-        contentScale = ContentScale.Fit,
-        modifier = modifier.padding(3.dp),
-    )
+    val context = LocalContext.current
+    // Software bitmap so the pixels can be read once; logos are small.
+    val request = remember(url) { ImageRequest.Builder(context).data(url).allowHardware(false).build() }
+    Box(
+        modifier.clip(RoundedCornerShape(8.dp)).background(if (darkInk) LogoPlate else Color.Transparent),
+        contentAlignment = Alignment.Center,
+    ) {
+        AsyncImage(
+            model = request,
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize().padding(if (darkInk) 5.dp else 3.dp),
+            onSuccess = { state -> darkInk = hasDarkInk(state.result.drawable) },
+            onError = { failed = true },
+        )
+    }
+}
+
+private val LogoPlate = Color(0xFFDDE1E6)
+
+/** True for a logo with transparency whose visible pixels are mostly dark (invisible on graphite). */
+private fun hasDarkInk(drawable: android.graphics.drawable.Drawable): Boolean {
+    val bitmap = (drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap ?: return false
+    if (bitmap.config == android.graphics.Bitmap.Config.HARDWARE || bitmap.width < 2 || bitmap.height < 2) return false
+    val steps = 24
+    var visible = 0.0
+    var lum = 0.0
+    for (i in 0 until steps) for (j in 0 until steps) {
+        val p = bitmap.getPixel(i * (bitmap.width - 1) / (steps - 1), j * (bitmap.height - 1) / (steps - 1))
+        val a = (p ushr 24) / 255.0
+        if (a < 0.25) continue
+        visible += a
+        lum += a * (0.2126 * ((p shr 16) and 0xFF) + 0.7152 * ((p shr 8) and 0xFF) + 0.0722 * (p and 0xFF)) / 255.0
+    }
+    // An opaque logo brings its own background; only transparent logos can vanish.
+    if (visible == 0.0 || visible > steps * steps * 0.9) return false
+    return lum / visible < 0.32
 }
 
 val RowShape = RoundedCornerShape(10.dp)
