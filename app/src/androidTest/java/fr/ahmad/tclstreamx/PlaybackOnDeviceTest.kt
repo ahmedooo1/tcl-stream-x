@@ -118,25 +118,23 @@ class PlaybackOnDeviceTest {
         }
         val start = System.currentTimeMillis()
         var readyAt = 0L
-        var startPos = -1L
         var advanced = 0L
         var error: String? = null
         while (System.currentTimeMillis() - start < TIMEOUT_MS) {
-            Thread.sleep(250)
+            Thread.sleep(POLL_MS)
             var state = 0
-            var pos = 0L
+            var playing = false
             inst.runOnMainSync {
                 val p = controller.player.value
                 state = p?.playbackState ?: 0
-                pos = p?.currentPosition ?: 0
+                playing = p?.isPlaying == true
                 controller.ui.value.issue?.let { error = it.name }
             }
             if (error != null) break
-            if (state == Player.STATE_READY && readyAt == 0L) { readyAt = System.currentTimeMillis() - start; startPos = pos }
-            if (readyAt > 0) {
-                advanced = pos - startPos
-                if (advanced >= TARGET_ADVANCE_MS && (firstFrame.get() || Build.VERSION.SDK_INT < 29)) break
-            }
+            if (state == Player.STATE_READY && readyAt == 0L) readyAt = System.currentTimeMillis() - start
+            // Wall-clock time actually spent playing (live positions jump when the player re-aligns on the live edge).
+            if (playing) advanced += POLL_MS
+            if (readyAt > 0 && advanced >= TARGET_ADVANCE_MS && (firstFrame.get() || Build.VERSION.SDK_INT < 29)) break
         }
         var selection: Boolean? = null
         var q = 0; var a = 0; var x = 0; var w = 0; var h = 0
@@ -163,6 +161,7 @@ class PlaybackOnDeviceTest {
 
     companion object {
         private const val MAX_CHANNELS = 14
+        private const val POLL_MS = 250L
         private const val TIMEOUT_MS = 30_000L
         private const val TARGET_ADVANCE_MS = 5_000L
         private const val MIN_ADVANCE_MS = 2_000L

@@ -40,10 +40,10 @@ if imp:
 pb = load("ci-out/playback-report.json")
 if pb:
     out.append(f"\n## Real playback on the emulator ({pb['device']})\n")
-    out.append("| Stream | Group | Ready | Played | First frame | Video | Quality options | Audio | Subtitles | Error |")
+    out.append("| Stream | Group | Ready | Time playing | First frame | Video | Quality options | Audio | Subtitles | Error |")
     out.append("|---|---|---|---|---|---|---|---|---|---|")
     for r in pb["results"]:
-        out.append(f"| {r['name']} | {r['group']} | {'yes' if r['ready'] else 'no'} ({r['readyMs']} ms) | {r['advancedMs']/1000:.1f} s | "
+        out.append(f"| {r['name']} | {r['group']} | {'yes' if r['ready'] else 'no'} ({r['readyMs']} ms) | {r["advancedMs"]/1000:.1f} s | "
                    f"{'yes' if r['firstFrameRendered'] else 'no'} | {r['video']} | {r['qualityOptions']} | {r['audioTracks']} | {r['textOptions']} | {r.get('error', '')} |")
 
 if os.path.exists("catalog/REPORT.md"):
