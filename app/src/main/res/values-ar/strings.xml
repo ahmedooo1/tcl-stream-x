@@ -267,4 +267,10 @@
     <string name="remote_pair_hint">أدخل هذا الرمز في TCL Stream X على الهاتف.</string>
     <string name="vod_featured">الواجهة</string>
     <string name="vod_see_all">عرض الكل</string>
+    <string name="home_resume_live">تابع البث المباشر</string>
+    <string name="cast_none_found">لم يُعثر على أي جهاز. تأكّد أن الهاتف والتلفاز على نفس شبكة الواي فاي (لا شبكة الضيوف)، وأن TCL Stream X مفتوح على التلفاز، أو أدخل العنوان الظاهر في إعدادات التلفاز.</string>
+    <string name="cast_manual_hint">عنوان التلفاز (مثل 192.168.1.50)</string>
+    <string name="settings_receive">الاستقبال من الهاتف</string>
+    <string name="settings_receive_address">عنوان هذا التلفاز: %1$s. على الهاتف افتح قناة ثم زر الإرسال.</string>
+    <string name="settings_receive_off">يعمل على التلفاز عندما يكون التطبيق مفتوحًا.</string>
 </resources>

@@ -80,6 +80,7 @@ fun TallyRow(
     // inside horizontal strips where the available width is unbounded.
     Box(
         modifier
+            .clip(RowShape)
             .background(
                 when {
                     pressed -> Palette.Hairline
@@ -121,14 +122,21 @@ fun TallyCard(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (focused) 1.03f else if (pressed) 0.98f else 1f, label = "card")
-    val shape = RoundedCornerShape(2.dp)
+    val scale by animateFloatAsState(if (focused) 1.05f else if (pressed) 0.97f else 1f, label = "card")
+    val shape = CardShape
     Box(
         modifier
-            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                // Focused card floats above its neighbours.
+                shadowElevation = if (focused) 18.dp.toPx() else 0f
+                this.shape = shape
+                clip = false
+            }
             .clip(shape)
             .background(if (focused) Palette.Raised else Palette.Graphite)
-            .border(if (focused) 2.dp else 1.dp, if (focused) Palette.Text else Palette.Hairline, shape)
+            .border(if (focused) 2.dp else 1.dp, if (focused) Palette.Tally else Palette.Hairline, shape)
             .onFocusChanged { if (it.isFocused) onFocus?.invoke() }
             .combinedClickable(
                 interactionSource = interaction,
@@ -166,24 +174,34 @@ fun statusLabel(status: StreamStatus): String = stringResource(
     }
 )
 
-/** Channel logo on a dark plate; falls back to the first letters of the name. */
+/**
+ * Channel logo on a light plate (logos are made for white backgrounds, many are dark and vanish on
+ * graphite); without a logo, the initials on a dark plate.
+ */
 @Composable
 fun ChannelLogo(url: String?, name: String, modifier: Modifier = Modifier) {
-    Box(modifier.background(Palette.Raised), contentAlignment = Alignment.Center) {
-        Text(
-            name.trim().split(' ').filter { it.isNotEmpty() }.take(2).joinToString("") { it.take(1) }.uppercase(),
-            style = LocalTallyType.current.numeralSmall,
-        )
-        if (!url.isNullOrBlank()) {
-            AsyncImage(
-                model = url,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize().background(Palette.Raised).padding(6.dp),
+    val shape = RoundedCornerShape(8.dp)
+    if (url.isNullOrBlank()) {
+        Box(modifier.clip(shape).background(Palette.Lift), contentAlignment = Alignment.Center) {
+            Text(
+                name.trim().split(' ').filter { it.isNotEmpty() }.take(2).joinToString("") { it.take(1) }.uppercase(),
+                style = LocalTallyType.current.numeralSmall.copy(color = Palette.Text),
             )
         }
+        return
+    }
+    Box(modifier.clip(shape).background(Palette.Plate), contentAlignment = Alignment.Center) {
+        AsyncImage(
+            model = url,
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize().padding(5.dp),
+        )
     }
 }
+
+val RowShape = RoundedCornerShape(10.dp)
+val CardShape = RoundedCornerShape(12.dp)
 
 /** Section heading: large condensed title with an optional count in the numeral face. */
 @Composable

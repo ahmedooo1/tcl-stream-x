@@ -42,6 +42,9 @@ class RemoteHub(private val context: Context, http: OkHttpClient) {
     private val _incoming = MutableSharedFlow<RemoteMedia>(extraBufferCapacity = 1)
     val incoming: SharedFlow<RemoteMedia> = _incoming.asSharedFlow()
     private var server: RemotePlayServer? = null
+    private val _receiverAddress = MutableStateFlow<String?>(null)
+    /** "192.168.1.50:8765" while the TV receives, to type on the phone if discovery is blocked. */
+    val receiverAddress: StateFlow<String?> = _receiverAddress.asStateFlow()
     private var registration: NsdManager.RegistrationListener? = null
 
     private val tokenStore = object : TokenStore {
@@ -60,6 +63,7 @@ class RemoteHub(private val context: Context, http: OkHttpClient) {
         val s = RemotePlayServer(deviceName, tokenStore, { _pairingCode.value = it }, { _incoming.tryEmit(it) })
         val port = try { s.start() } catch (e: IOException) { return }
         server = s
+        _receiverAddress.value = localIpv4()?.let { "$it:$port" }
         val info = NsdServiceInfo().apply {
             serviceName = deviceName
             serviceType = RemotePlayServer.SERVICE_TYPE
@@ -81,6 +85,7 @@ class RemoteHub(private val context: Context, http: OkHttpClient) {
         registration = null
         server?.stop()
         server = null
+        _receiverAddress.value = null
         _pairingCode.value = null
     }
 
@@ -148,6 +153,42 @@ class RemoteHub(private val context: Context, http: OkHttpClient) {
             }
         })
     }
+
+    /**
+     * TV typed by hand ("192.168.1.50" or "192.168.1.50:8765"): checked with /info, then listed like a
+     * discovered one. Used when the router blocks multicast discovery (guest or "isolated" Wi-Fi).
+     */
+    suspend fun addManual(input: String): RemoteTv? {
+        val text = input.trim()
+        val host = text.substringBefore(':')
+        val port = text.substringAfter(':', "").toIntOrNull() ?: RemotePlayServer.PREFERRED_PORT
+        if (!Regex("^[0-9]{1,3}(\\.[0-9]{1,3}){3}$").matches(host) || port !in 1..65535) return null
+        val probe = RemoteTv(host, host, port, false)
+        val body = withContext(Dispatchers.IO) {
+            try {
+                client.newCall(Request.Builder().url(base(probe) + "/info").build()).execute().use { r ->
+                    if (r.isSuccessful) r.body?.string().orEmpty().take(2048) else null
+                }
+            } catch (e: IOException) {
+                null
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        } ?: return null
+        if (!body.contains("\"TCLStreamX\"")) return null
+        val name = Regex("\"name\":\"([^\"]{1,60})\"").find(body)?.groupValues?.get(1) ?: host
+        val tv = RemoteTv(name, host, port, token(name) != null)
+        _tvs.value = (_tvs.value.filterNot { it.name == tv.name } + tv).sortedBy { it.name }
+        return tv
+    }
+
+    private fun localIpv4(): String? = runCatching {
+        java.net.NetworkInterface.getNetworkInterfaces().toList()
+            .filter { it.isUp && !it.isLoopback }
+            .flatMap { it.inetAddresses.toList() }
+            .firstOrNull { it is java.net.Inet4Address && it.isSiteLocalAddress }
+            ?.hostAddress
+    }.getOrNull()
 
     private fun token(name: String): String? = senderPrefs.getString("token:$name", null)
 

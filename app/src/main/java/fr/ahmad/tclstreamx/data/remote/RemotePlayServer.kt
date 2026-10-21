@@ -57,7 +57,12 @@ class RemotePlayServer(
     fun start(): Int {
         val socket = ServerSocket()
         socket.reuseAddress = true
-        socket.bind(InetSocketAddress(0))
+        // A fixed port lets the user type the TV address by hand when discovery is blocked by the router.
+        try {
+            socket.bind(InetSocketAddress(PREFERRED_PORT))
+        } catch (e: IOException) {
+            socket.bind(InetSocketAddress(0))
+        }
         server = socket
         running = true
         thread(name = "remote-play", isDaemon = true) {
@@ -154,7 +159,9 @@ class RemotePlayServer(
     }
 
     companion object {
-        const val SERVICE_TYPE = "_tclstreamx._tcp."
+        /** DNS-SD type, written without the trailing dot as NsdManager expects. */
+        const val SERVICE_TYPE = "_tclstreamx._tcp"
+        const val PREFERRED_PORT = 8765
         private const val MAX_BODY = 32 * 1024
         private const val CODE_TTL_MS = 120_000L
         private const val MAX_ATTEMPTS = 5

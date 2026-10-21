@@ -68,6 +68,16 @@ fun SettingsScreen() {
             }
         }
 
+        item { Section(stringResource(R.string.settings_receive)) }
+        item {
+            val address by c.remote.receiverAddress.collectAsState()
+            Text(
+                address?.let { stringResource(R.string.settings_receive_address, it) } ?: stringResource(R.string.settings_receive_off),
+                style = type.body,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            )
+        }
+
         item { Section(stringResource(R.string.settings_epg)) }
         item {
             InputField(

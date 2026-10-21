@@ -76,6 +76,11 @@ fun CastPanel(playback: PlaybackController, modifier: Modifier) {
     var pairing by remember { mutableStateOf<RemoteTv?>(null) }
     var status by remember { mutableStateOf<CastStatus?>(null) }
     val first = remember { FocusRequester() }
+    var waitedLong by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(12_000)
+        waitedLong = true
+    }
 
     DisposableEffect(Unit) {
         castAvailable = c.chromecast.available()
@@ -135,9 +140,21 @@ fun CastPanel(playback: PlaybackController, modifier: Modifier) {
 
         // ---- 1. the app on the TV ---------------------------------------------------------
         item { PanelTitle(stringResource(R.string.cast_tv_app)) }
-        if (tvs.isEmpty()) item { Hint(stringResource(R.string.cast_tv_app_empty)) }
+        if (tvs.isEmpty()) item { Hint(stringResource(if (waitedLong) R.string.cast_none_found else R.string.cast_tv_app_empty)) }
         items(tvs, key = { "tv:" + it.name }) { tv ->
             DeviceRow(tv.name, if (tv.paired) null else stringResource(R.string.cast_pair_needed), Modifier.focusRequester(first)) { sendTo(tv) }
+        }
+        // Some routers block discovery (guest Wi-Fi, "AP isolation"): the address shown in the TV settings can be typed here.
+        item {
+            InputField(
+                value = "",
+                placeholder = stringResource(R.string.cast_manual_hint),
+                keyboardType = KeyboardType.Uri,
+                modifier = Modifier.padding(horizontal = 12.dp),
+                onSubmit = { text ->
+                    if (text.isNotBlank()) scope.launch { if (c.remote.addManual(text) == null) status = CastStatus.Unreachable }
+                },
+            )
         }
         pairing?.let { tv ->
             item {
@@ -164,7 +181,7 @@ fun CastPanel(playback: PlaybackController, modifier: Modifier) {
         item { PanelTitle(stringResource(R.string.cast_chromecast)) }
         when {
             castAvailable == false -> item { Hint(stringResource(R.string.cast_unavailable)) }
-            devices.isEmpty() -> item { Hint(stringResource(R.string.cast_searching)) }
+            devices.isEmpty() -> item { Hint(stringResource(if (waitedLong) R.string.cast_none_found else R.string.cast_searching)) }
         }
         items(devices, key = { "cc:" + it.id }) { d ->
             DeviceRow(d.name, d.description, Modifier) {

@@ -1,6 +1,16 @@
 package fr.ahmad.tclstreamx.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,6 +93,11 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     val movieCount by remember { dao.observeCount(0, ContentKind.MOVIE, null) }.collectAsState(initial = 0)
     val seriesCount by remember { dao.observeCount(0, ContentKind.SERIES, null) }.collectAsState(initial = 0)
     val playlists by live.playlists.collectAsState()
+    val settings by c.settings.settings.collectAsState(initial = null)
+    var lastChannel by remember { mutableStateOf<ChannelEntity?>(null) }
+    LaunchedEffect(settings?.lastChannelKey) {
+        lastChannel = settings?.lastChannelKey?.let { dao.byKey(it) }
+    }
     val firstTile = remember { FocusRequester() }
 
     fun play(ch: ChannelEntity) {
@@ -133,7 +148,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     ) {
         item(key = "header") {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(18.dp).background(Palette.Tally))
+                Image(painterResource(R.drawable.logo_mark), contentDescription = null, modifier = Modifier.size(if (compact) 40.dp else 48.dp))
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.app_name), style = type.headline, maxLines = 1)
@@ -141,6 +156,10 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                 }
                 Clock()
             }
+        }
+
+        lastChannel?.let { ch ->
+            item(key = "resume-live") { ResumeLive(ch, compact) { play(ch) } }
         }
 
         // Section buttons, in rows of 2 (phone) or 5 (TV).
@@ -184,15 +203,65 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     }
 }
 
+/** Each section has its own light: the tile carries it as a wash of colour and a large watermark icon. */
+private fun accentOf(route: String): Color = when (route) {
+    Routes.LIVE -> Palette.Tally
+    Routes.MOVIES -> Palette.Ember
+    Routes.SERIES -> Palette.Violet
+    Routes.SPORTS -> Palette.Signal
+    Routes.ANIMATION -> Palette.Cyan
+    Routes.LOCAL -> Palette.Caution
+    Routes.SEARCH -> Palette.Rose
+    else -> Palette.TextDim
+}
+
 @Composable
 private fun SectionTile(section: Section, subtitle: String, modifier: Modifier, onClick: () -> Unit) {
     val type = LocalTallyType.current
-    TallyCard(onClick = onClick, modifier = modifier.height(112.dp)) { focused ->
+    val accent = accentOf(section.route)
+    TallyCard(onClick = onClick, modifier = modifier.height(118.dp)) { focused ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Brush.linearGradient(listOf(accent.copy(alpha = if (focused) 0.34f else 0.20f), Color.Transparent)))
+        )
+        AppIcon(
+            section.icon,
+            accent.copy(alpha = if (focused) 0.30f else 0.14f),
+            size = 92.dp,
+            modifier = Modifier.align(Alignment.BottomEnd).offset(x = 18.dp, y = 22.dp),
+        )
         Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.SpaceBetween) {
-            AppIcon(section.icon, if (focused) Palette.Tally else Palette.Text, size = 30.dp)
+            Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(accent.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                AppIcon(section.icon, accent, size = 24.dp)
+            }
             Column {
                 Text(stringResource(section.label), style = type.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(subtitle, style = type.mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(subtitle, style = type.mono.copy(color = if (focused) Palette.Text else Palette.TextDim), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+/** "Back to what you were watching": the last live channel, one press away. */
+@Composable
+private fun ResumeLive(ch: ChannelEntity, compact: Boolean, onClick: () -> Unit) {
+    val type = LocalTallyType.current
+    TallyCard(onClick = onClick, modifier = Modifier.fillMaxWidth().height(if (compact) 92.dp else 104.dp)) { focused ->
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.horizontalGradient(listOf(Palette.Tally.copy(alpha = if (focused) 0.42f else 0.28f), Palette.Graphite))
+            )
+        )
+        Row(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            ChannelLogo(ch.logo, ch.name, Modifier.size(width = if (compact) 84.dp else 104.dp, height = if (compact) 56.dp else 64.dp))
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.home_resume_live), style = type.label.copy(color = Palette.Text))
+                Text(ch.name, style = type.headline, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Box(Modifier.size(48.dp).clip(CircleShape).background(Palette.Tally), contentAlignment = Alignment.Center) {
+                Text("▶", style = type.title.copy(color = Palette.Ink))
             }
         }
     }

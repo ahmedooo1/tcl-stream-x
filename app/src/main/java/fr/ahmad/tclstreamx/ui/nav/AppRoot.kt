@@ -26,6 +26,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.focus.focusProperties
@@ -165,15 +169,26 @@ fun AppRoot(playback: PlaybackController) {
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
+    // Not a flat black: a faint warm light from the top corner, like a studio monitor wall.
+    val backdrop = Modifier.drawBehind {
+        drawRect(Palette.Ink)
+        drawRect(
+            Brush.radialGradient(
+                listOf(Palette.Tally.copy(alpha = 0.09f), Color.Transparent),
+                center = Offset(size.width * 0.12f, 0f),
+                radius = size.maxDimension * 0.65f,
+            )
+        )
+    }
+    Box(Modifier.fillMaxSize().then(backdrop)) {
         if (compact) {
             // Phone: content on top, a bottom bar with the main sections (thumb reach), no rail.
-            Column(Modifier.fillMaxSize().background(Palette.Ink)) {
+            Column(Modifier.fillMaxSize()) {
                 host(Modifier.weight(1f).fillMaxWidth())
                 if (route != Routes.PLAYER) BottomBar(current = route, onSelect = navigator::go)
             }
         } else {
-            Row(Modifier.fillMaxSize().background(Palette.Ink)) {
+            Row(Modifier.fillMaxSize()) {
                 if (route != Routes.PLAYER) Rail(current = route, onSelect = navigator::go)
                 host(Modifier.weight(1f).fillMaxHeight())
             }

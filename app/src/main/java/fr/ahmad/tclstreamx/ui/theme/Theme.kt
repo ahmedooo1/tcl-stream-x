@@ -35,6 +35,13 @@ object Palette {
     val Signal = Color(0xFF5BD98F)
     val Caution = Color(0xFFF2B33D)
     val Dead = Color(0xFF6B7078)
+    // Section accents: each part of the app has its own light, all from the same warm-to-cool range.
+    val Ember = Color(0xFFFF963C)
+    val Violet = Color(0xFF9C8CFF)
+    val Cyan = Color(0xFF3FC8E4)
+    val Rose = Color(0xFFFF6F91)
+    // Logos are designed for white backgrounds: they sit on a light plate so dark logos stay visible.
+    val Plate = Color(0xFFE9ECEF)
 }
 
 val PlexSans = FontFamily(

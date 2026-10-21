@@ -267,4 +267,10 @@
     <string name="remote_pair_hint">Saisissez ce code dans TCL Stream X sur le téléphone.</string>
     <string name="vod_featured">À la une</string>
     <string name="vod_see_all">Tout voir</string>
+    <string name="home_resume_live">Reprendre en direct</string>
+    <string name="cast_none_found">Aucun appareil trouvé. Vérifiez que le téléphone et la TV sont sur le même Wi‑Fi (pas un Wi‑Fi invité) et que TCL Stream X est ouvert sur la TV, ou saisissez l\'adresse affichée dans Réglages sur la TV.</string>
+    <string name="cast_manual_hint">Adresse de la TV (ex. 192.168.1.50)</string>
+    <string name="settings_receive">Recevoir depuis le téléphone</string>
+    <string name="settings_receive_address">Adresse de cette TV : %1$s. Sur le téléphone, ouvrez une chaîne puis le bouton de diffusion.</string>
+    <string name="settings_receive_off">Actif sur la TV quand l\'application est ouverte.</string>
 </resources>
