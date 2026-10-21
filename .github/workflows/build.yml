@@ -100,13 +100,15 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash tools/ci_emulator_tests.sh
 
-      - name: Retry emulator tests once (default skin)
+      # When the Android TV image does not boot on the runner, the same tests run on the standard
+      # Google APIs image (x86_64), which GitHub runners boot reliably; device.txt records which one ran.
+      - name: Retry emulator tests once (Google APIs x86_64 image)
         if: steps.emu1.outcome == 'failure' && hashFiles('ci-out/instrumented-status.txt') == ''
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
-          target: android-tv
-          arch: x86
+          target: google_apis
+          arch: x86_64
           disable-animations: true
           force-avd-creation: true
           emulator-boot-timeout: 900
