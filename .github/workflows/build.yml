@@ -115,6 +115,25 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash tools/ci_emulator_tests.sh
 
+      # Runner logs are not readable from the development environment, so boot problems are reported as annotations.
+      - name: Emulator diagnostics (only when no emulator booted)
+        if: always() && steps.build.outcome == 'success' && hashFiles('ci-out/instrumented-status.txt') == ''
+        continue-on-error: true
+        run: |
+          EMU="$ANDROID_HOME/emulator/emulator"
+          note() { printf '::warning::%s\n' "$(printf '%s' "$1" | head -c 3500 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')"; }
+          note "kvm: $(ls -l /dev/kvm 2>&1) | groups: $(id) | nproc $(nproc) | mem $(free -m | awk '/Mem/{print $2}') MB | disk $(df -h / | tail -1)"
+          note "emulator: $($EMU -version 2>&1 | head -2) | accel: $($EMU -accel-check 2>&1)"
+          note "avds: $($EMU -list-avds 2>&1) | images: $(ls $ANDROID_HOME/system-images/*/* 2>&1 | tr '\n' ' ')"
+          AVD=$($EMU -list-avds 2>/dev/null | tail -1)
+          if [ -n "$AVD" ]; then
+            ( timeout 240 "$EMU" -avd "$AVD" -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -verbose > emu.log 2>&1 & )
+            sleep 200
+            note "adb: $(adb devices 2>&1) | boot_completed=$(adb shell getprop sys.boot_completed 2>&1)"
+            note "emulator log (errors): $(grep -iE 'error|fail|fatal|cannot|unable|kvm|hax|panic' emu.log | head -40)"
+            note "emulator log (tail): $(tail -40 emu.log)"
+          fi
+
       - name: Summarize
         if: always()
         run: |
