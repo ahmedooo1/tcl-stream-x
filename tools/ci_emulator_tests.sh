@@ -37,10 +37,15 @@ adb shell wm density 261 || true
 sleep 3
 run_test PhoneTourTest
 adb shell wm size >> "$OUT/display.txt" 2>&1 || true
-# TV (960x540 dp like a 1080p Google TV): 1280x720 px at 213 dpi.
-adb shell wm size 1280x720 || true
+# TV: the panel is portrait (320x640) and refuses overrides wider than about 2x, so a landscape
+# 16:9-like screen is made by overriding the natural (portrait) size to 640x1280 and rotating it:
+# 1280x640 px at 213 dpi = 961x480 dp, close to a 1080p Google TV (960x540 dp).
+adb shell wm size 640x1280 || true
 adb shell wm density 213 || true
-sleep 3
+adb shell settings put system accelerometer_rotation 0 || true
+adb shell settings put system user_rotation 1 || true
+sleep 4
+adb shell dumpsys window displays 2>/dev/null | grep -m2 -E "cur=|init=" >> "$OUT/display.txt" || true
 run_test UiTourTest
 adb shell wm size >> "$OUT/display.txt" 2>&1 || true
 adb exec-out run-as "$PKG" sh -c 'cd files/ci && tar -cf - .' > "$OUT/device-files.tar" || true
