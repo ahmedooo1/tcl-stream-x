@@ -11,10 +11,8 @@ adb shell getprop ro.product.model >> "$OUT/device.txt"
 adb shell getprop ro.build.version.sdk >> "$OUT/device.txt"
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-# The default AVD is a small portrait screen: give it the logical geometry of a 1080p TV (960x540 dp).
-adb shell wm size 1920x1080 || true
-adb shell wm density 320 || true
-adb shell settings put system user_rotation 0 || true
+adb shell wm size > "$OUT/display.txt" 2>&1 || true
+adb shell wm density >> "$OUT/display.txt" 2>&1 || true
 adb shell settings put global stay_on_while_plugged_in 7 || true
 adb shell input keyevent KEYCODE_WAKEUP || true
 adb logcat -c || true
