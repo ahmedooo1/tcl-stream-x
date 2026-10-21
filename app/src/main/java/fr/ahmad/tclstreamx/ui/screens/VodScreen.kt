@@ -850,7 +850,7 @@ private fun FeaturedHome(
 private fun Hero(pick: Pick?, compact: Boolean, onPlay: () -> Unit) {
     val type = LocalTallyType.current
     val (title, text, image) = when (pick) {
-        is Pick.Channel -> Triple(pick.ch.name, pick.ch.groupTitle.ifBlank { null }, pick.ch.logo)
+        is Pick.Channel -> Triple(pick.ch.name, pick.ch.groupTitle.takeIf { it.isNotBlank() }?.let { groupLabel(it) }, pick.ch.logo)
         is Pick.Archive -> Triple(pick.item.title, pick.item.description, pick.item.poster)
         null -> Triple(null, null, null)
     }
