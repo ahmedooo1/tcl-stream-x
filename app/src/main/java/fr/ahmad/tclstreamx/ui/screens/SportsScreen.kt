@@ -66,6 +66,28 @@ import java.time.ZoneId
 import java.util.Date
 
 /** Opens the official app's page in the Play Store; nothing is ever played from here. */
+/** Opens an official app when it is installed (TV launcher entry first), its store page otherwise. */
+fun openService(context: Context, pkg: String?, query: String) {
+    if (pkg != null) {
+        val pm = context.packageManager
+        val launch = pm.getLeanbackLaunchIntentForPackage(pkg) ?: pm.getLaunchIntentForPackage(pkg)
+        val intents = listOfNotNull(
+            launch,
+            Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg")),
+            Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$pkg")),
+        )
+        for (i in intents) {
+            try {
+                context.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                return
+            } catch (e: ActivityNotFoundException) {
+                continue
+            }
+        }
+    }
+    openStoreSearch(context, query)
+}
+
 fun openStoreSearch(context: Context, query: String) {
     val q = Uri.encode(query)
     val intents = listOf(

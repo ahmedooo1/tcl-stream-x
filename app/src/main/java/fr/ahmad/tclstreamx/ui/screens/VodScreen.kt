@@ -39,6 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -86,6 +88,8 @@ private sealed interface VodSection {
     data class Channels(val category: String, val count: Int) : VodSection
     data object OpenFilms : VodSection
     data object Services : VodSection
+    /** Start page of the section: a featured title and one row per category, like a streaming service. */
+    data object Featured : VodSection
 }
 
 private val ANIMATION_WORDS = listOf("anim", "cartoon", "kids", "enfant", "jeunesse", "dessin", "كرتون", "أطفال", "اطفال", "انمي", "أنمي")
@@ -126,11 +130,13 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
     val playlistSections by groupsFlow.collectAsState(initial = emptyList())
     val archiveSections = remember(shelf) { Genre.of(shelf).map { VodSection.Archive(it) } }
     val hasOpenFilms = shelf != VodShelf.SERIES
-    var selected by remember(shelf) { mutableStateOf<VodSection>(archiveSections.first()) }
-    var userPicked by remember(shelf) { mutableStateOf(false) }
-    // The user's own playlists come first as soon as they exist, and after a change of country or language.
-    LaunchedEffect(playlistSections.isNotEmpty(), region) {
-        if ((!userPicked || region != null) && playlistSections.isNotEmpty() && selected !in playlistSections) selected = playlistSections.first()
+    var selected by remember(shelf) { mutableStateOf<VodSection>(VodSection.Featured) }
+    // A category that disappears after a change of country or language sends back to the start page.
+    LaunchedEffect(playlistSections, region) {
+        val current = selected
+        if (current is VodSection.Playlist && playlistSections.none { it.group == current.group && it.kind == current.kind }) {
+            selected = VodSection.Featured
+        }
     }
     val pickRegion: (String?) -> Unit = { region = it }
     val channelCategory = when (shelf) {
@@ -140,7 +146,7 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
     }
     val channelRows by remember(shelf) { c.db.channels().observeCategory(channelCategory) }.collectAsState(initial = emptyList())
     val channelSections = if (channelRows.isEmpty()) emptyList() else listOf(VodSection.Channels(channelCategory, channelRows.size))
-    val sections: List<VodSection> = playlistSections + channelSections + archiveSections +
+    val sections: List<VodSection> = listOf(VodSection.Featured) + playlistSections + channelSections + archiveSections +
         (if (hasOpenFilms) listOf(VodSection.OpenFilms, VodSection.Services) else emptyList())
 
     val title = stringResource(
@@ -150,7 +156,7 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
             VodShelf.ANIMATION -> R.string.nav_animation
         }
     )
-    val pick: (VodSection) -> Unit = { selected = it; userPicked = true }
+    val pick: (VodSection) -> Unit = { selected = it }
 
     if (compact) {
         Column(Modifier.fillMaxSize().padding(top = 12.dp)) {
@@ -167,7 +173,7 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
                 }
             }
             RegionStrip(regions, region, pickRegion, Modifier.padding(bottom = 8.dp))
-            SectionContent(selected, shelf, region, navigator, playback, Modifier.weight(1f))
+            SectionContent(selected, shelf, region, playlistSections, pick, navigator, playback, Modifier.weight(1f))
         }
     } else {
         Row(Modifier.fillMaxSize().padding(top = 28.dp)) {
@@ -176,6 +182,7 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
                 contentPadding = PaddingValues(bottom = 32.dp),
             ) {
                 item { Text(title, style = type.display, modifier = Modifier.padding(start = 14.dp, bottom = 12.dp)) }
+                item { SectionRow(VodSection.Featured, selected == VodSection.Featured) { pick(VodSection.Featured) } }
                 if (playlistSections.isNotEmpty()) {
                     item { SectionHeader(stringResource(R.string.section_my_playlists)) }
                     items(playlistSections, key = { sectionKey(it) }) { s -> SectionRow(s, s == selected) { pick(s) } }
@@ -194,7 +201,7 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
             }
             Column(Modifier.weight(1f)) {
                 RegionStrip(regions, region, pickRegion, Modifier.padding(bottom = 8.dp), PaddingValues(start = 16.dp, end = 24.dp))
-                SectionContent(selected, shelf, region, navigator, playback, Modifier.weight(1f))
+                SectionContent(selected, shelf, region, playlistSections, pick, navigator, playback, Modifier.weight(1f))
             }
         }
     }
@@ -206,6 +213,7 @@ private fun sectionKey(s: VodSection): String = when (s) {
     is VodSection.Channels -> "c:${s.category}"
     VodSection.OpenFilms -> "open"
     VodSection.Services -> "svc"
+    VodSection.Featured -> "featured"
 }
 
 @Composable
@@ -215,6 +223,7 @@ private fun sectionLabel(s: VodSection): String = when (s) {
     is VodSection.Channels -> groupLabel(s.category)
     VodSection.OpenFilms -> stringResource(R.string.section_open_films)
     VodSection.Services -> stringResource(R.string.vod_services)
+    VodSection.Featured -> stringResource(R.string.vod_featured)
 }
 
 @Composable
@@ -248,7 +257,16 @@ private fun SectionRow(s: VodSection, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SectionContent(section: VodSection, shelf: VodShelf, region: String?, navigator: Navigator, playback: PlaybackController, modifier: Modifier) {
+private fun SectionContent(
+    section: VodSection,
+    shelf: VodShelf,
+    region: String?,
+    playlistSections: List<VodSection.Playlist>,
+    onPick: (VodSection) -> Unit,
+    navigator: Navigator,
+    playback: PlaybackController,
+    modifier: Modifier,
+) {
     Box(modifier.fillMaxHeight()) {
         when (section) {
             is VodSection.Playlist ->
@@ -258,6 +276,7 @@ private fun SectionContent(section: VodSection, shelf: VodShelf, region: String?
             is VodSection.Channels -> CategoryChannels(section.category, navigator, playback)
             VodSection.OpenFilms -> OpenFilmsGrid(shelf, navigator, playback)
             VodSection.Services -> ServicesGrid()
+            VodSection.Featured -> FeaturedHome(shelf, region, playlistSections, navigator, playback, onOpen = onPick)
         }
     }
 }
@@ -576,17 +595,18 @@ private fun ServicesGrid() {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) { GridTitle(stringResource(R.string.vod_services), stringResource(R.string.sports_open_service)) }
-        servicesItems(c.vod.openMedia.services.map { it.name to it.query }, type) { openStoreSearch(context, it) }
+        servicesItems(c.vod.openMedia.services, type) { openService(context, it.pkg, it.query) }
     }
 }
 
 private fun LazyGridScope.servicesItems(
-    services: List<Pair<String, String>>,
+    services: List<fr.ahmad.tclstreamx.data.vod.FreeService>,
     type: fr.ahmad.tclstreamx.ui.theme.TallyType,
-    onOpen: (String) -> Unit,
+    onOpen: (fr.ahmad.tclstreamx.data.vod.FreeService) -> Unit,
 ) {
-    items(services, key = { "svc:" + it.first }) { (name, query) ->
-        TallyRow(onClick = { onOpen(query) }, modifier = Modifier.height(56.dp)) {
+    items(services, key = { "svc:" + it.name }) { svc ->
+        val name = svc.name
+        TallyRow(onClick = { onOpen(svc) }, modifier = Modifier.height(56.dp)) {
             Row(Modifier.fillMaxSize().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(name, style = type.body, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("↗", style = type.mono)
@@ -606,14 +626,14 @@ private fun GridTitle(title: String, subtitle: String) {
 }
 
 @Composable
-private fun ChannelPoster(ch: ChannelEntity, onClick: () -> Unit) {
-    PosterTile(VodItem(ch.channelKey, ch.name, null, ch.logo, null, null), onClick)
+private fun ChannelPoster(ch: ChannelEntity, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    PosterTile(VodItem(ch.channelKey, ch.name, null, ch.logo, null, null), modifier, onClick)
 }
 
 @Composable
-private fun PosterTile(item: VodItem, onClick: () -> Unit) {
+private fun PosterTile(item: VodItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val type = LocalTallyType.current
-    TallyCard(onClick = onClick) { focused ->
+    TallyCard(onClick = onClick, modifier = modifier) { focused ->
         Column {
             Box(Modifier.fillMaxWidth().aspectRatio(16f / 10f).background(Palette.Raised)) {
                 Text(
@@ -683,3 +703,253 @@ private fun DetailPanel(vod: VodItem, modifier: Modifier, onClose: () -> Unit, o
 }
 
 private const val MAX_EPISODES = 20_000
+
+// ---- start page ("à la une") -------------------------------------------------------------
+
+/** Something the start page can open: an entry of the user's sources or a public-domain title. */
+private sealed interface Pick {
+    data class Channel(val ch: ChannelEntity) : Pick
+    data class Archive(val item: VodItem) : Pick
+}
+
+private const val MAX_PLAYLIST_ROWS = 14
+private const val ROW_ITEMS = 24
+
+/**
+ * The first page of Films / Séries / Animation, organised like a streaming service: a featured title,
+ * "continue watching", then one horizontal row per category (the user's sources first, then the free
+ * channels and the public-domain genres). Rows load only when they scroll into view, from the local
+ * database or a cached search, so the page opens immediately even with a library of 100 000 titles.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun FeaturedHome(
+    shelf: VodShelf,
+    region: String?,
+    playlistSections: List<VodSection.Playlist>,
+    navigator: Navigator,
+    playback: PlaybackController,
+    onOpen: (VodSection) -> Unit,
+) {
+    val c = (LocalContext.current.applicationContext as TclApp).container
+    val compact = isCompactWidth()
+    var hero by remember(shelf, region) { mutableStateOf<Pick?>(null) }
+    var detail by remember { mutableStateOf<VodItem?>(null) }
+    var series by remember { mutableStateOf<ChannelEntity?>(null) }
+    val resume by remember { c.db.vodProgress().observeContinue(20) }.collectAsState(initial = emptyList())
+    val category = when (shelf) {
+        VodShelf.MOVIES -> "movies"
+        VodShelf.SERIES -> "series"
+        VodShelf.ANIMATION -> "kids"
+    }
+    val freeChannels by remember(shelf) { c.db.channels().observeCategory(category) }.collectAsState(initial = emptyList())
+    val genres = remember(shelf) { Genre.of(shelf) }
+    val tileWidth = if (compact) 150.dp else 200.dp
+    val offerHero: (Pick) -> Unit = { if (hero == null) hero = it }
+
+    fun open(p: Pick) {
+        when (p) {
+            is Pick.Channel -> if (XtreamRepository.isSeries(p.ch.url)) {
+                series = p.ch
+            } else {
+                playback.play(PlayItem.fromChannel(p.ch, null))
+                navigator.openPlayer()
+            }
+            is Pick.Archive -> {
+                val direct = p.item.directUrl
+                if (direct != null) {
+                    playback.play(PlayItem(key = p.item.key, title = p.item.title, urls = listOf(direct), isLive = false, poster = p.item.poster))
+                    navigator.openPlayer()
+                } else {
+                    detail = p.item
+                }
+            }
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.fillMaxSize().focusRestorer(),
+            contentPadding = PaddingValues(bottom = 48.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 18.dp else 24.dp),
+        ) {
+            item(key = "hero") { Hero(hero, compact) { hero?.let(::open) } }
+            if (resume.isNotEmpty() && shelf != VodShelf.ANIMATION) {
+                item(key = "resume") {
+                    ShelfRow(stringResource(R.string.home_continue), null) {
+                        items(resume, key = { "r:" + it.key }) { r ->
+                            PosterTile(VodItem(r.key, r.title, null, r.poster, null, null), Modifier.width(tileWidth)) {
+                                playback.play(PlayItem(key = r.key, title = r.title, urls = listOf(r.uri), isLive = false, poster = r.poster))
+                                navigator.openPlayer()
+                            }
+                        }
+                    }
+                }
+            }
+            items(playlistSections.take(MAX_PLAYLIST_ROWS), key = { "pl:${it.kind}:${it.group}" }) { s ->
+                SourceRow(s, region, tileWidth, offerHero, ::open) { onOpen(s) }
+            }
+            if (freeChannels.isNotEmpty()) {
+                item(key = "free") {
+                    ShelfRow(groupLabel(category), { onOpen(VodSection.Channels(category, freeChannels.size)) }) {
+                        items(freeChannels.take(ROW_ITEMS), key = { "f:" + it.id }) { ch ->
+                            ChannelPoster(ch, Modifier.width(tileWidth)) { open(Pick.Channel(ch)) }
+                        }
+                    }
+                }
+            }
+            items(genres, key = { "g:" + it.name }) { g ->
+                ArchiveRow(shelf, g, tileWidth, offerHero, ::open) { onOpen(VodSection.Archive(g)) }
+            }
+        }
+        detail?.let { d ->
+            DetailPanel(d, Modifier.align(Alignment.CenterEnd), onClose = { detail = null }) { file ->
+                playback.play(
+                    PlayItem(
+                        key = "${d.key}/${file.url.substringAfterLast('/')}",
+                        title = if (file.title.equals(d.title, true)) d.title else "${d.title} · ${file.title}",
+                        urls = listOf(file.url),
+                        isLive = false,
+                        subtitles = file.subtitles,
+                        poster = d.poster,
+                    )
+                )
+                navigator.openPlayer()
+            }
+        }
+        series?.let { show ->
+            SeriesPanel(show, Modifier.align(Alignment.CenterEnd), onClose = { series = null }) { item ->
+                playback.play(item)
+                navigator.openPlayer()
+            }
+        }
+    }
+}
+
+@Composable
+private fun Hero(pick: Pick?, compact: Boolean, onPlay: () -> Unit) {
+    val type = LocalTallyType.current
+    val (title, text, image) = when (pick) {
+        is Pick.Channel -> Triple(pick.ch.name, pick.ch.groupTitle.ifBlank { null }, pick.ch.logo)
+        is Pick.Archive -> Triple(pick.item.title, pick.item.description, pick.item.poster)
+        null -> Triple(null, null, null)
+    }
+    Box(Modifier.fillMaxWidth().height(if (compact) 230.dp else 320.dp).background(Palette.Graphite)) {
+        if (image != null) {
+            AsyncImage(model = image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        }
+        // Legibility of the title over any poster: dark at the bottom and on the reading side.
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Palette.Ink.copy(alpha = 0.55f), Palette.Ink))))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Palette.Ink.copy(alpha = 0.75f), Color.Transparent))))
+        if (title != null) {
+            Column(
+                Modifier.align(Alignment.BottomStart).padding(start = 20.dp, end = 20.dp, bottom = 18.dp).widthIn(max = 560.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(title, style = if (compact) type.headline else type.display, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                text?.let { Text(it, style = type.bodySmall.copy(color = Palette.Text), maxLines = 3, overflow = TextOverflow.Ellipsis) }
+                TallyRow(onClick = onPlay, modifier = Modifier.width(190.dp).height(48.dp)) {
+                    Text("▶  " + stringResource(R.string.vod_play), style = type.title, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 16.dp))
+                }
+            }
+        }
+    }
+}
+
+/** Title line and one horizontal row of tiles; "see all" opens the full category. */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun ShelfRow(title: String, onAll: (() -> Unit)?, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
+    val type = LocalTallyType.current
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = type.headline, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            if (onAll != null) {
+                TallyRow(onClick = onAll, modifier = Modifier.height(38.dp)) {
+                    Text(stringResource(R.string.vod_see_all) + "  ›", style = type.label.copy(color = Palette.Text), modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp))
+                }
+            }
+        }
+        LazyRow(
+            Modifier.fillMaxWidth().focusRestorer(),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun RowPlaceholder(width: androidx.compose.ui.unit.Dp) {
+    Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        repeat(4) { Box(Modifier.width(width).aspectRatio(16f / 10f).background(Palette.Raised)) }
+    }
+}
+
+/** First titles of one category of the user's sources (a single indexed query). */
+@Composable
+private fun SourceRow(
+    s: VodSection.Playlist,
+    region: String?,
+    tileWidth: androidx.compose.ui.unit.Dp,
+    offerHero: (Pick) -> Unit,
+    open: (Pick) -> Unit,
+    onAll: () -> Unit,
+) {
+    val c = (LocalContext.current.applicationContext as TclApp).container
+    var rows by remember(s.group, s.kind, region) { mutableStateOf<List<ChannelEntity>?>(null) }
+    LaunchedEffect(s.group, s.kind, region) {
+        val got = c.db.channels().firstOfLineup(0, s.group, 0, s.kind, region, ROW_ITEMS)
+        rows = got
+        got.firstOrNull { it.logo != null }?.let { offerHero(Pick.Channel(it)) }
+    }
+    val list = rows
+    if (list == null) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(s.group.ifBlank { stringResource(R.string.group_none) }, style = LocalTallyType.current.headline, modifier = Modifier.padding(horizontal = 16.dp))
+            RowPlaceholder(tileWidth)
+        }
+        return
+    }
+    if (list.isEmpty()) return
+    ShelfRow(s.group.ifBlank { stringResource(R.string.group_none) }, onAll) {
+        items(list, key = { "c:" + it.id }) { ch -> ChannelPoster(ch, Modifier.width(tileWidth)) { open(Pick.Channel(ch)) } }
+    }
+}
+
+/** First page of a public-domain genre (cached for 30 minutes). */
+@Composable
+private fun ArchiveRow(
+    shelf: VodShelf,
+    genre: Genre,
+    tileWidth: androidx.compose.ui.unit.Dp,
+    offerHero: (Pick) -> Unit,
+    open: (Pick) -> Unit,
+    onAll: () -> Unit,
+) {
+    val c = (LocalContext.current.applicationContext as TclApp).container
+    var rows by remember(shelf, genre) { mutableStateOf<List<VodItem>?>(null) }
+    LaunchedEffect(shelf, genre) {
+        val got = try {
+            c.vod.archiveShelf(shelf, 1, null, genre)
+        } catch (e: IOException) {
+            emptyList()
+        } catch (e: IllegalArgumentException) {
+            emptyList()
+        }
+        rows = got
+        got.firstOrNull { !it.description.isNullOrBlank() }?.let { offerHero(Pick.Archive(it)) }
+    }
+    val list = rows
+    if (list == null) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(genreLabel(genre), style = LocalTallyType.current.headline, modifier = Modifier.padding(horizontal = 16.dp))
+            RowPlaceholder(tileWidth)
+        }
+        return
+    }
+    if (list.isEmpty()) return
+    ShelfRow(genreLabel(genre), onAll) {
+        items(list.take(ROW_ITEMS), key = { "a:" + it.key }) { v -> PosterTile(v, Modifier.width(tileWidth)) { open(Pick.Archive(v)) } }
+    }
+}

@@ -265,4 +265,7 @@
     <string name="cast_note">Certaines chaînes exigent des en-têtes particuliers ou une région : elles peuvent ne pas passer par Chromecast.</string>
     <string name="remote_pair_title">Associer un téléphone</string>
     <string name="remote_pair_hint">Saisissez ce code dans TCL Stream X sur le téléphone.</string>
+    <string name="vod_featured">À la une</string>
+    <string name="vod_see_all">Tout voir</string>
+    <string name="vod_play">Lecture</string>
 </resources>

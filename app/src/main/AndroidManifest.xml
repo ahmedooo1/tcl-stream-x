@@ -12,6 +12,19 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
+    <!-- Official free services the app can open (package visibility, Android 11+). -->
+    <queries>
+        <package android:name="fr.francetv.pluzz" />
+        <package android:name="tv.arte.plus7" />
+        <package android:name="fr.tf1.mytf1" />
+        <package android:name="fr.m6.m6replay" />
+        <package android:name="tv.pluto.android" />
+        <package android:name="tv.wuaki" />
+        <package android:name="net.mbc.shahid" />
+        <package android:name="com.google.android.youtube.tv" />
+        <package android:name="com.google.android.youtube" />
+    </queries>
+
     <application
         android:name=".TclApp"
         android:allowBackup="false"

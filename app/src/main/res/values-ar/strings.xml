@@ -265,4 +265,7 @@
     <string name="cast_note">بعض القنوات تتطلب ترويسات خاصة أو منطقة جغرافية معيّنة، فقد لا تعمل عبر Chromecast.</string>
     <string name="remote_pair_title">ربط هاتف</string>
     <string name="remote_pair_hint">أدخل هذا الرمز في TCL Stream X على الهاتف.</string>
+    <string name="vod_featured">الواجهة</string>
+    <string name="vod_see_all">عرض الكل</string>
+    <string name="vod_play">تشغيل</string>
 </resources>

@@ -78,29 +78,51 @@
  ],
  "services": [
   {
-   "name": "arte.tv",
-   "query": "arte",
-   "lang": "fr"
-  },
-  {
    "name": "france.tv",
    "query": "france.tv",
-   "lang": "fr"
+   "lang": "fr",
+   "pkg": "fr.francetv.pluzz"
+  },
+  {
+   "name": "arte.tv",
+   "query": "arte",
+   "lang": "fr",
+   "pkg": "tv.arte.plus7"
+  },
+  {
+   "name": "TF1+",
+   "query": "TF1+",
+   "lang": "fr",
+   "pkg": "fr.tf1.mytf1"
+  },
+  {
+   "name": "M6+",
+   "query": "M6+",
+   "lang": "fr",
+   "pkg": "fr.m6.m6replay"
   },
   {
    "name": "Pluto TV",
    "query": "Pluto TV",
-   "lang": "fr"
+   "lang": "fr",
+   "pkg": "tv.pluto.android"
   },
   {
    "name": "Rakuten TV",
    "query": "Rakuten TV",
-   "lang": "fr"
+   "lang": "fr",
+   "pkg": "tv.wuaki"
   },
   {
    "name": "ADN (Animation Digital Network)",
    "query": "ADN Animation Digital Network",
    "lang": "fr"
+  },
+  {
+   "name": "Shahid",
+   "query": "Shahid",
+   "lang": "ar",
+   "pkg": "net.mbc.shahid"
   },
   {
    "name": "AWAAN",
@@ -115,7 +137,8 @@
   {
    "name": "YouTube",
    "query": "YouTube",
-   "lang": "all"
+   "lang": "all",
+   "pkg": "com.google.android.youtube.tv"
   }
  ]
 }

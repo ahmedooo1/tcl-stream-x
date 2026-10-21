@@ -77,8 +77,9 @@ data class OpenFilm(
     val poster: String? = null,
 )
 
+/** An official free service: opened in its own app when installed ([pkg]), otherwise found in the Play Store. */
 @Serializable
-data class FreeService(val name: String, val query: String, val lang: String)
+data class FreeService(val name: String, val query: String, val lang: String, val pkg: String? = null)
 
 data class LocalVideo(val id: Long, val title: String, val uri: String, val durationMs: Long, val folder: String?)
 
@@ -98,7 +99,22 @@ class VodRepository(private val context: Context, private val http: OkHttpClient
     /**
      * [genre] is one of the fixed clauses of [Genre] (never user text); [query] is sanitized user text.
      */
-    suspend fun archiveShelf(shelf: VodShelf, page: Int, query: String? = null, genre: Genre? = null): List<VodItem> = withContext(Dispatchers.IO) {
+    /** Recent shelf answers kept in memory: going back to a page or a row is instant. */
+    private val shelfCache = object : LinkedHashMap<String, Pair<Long, List<VodItem>>>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<Long, List<VodItem>>>?) = size > 80
+    }
+
+    suspend fun archiveShelf(shelf: VodShelf, page: Int, query: String? = null, genre: Genre? = null): List<VodItem> {
+        val key = "$shelf|$page|${query.orEmpty()}|${genre?.name}"
+        synchronized(shelfCache) { shelfCache[key] }?.let { (at, items) ->
+            if (System.currentTimeMillis() - at < SHELF_TTL_MS) return items
+        }
+        val items = fetchShelf(shelf, page, query, genre)
+        synchronized(shelfCache) { shelfCache[key] = System.currentTimeMillis() to items }
+        return items
+    }
+
+    private suspend fun fetchShelf(shelf: VodShelf, page: Int, query: String?, genre: Genre?): List<VodItem> = withContext(Dispatchers.IO) {
         val base = when (shelf) {
             VodShelf.MOVIES -> "collection:(feature_films) AND mediatype:(movies)"
             VodShelf.SERIES -> "collection:(classic_tv) AND mediatype:(movies)"
@@ -216,6 +232,7 @@ class VodRepository(private val context: Context, private val http: OkHttpClient
 
     companion object {
         const val PAGE_SIZE = 40
+        private const val SHELF_TTL_MS = 30 * 60_000L
         private const val MAX_LOCAL = 2000
         private val IDENTIFIER = Regex("^[A-Za-z0-9._-]{1,100}$")
         private val HTML_TAG = Regex("<[^>]*>")
