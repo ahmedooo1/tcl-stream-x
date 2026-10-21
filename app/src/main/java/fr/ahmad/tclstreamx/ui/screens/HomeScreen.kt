@@ -4,12 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -29,112 +30,129 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import fr.ahmad.tclstreamx.R
 import fr.ahmad.tclstreamx.TclApp
 import fr.ahmad.tclstreamx.data.db.ChannelEntity
+import fr.ahmad.tclstreamx.data.db.ContentKind
 import fr.ahmad.tclstreamx.data.db.StreamStatus
 import fr.ahmad.tclstreamx.data.db.VodProgressEntity
 import fr.ahmad.tclstreamx.player.PlayItem
 import fr.ahmad.tclstreamx.player.PlaybackController
+import fr.ahmad.tclstreamx.ui.components.AppIcon
 import fr.ahmad.tclstreamx.ui.components.ChannelLogo
 import fr.ahmad.tclstreamx.ui.components.Clock
-import fr.ahmad.tclstreamx.ui.components.EmptyState
 import fr.ahmad.tclstreamx.ui.components.ProgressLine
 import fr.ahmad.tclstreamx.ui.components.StatusDot
 import fr.ahmad.tclstreamx.ui.components.TallyCard
 import fr.ahmad.tclstreamx.ui.nav.Navigator
+import fr.ahmad.tclstreamx.ui.nav.Routes
+import fr.ahmad.tclstreamx.ui.nav.SECTIONS
+import fr.ahmad.tclstreamx.ui.nav.Section
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
-import fr.ahmad.tclstreamx.ui.theme.screenPadding
 import fr.ahmad.tclstreamx.ui.theme.Palette
+import fr.ahmad.tclstreamx.ui.theme.isCompactWidth
+import fr.ahmad.tclstreamx.ui.theme.isTv
+import fr.ahmad.tclstreamx.ui.theme.screenPadding
 import java.text.DateFormat
-import java.util.Calendar
 import java.util.Date
 
 /**
- * Home reads like the front page of a TV guide: a masthead with the time, then shelves ordered
- * by intent (resume, favorites, news, sport) instead of a promotional hero.
+ * Home is a launcher: first a grid of big section buttons (each with its icon and what is inside),
+ * then the shelves people come back for (resume, recent, favorites, news, free sport).
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveViewModel) {
     val c = (LocalContext.current.applicationContext as TclApp).container
     val type = LocalTallyType.current
-    val recent by remember { c.db.channels().observeRecent(12) }.collectAsState(initial = emptyList())
-    val favorites by remember { c.db.channels().observeFavorites(30) }.collectAsState(initial = emptyList())
-    val news by remember { c.db.channels().observeCategory("news") }.collectAsState(initial = emptyList())
-    val sports by remember { c.db.channels().observeCategory("sports") }.collectAsState(initial = emptyList())
+    val compact = isCompactWidth()
+    val tv = isTv()
+    val dao = c.db.channels()
+    val recent by remember { dao.observeRecent(12) }.collectAsState(initial = emptyList())
+    val favorites by remember { dao.observeFavorites(30) }.collectAsState(initial = emptyList())
+    val news by remember { dao.observeCategory("news") }.collectAsState(initial = emptyList())
+    val sports by remember { dao.observeCategory("sports") }.collectAsState(initial = emptyList())
     val resume by remember { c.db.vodProgress().observeContinue(12) }.collectAsState(initial = emptyList())
-    val total by live.totalCount.collectAsState()
-    val firstFocus = remember { FocusRequester() }
-    val onlineCount = (news + sports).count { it.status == StreamStatus.ONLINE.code }
+    val liveCount by remember { dao.observeCount(0, ContentKind.LIVE) }.collectAsState(initial = 0)
+    val movieCount by remember { dao.observeCount(0, ContentKind.MOVIE) }.collectAsState(initial = 0)
+    val seriesCount by remember { dao.observeCount(0, ContentKind.SERIES) }.collectAsState(initial = 0)
+    val playlists by live.playlists.collectAsState()
+    val firstTile = remember { FocusRequester() }
 
     fun play(ch: ChannelEntity) {
         playback.play(PlayItem.fromChannel(ch, null))
         navigator.openPlayer()
     }
 
-    LaunchedEffect(recent.isNotEmpty() || news.isNotEmpty()) { runCatching { firstFocus.requestFocus() } }
+    // Remote only: on a phone, requesting focus would scroll rows and crop the first cards.
+    LaunchedEffect(tv) { if (tv) runCatching { firstTile.requestFocus() } }
+
+    val tiles = SECTIONS.filter { it.route != Routes.HOME }
+    val subtitles = tiles.associate { s ->
+        s.route to when (s.route) {
+            Routes.LIVE -> stringResource(R.string.home_tile_channels, liveCount)
+            Routes.MOVIES -> if (movieCount > 0) stringResource(R.string.home_tile_titles, movieCount) else stringResource(R.string.home_tile_public)
+            Routes.SERIES -> if (seriesCount > 0) stringResource(R.string.home_tile_titles, seriesCount) else stringResource(R.string.home_tile_public)
+            Routes.SPORTS -> stringResource(R.string.home_tile_matches)
+            Routes.ANIMATION -> stringResource(R.string.home_tile_public)
+            Routes.LOCAL -> stringResource(R.string.home_tile_local)
+            Routes.SEARCH -> stringResource(R.string.home_tile_search)
+            Routes.PLAYLISTS -> stringResource(R.string.home_tile_playlists, playlists.size)
+            else -> stringResource(R.string.home_tile_settings)
+        }
+    }
+    val columns = if (compact) 2 else 5
+    val tileWidth: Dp = if (compact) 168.dp else 210.dp
+    val shelves = listOf(
+        stringResource(R.string.home_recent) to recent,
+        stringResource(R.string.home_favorites) to favorites,
+        stringResource(R.string.home_news) to news,
+        stringResource(R.string.home_free_sports) to sports,
+    ).filter { it.second.isNotEmpty() }
+    val continueTitle = stringResource(R.string.home_continue)
 
     LazyColumn(
         Modifier.fillMaxSize().focusRestorer(),
-        contentPadding = screenPadding(end = 0.dp),
-        verticalArrangement = Arrangement.spacedBy(30.dp),
+        contentPadding = screenPadding(),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 18.dp else 26.dp),
     ) {
-        item {
-            Row(Modifier.fillMaxWidth().padding(end = 40.dp), verticalAlignment = Alignment.Bottom) {
+        item(key = "header") {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(18.dp).background(Palette.Tally))
+                Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-                    Text(
-                        stringResource(if (hour in 5..17) R.string.home_greeting_morning else R.string.home_greeting_evening),
-                        style = type.display,
-                    )
-                    Text(
-                        DateFormat.getDateInstance(DateFormat.FULL).format(Date()),
-                        style = type.body.copy(color = Palette.TextDim),
-                    )
+                    Text(stringResource(R.string.app_name), style = type.headline, maxLines = 1)
+                    Text(DateFormat.getDateInstance(DateFormat.FULL).format(Date()), style = type.bodySmall, maxLines = 1)
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Clock()
-                    Text(stringResource(R.string.home_channels_count, total, onlineCount), style = type.mono)
-                }
+                Clock()
             }
-            Box(Modifier.padding(top = 18.dp, end = 40.dp).fillMaxWidth().height(1.dp).background(Palette.Hairline))
         }
 
-        val shelves = listOf(
-            R.string.home_recent to recent,
-            R.string.home_favorites to favorites,
-            R.string.home_news to news,
-            R.string.home_free_sports to sports,
-        ).filter { it.second.isNotEmpty() }
-        if (shelves.isEmpty() && resume.isEmpty()) {
-            item { EmptyState(stringResource(R.string.home_empty_title), stringResource(R.string.home_empty_body)) }
-        }
-        shelves.forEachIndexed { shelfIndex, (title, list) ->
-            item(key = "shelf$title") {
-                Shelf(stringResource(title)) {
-                    LazyRow(
-                        Modifier.focusRestorer(),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        contentPadding = PaddingValues(end = 40.dp),
-                    ) {
-                        items(list, key = { it.channelKey + title }) { ch ->
-                            val mod = if (shelfIndex == 0 && ch == list.first()) Modifier.focusRequester(firstFocus) else Modifier
-                            ChannelTile(ch, mod) { play(ch) }
-                        }
-                    }
+        // Section buttons, in rows of 2 (phone) or 5 (TV).
+        items(tiles.chunked(columns), key = { row -> "tiles:" + row.first().route }) { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                row.forEach { s ->
+                    SectionTile(
+                        section = s,
+                        subtitle = subtitles.getValue(s.route),
+                        modifier = Modifier.weight(1f).let { if (s == tiles.first()) it.focusRequester(firstTile) else it },
+                        onClick = { navigator.go(s.route) },
+                    )
                 }
+                repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
+
         if (resume.isNotEmpty()) {
             item(key = "resume") {
-                Shelf(stringResource(R.string.home_continue)) {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp), contentPadding = PaddingValues(end = 40.dp)) {
+                Shelf(continueTitle) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(resume, key = { it.key }) { r ->
-                            ResumeTile(r) {
+                            ResumeTile(r, tileWidth) {
                                 playback.play(PlayItem(key = r.key, title = r.title, urls = listOf(r.uri), isLive = false, poster = r.poster))
                                 navigator.openPlayer()
                             }
@@ -143,12 +161,35 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                 }
             }
         }
+        shelves.forEach { (title, list) ->
+            item(key = "shelf:$title") {
+                Shelf(title) {
+                    LazyRow(Modifier.focusRestorer(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(list, key = { it.channelKey + title }) { ch -> ChannelTile(ch, Modifier.width(tileWidth)) { play(ch) } }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTile(section: Section, subtitle: String, modifier: Modifier, onClick: () -> Unit) {
+    val type = LocalTallyType.current
+    TallyCard(onClick = onClick, modifier = modifier.height(112.dp)) { focused ->
+        Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            AppIcon(section.icon, if (focused) Palette.Tally else Palette.Text, size = 30.dp)
+            Column {
+                Text(stringResource(section.label), style = type.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(subtitle, style = type.mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
     }
 }
 
 @Composable
 private fun Shelf(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(title, style = LocalTallyType.current.headline)
         content()
     }
@@ -157,40 +198,35 @@ private fun Shelf(title: String, content: @Composable () -> Unit) {
 @Composable
 fun ChannelTile(ch: ChannelEntity, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val type = LocalTallyType.current
-    TallyCard(onClick = onClick, modifier = modifier.width(216.dp)) { focused ->
+    TallyCard(onClick = onClick, modifier = modifier) { focused ->
         Column {
-            Box(Modifier.fillMaxWidth().height(108.dp)) {
-                ChannelLogo(ch.logo, ch.name, Modifier.fillMaxSize().padding(18.dp))
-                Text(
-                    ch.position.toString(),
-                    style = type.numeralSmall.copy(color = if (focused) Palette.Tally else Palette.TextFaint),
-                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-                )
-                StatusDot(StreamStatus.of(ch.status), Modifier.align(Alignment.TopEnd).padding(10.dp))
+            Box(Modifier.fillMaxWidth().height(96.dp)) {
+                ChannelLogo(ch.logo, ch.name, Modifier.fillMaxSize().padding(14.dp))
+                StatusDot(StreamStatus.of(ch.status), Modifier.align(Alignment.TopEnd).padding(8.dp))
             }
             Text(
                 ch.name,
                 style = type.body.copy(color = if (focused) Palette.Text else Palette.TextDim),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
             )
         }
     }
 }
 
 @Composable
-private fun ResumeTile(r: VodProgressEntity, onClick: () -> Unit) {
+private fun ResumeTile(r: VodProgressEntity, width: Dp, onClick: () -> Unit) {
     val type = LocalTallyType.current
-    TallyCard(onClick = onClick, modifier = Modifier.width(260.dp)) {
+    TallyCard(onClick = onClick, modifier = Modifier.width(width)) {
         Column {
-            Box(Modifier.fillMaxWidth().height(146.dp).background(Palette.Raised)) {
+            Box(Modifier.fillMaxWidth().height(96.dp).background(Palette.Raised)) {
                 if (r.poster != null) {
                     AsyncImage(model = r.poster, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 }
             }
             ProgressLine(r.positionMs.toFloat() / r.durationMs.coerceAtLeast(1), Modifier.fillMaxWidth())
-            Text(r.title, style = type.body, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(12.dp))
+            Text(r.title, style = type.body, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(10.dp))
         }
     }
 }

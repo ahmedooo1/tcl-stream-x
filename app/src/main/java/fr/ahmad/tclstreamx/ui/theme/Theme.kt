@@ -69,10 +69,20 @@ val LocalTallyType = staticCompositionLocalOf<TallyType> { error("TallyTheme mis
 @Composable
 fun TallyTheme(content: @Composable () -> Unit) {
     val arabic = LocalConfiguration.current.locales[0].language == "ar"
+    // Phones: the TV-scale display type would wrap a single word ("Bonjour") on two lines.
+    val phone = LocalConfiguration.current.screenWidthDp < 600
     val headlineFamily = if (arabic) PlexSans else Condensed
     val type = TallyType(
-        display = TextStyle(fontFamily = headlineFamily, fontWeight = FontWeight.Bold, fontSize = if (arabic) 44.sp else 58.sp, lineHeight = if (arabic) 60.sp else 58.sp, color = Palette.Text),
-        headline = TextStyle(fontFamily = headlineFamily, fontWeight = FontWeight.SemiBold, fontSize = if (arabic) 26.sp else 32.sp, lineHeight = if (arabic) 38.sp else 34.sp, color = Palette.Text),
+        display = TextStyle(
+            fontFamily = headlineFamily, fontWeight = FontWeight.Bold, color = Palette.Text,
+            fontSize = if (phone) (if (arabic) 28.sp else 34.sp) else if (arabic) 44.sp else 58.sp,
+            lineHeight = if (phone) (if (arabic) 40.sp else 36.sp) else if (arabic) 60.sp else 58.sp,
+        ),
+        headline = TextStyle(
+            fontFamily = headlineFamily, fontWeight = FontWeight.SemiBold, color = Palette.Text,
+            fontSize = if (phone) (if (arabic) 20.sp else 24.sp) else if (arabic) 26.sp else 32.sp,
+            lineHeight = if (phone) (if (arabic) 30.sp else 26.sp) else if (arabic) 38.sp else 34.sp,
+        ),
         title = TextStyle(fontFamily = PlexSans, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 26.sp, color = Palette.Text),
         body = TextStyle(fontFamily = PlexSans, fontWeight = FontWeight.Normal, fontSize = 15.sp, lineHeight = 22.sp, color = Palette.Text),
         bodySmall = TextStyle(fontFamily = PlexSans, fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 19.sp, color = Palette.TextDim),

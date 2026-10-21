@@ -159,6 +159,51 @@ def load_csv(name: str) -> list[dict]:
     return list(csv.DictReader(io.StringIO(fetch_text(f"{RAW}/database/master/data/{name}"))))
 
 
+# Second-level public suffixes seen in the scanned countries (enough for registrable-domain matching).
+TWO_LEVEL_SUFFIXES = {
+    "co.uk", "org.uk", "com.tr", "gov.tr", "com.sa", "net.sa", "gov.sa", "org.sa", "com.eg", "gov.eg", "org.qa",
+    "gov.qa", "com.qa", "com.lb", "com.jo", "gov.jo", "gov.om", "co.om", "co.ma", "gov.ma", "press.ma", "com.kw",
+    "gov.kw", "com.bh", "gov.bh", "gov.iq", "com.iq", "gov.ae", "co.ae", "com.ly", "gov.ly", "com.dz", "gov.dz",
+    "com.tn", "gov.tn", "com.sy", "gov.sy", "com.ps", "gov.ps", "com.ye", "com.sd", "com.au", "co.za", "com.br",
+}
+CATEGORY_MAP = {
+    "news": "news", "business": "news", "weather": "news", "legislative": "news",
+    "sports": "sports", "outdoor": "sports",
+    "kids": "kids", "animation": "kids", "family": "kids",
+    "music": "music",
+    "religious": "religious",
+    "documentary": "documentary", "education": "documentary", "science": "documentary", "culture": "documentary",
+    "travel": "documentary",
+}
+LANG_MAP = {"ara": "ar", "fra": "fr", "eng": "en", "spa": "es", "tur": "tr", "por": "pt", "deu": "de", "ita": "it", "kur": "ku", "fas": "fa"}
+AUTO_LANGS = {"ar", "fr", "en"}
+MAX_AUTO_CHANNELS = 700
+# Paid CDNs operated for broadcasters and FAST distributors. Restreams of pay-TV channels are not
+# hosted there in practice; raw IPs, free workers and throwaway domains never match these suffixes.
+TRUSTED_CDN_SUFFIXES = (
+    "akamaized.net", "akamaihd.net", "kwikmotion.com", "mangomolo.com", "mgmlcdn.com", "ercdn.net",
+    "amagi.tv", "wurl.com", "cdn-globecast.akamaized.net", "vedge.infomaniak.com", "easybroadcast.io",
+    "itworkscdn.net", "cloudfront.net", "getaj.net", "thehlive.com", "brightcove.com", "jwplayer.com",
+    "dailymotion.com", "dmcdn.net", "freecaster.com", "streamhub.io", "hlspackager.akamaized.net",
+)
+# Subscription brands are never shipped, whatever the host.
+PAID_BRANDS = re.compile(
+    r"bein|osn|canal\+?|canalplus|rmc ?sport|dazn|ssc|starz|eurosport|sky ?sport|mbc|rotana|shahid|tod|"
+    r"art |showtime|hbo|cinemax|paramount|disney|netflix|prime video|ufc|wwe|nba tv|nfl",
+    re.IGNORECASE,
+)
+
+
+def registrable(host: str) -> str:
+    host = host.lower().split(":")[0].strip(".")
+    if re.fullmatch(r"[0-9.]+", host):
+        return ""
+    parts = host.split(".")
+    if len(parts) >= 3 and ".".join(parts[-2:]) in TWO_LEVEL_SUFFIXES:
+        return ".".join(parts[-3:])
+    return ".".join(parts[-2:]) if len(parts) >= 2 else host
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--rules", default="catalog/official_sources.json")
@@ -169,9 +214,45 @@ def main() -> int:
     args = ap.parse_args()
 
     rules = json.load(open(args.rules, encoding="utf-8"))
-    by_id = {r["id"]: r for r in rules["rules"]}
-    found: dict[str, list[Candidate]] = {r["id"]: [] for r in rules["rules"]}
+    manual = {r["id"]: dict(r, source="manual") for r in rules["rules"]}
 
+    channels_db = {row["id"]: row for row in load_csv("channels.csv")}
+    feeds = {(row["channel"], row["id"]): row for row in load_csv("feeds.csv")}
+    blocked = {row["channel"] for row in load_csv("blocklist.csv")}
+    logos: dict[str, str] = {}
+    for row in load_csv("logos.csv"):
+        key = row["channel"] + ("@" + row["feed"] if row.get("feed") else "")
+        logos.setdefault(key, row["url"])
+        logos.setdefault(row["channel"], row["url"])
+
+    def auto_rule(tvg_id: str, url: str) -> dict | None:
+        """Accept a stream served from the same registrable domain as the channel's official website."""
+        base, _, feed = tvg_id.partition("@")
+        db = channels_db.get(base)
+        if not db or base in blocked or db.get("is_nsfw") == "TRUE" or db.get("closed"):
+            return None
+        if PAID_BRANDS.search(db.get("name", "")) or PAID_BRANDS.search(db.get("network") or ""):
+            return None
+        host = urllib.parse.urlparse(url).netloc.lower().split(":")[0]
+        site = registrable(urllib.parse.urlparse(db.get("website") or "").netloc)
+        if site and site == registrable(host):
+            source = "domain-match: " + site
+        else:
+            cdn = next((sfx for sfx in TRUSTED_CDN_SUFFIXES if host == sfx or host.endswith("." + sfx)), None)
+            if cdn is None:
+                return None
+            source = "broadcaster CDN: " + cdn
+        langs = (feeds.get((base, feed)) or {}).get("languages", "")
+        lang = LANG_MAP.get(langs.split(";")[0], langs.split(";")[0])
+        cats = [c for c in (db.get("categories") or "").split(";") if c]
+        cat = next((CATEGORY_MAP[c] for c in cats if c in CATEGORY_MAP), "entertainment")
+        if lang not in AUTO_LANGS and cat != "sports":
+            return None
+        return {"id": tvg_id, "url_regex": "", "cat": cat, "lang": lang or "en", "owner": db.get("name", base),
+                "source": source}
+
+    found: dict[str, list[Candidate]] = {}
+    meta: dict[str, dict] = {}
     for cc in rules["countries"]:
         try:
             text = fetch_text(f"{RAW}/iptv/master/streams/{cc}.m3u")
@@ -179,58 +260,68 @@ def main() -> int:
             print(f"warning: {e}", file=sys.stderr)
             continue
         for tvg_id, name, url, ua, ref in parse_m3u(text):
-            rule = by_id.get(tvg_id)
-            if not rule or not re.search(rule["url_regex"], url):
+            if not tvg_id:
                 continue
-            if any(c.url == url for c in found[tvg_id]):
+            rule = manual.get(tvg_id)
+            if rule is not None:
+                if not re.search(rule["url_regex"], url):
+                    continue
+            else:
+                rule = auto_rule(tvg_id, url)
+                if rule is None:
+                    continue
+            meta.setdefault(tvg_id, rule)
+            lst = found.setdefault(tvg_id, [])
+            if any(c.url == url for c in lst):
                 continue
             q = QUALITY.search(name)
-            found[tvg_id].append(Candidate(url=url, name=QUALITY.sub("", LABEL.sub("", name)).strip(),
-                                           quality=int(q.group(1)) if q else 0, user_agent=ua, referrer=ref,
-                                           labels=LABEL.findall(name)))
+            lst.append(Candidate(url=url, name=QUALITY.sub("", LABEL.sub("", name)).strip(),
+                                 quality=int(q.group(1)) if q else 0, user_agent=ua, referrer=ref,
+                                 labels=LABEL.findall(name)))
 
+    auto_ids = sorted((i for i in found if meta[i]["source"] != "manual"), key=lambda i: (meta[i]["cat"], meta[i]["lang"], i))
+    keep = [r["id"] for r in rules["rules"]] + auto_ids[:MAX_AUTO_CHANNELS]
     for tvg_id in found:
         found[tvg_id].sort(key=lambda c: -c.quality)
         found[tvg_id] = found[tvg_id][:MAX_CANDIDATES_PER_CHANNEL]
 
-    channels_db = {row["id"]: row for row in load_csv("channels.csv")}
-    logos: dict[str, str] = {}
-    for row in load_csv("logos.csv"):
-        key = row["channel"] + ("@" + row["feed"] if row.get("feed") else "")
-        logos.setdefault(key, row["url"])
-        logos.setdefault(row["channel"], row["url"])
-
     if args.check:
-        flat = [c for cands in found.values() for c in cands]
-        with ThreadPoolExecutor(max_workers=12) as pool:
+        flat = [c for i in keep for c in found.get(i, [])]
+        with ThreadPoolExecutor(max_workers=24) as pool:
             list(pool.map(probe, flat))
 
     out_channels, report = [], []
-    for rule in rules["rules"]:
-        cands = found[rule["id"]]
-        base_id, _, feed = rule["id"].partition("@")
+    for cid in keep:
+        rule = manual.get(cid) or meta[cid]
+        cands = found.get(cid, [])
+        base_id, _, feed = cid.partition("@")
         db = channels_db.get(base_id, {})
         if not cands:
-            report.append((rule["id"], db.get("name", base_id), "not_listed", "no URL matching the broadcaster rule"))
+            report.append((cid, db.get("name", base_id), "not_listed", "no URL matching the broadcaster rule"))
             continue
         cands.sort(key=lambda c: (c.status != "ok", -c.quality))
         best = cands[0]
+        # Auto-accepted channels are only shipped when they really answered (or are geo-restricted).
+        if args.check and rule.get("source") != "manual" and best.status not in ("ok", "forbidden_or_geo"):
+            report.append((cid, db.get("name", base_id), best.status, "auto channel dropped: " + best.detail))
+            continue
         display = best.name or db.get("name") or base_id
         out_channels.append({
-            "id": rule["id"],
+            "id": cid,
             "name": display,
-            "logo": logos.get(rule["id"]) or logos.get(base_id),
+            "logo": logos.get(cid) or logos.get(base_id),
             "category": rule["cat"],
             "language": rule["lang"],
             "country": db.get("country", ""),
             "website": db.get("website", ""),
             "owner": rule["owner"],
-            "geo": rule.get("geo"),
+            "geo": rule.get("geo") or ("restricted" if best.status == "forbidden_or_geo" or "Geo-blocked" in best.labels else None),
+            "provenance": rule.get("source", "manual"),
             "status": best.status,
             "streams": [{"url": c.url, "userAgent": c.user_agent, "referrer": c.referrer, "quality": c.quality,
                          "status": c.status, "detail": c.detail, "checkedAt": c.checked_at} for c in cands],
         })
-        report.append((rule["id"], display, best.status, best.detail))
+        report.append((cid, display, best.status, best.detail))
 
     payload = {
         "schema": 1,
@@ -242,14 +333,15 @@ def main() -> int:
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=1)
 
-    ok = sum(1 for r in report if r[2] == "ok")
+    ok = sum(1 for c in out_channels if c["status"] == "ok")
     with open(args.report, "w", encoding="utf-8") as f:
         f.write(f"# Built-in catalog check\n\nGenerated: {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())}  \n")
-        f.write(f"Checked from: {payload['checkedFrom']}  \nChannels with a reachable stream: {ok} / {len(report)}\n\n")
-        f.write("| Channel | Rule id | Result | Detail |\n|---|---|---|---|\n")
+        f.write(f"Checked from: {payload['checkedFrom']}  \n")
+        f.write(f"Channels shipped: {len(out_channels)} ({ok} verified ok) out of {len(report)} candidates\n\n")
+        f.write("| Channel | Id | Result | Detail |\n|---|---|---|---|\n")
         for rid, name, status, detail in report:
             f.write(f"| {name} | `{rid}` | {status} | {detail.replace('|', '/')} |\n")
-    print(f"catalog: {len(out_channels)} channels written, {ok} verified ok")
+    print(f"catalog: {len(out_channels)} channels written, {ok} verified ok, {len(auto_ids)} auto candidates")
     return 0
 
 

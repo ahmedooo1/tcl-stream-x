@@ -204,4 +204,17 @@
     <string name="vod_items">%1$d عنوان</string>
     <string name="vod_sections">الأقسام</string>
     <string name="vod_no_playlist_hint">أضف قائمة M3U تحتوي على أفلام أو مسلسلات وستظهر هنا مرتبة حسب المجموعات.</string>
+    <string name="home_tile_channels">%1$d قناة</string>
+    <string name="home_tile_titles">%1$d عنوان</string>
+    <string name="home_tile_public">الملكية العامة</string>
+    <string name="home_tile_matches">مباريات وقنوات مجانية</string>
+    <string name="home_tile_local">التلفاز وذاكرات USB</string>
+    <string name="home_tile_search">قنوات وأفلام ومسلسلات</string>
+    <string name="home_tile_playlists">%1$d قوائم</string>
+    <string name="home_tile_settings">اللغة والدليل والفحص</string>
+    <string name="home_sections">الأقسام</string>
+    <string name="cat_kids">أطفال</string>
+    <string name="cat_music">موسيقى</string>
+    <string name="cat_religious">دينية</string>
+    <string name="cat_documentary">وثائقية</string>
 </resources>

@@ -33,6 +33,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -71,6 +75,9 @@ fun TallyRow(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val pressed by interaction.collectIsPressedAsState()
+    val bar = if (focused || pressed) Palette.Tally else if (selected) Palette.TallyDeep else Color.Transparent
+    // The tally bar is drawn, not laid out: the row then sizes like a plain Box, which also works
+    // inside horizontal strips where the available width is unbounded.
     Box(
         modifier
             .background(
@@ -81,6 +88,14 @@ fun TallyRow(
                     else -> Color.Transparent
                 }
             )
+            .drawWithContent {
+                drawContent()
+                if (bar != Color.Transparent) {
+                    val w = 4.dp.toPx()
+                    val x = if (layoutDirection == LayoutDirection.Rtl) size.width - w else 0f
+                    drawRect(bar, topLeft = Offset(x, 0f), size = Size(w, size.height))
+                }
+            }
             .onFocusChanged { if (it.isFocused) onFocus?.invoke() }
             .combinedClickable(
                 interactionSource = interaction,
@@ -89,15 +104,7 @@ fun TallyRow(
                 onClick = onClick,
             )
     ) {
-        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-            Box(
-                Modifier
-                    .width(4.dp)
-                    .fillMaxHeight()
-                    .background(if (focused || pressed) Palette.Tally else if (selected) Palette.TallyDeep else Color.Transparent)
-            )
-            Box(Modifier.weight(1f)) { content(focused) }
-        }
+        content(focused)
     }
 }
 

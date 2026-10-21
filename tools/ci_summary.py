@@ -26,7 +26,7 @@ def load(p):
     except (OSError, ValueError):
         return None
 
-for cls in ["ImportOnDeviceTest", "PlaybackOnDeviceTest", "UiTourTest"]:
+for cls in ["ImportOnDeviceTest", "PlaybackOnDeviceTest", "PhoneTourTest", "UiTourTest"]:
     p = f"ci-out/{cls}.txt"
     if os.path.exists(p):
         ok = any(l.startswith("OK (") for l in open(p, encoding="utf-8", errors="replace"))

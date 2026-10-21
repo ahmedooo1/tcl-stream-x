@@ -5,15 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -42,6 +41,8 @@ import androidx.tv.material3.Text
 import fr.ahmad.tclstreamx.R
 import fr.ahmad.tclstreamx.data.vod.VodShelf
 import fr.ahmad.tclstreamx.player.PlaybackController
+import fr.ahmad.tclstreamx.ui.components.AppIcon
+import fr.ahmad.tclstreamx.ui.components.AppIcons
 import fr.ahmad.tclstreamx.ui.components.TallyRow
 import fr.ahmad.tclstreamx.ui.screens.HomeScreen
 import fr.ahmad.tclstreamx.ui.screens.LanScreen
@@ -73,20 +74,25 @@ object Routes {
     const val LAN = "lan"
 }
 
-private data class RailEntry(val route: String, val label: Int)
+data class Section(val route: String, val label: Int, val icon: ImageVector)
 
-private val RAIL = listOf(
-    RailEntry(Routes.HOME, R.string.nav_home),
-    RailEntry(Routes.LIVE, R.string.nav_live),
-    RailEntry(Routes.SPORTS, R.string.nav_sports),
-    RailEntry(Routes.MOVIES, R.string.nav_movies),
-    RailEntry(Routes.SERIES, R.string.nav_series),
-    RailEntry(Routes.ANIMATION, R.string.nav_animation),
-    RailEntry(Routes.LOCAL, R.string.nav_local),
-    RailEntry(Routes.SEARCH, R.string.nav_search),
-    RailEntry(Routes.PLAYLISTS, R.string.nav_playlists),
-    RailEntry(Routes.SETTINGS, R.string.nav_settings),
+/** Every section of the app, in menu order (TV rail, home grid). */
+val SECTIONS = listOf(
+    Section(Routes.HOME, R.string.nav_home, AppIcons.Home),
+    Section(Routes.LIVE, R.string.nav_live, AppIcons.LiveTv),
+    Section(Routes.MOVIES, R.string.nav_movies, AppIcons.Movie),
+    Section(Routes.SERIES, R.string.nav_series, AppIcons.Series),
+    Section(Routes.SPORTS, R.string.nav_sports, AppIcons.Sports),
+    Section(Routes.ANIMATION, R.string.nav_animation, AppIcons.Animation),
+    Section(Routes.LOCAL, R.string.nav_local, AppIcons.Folder),
+    Section(Routes.SEARCH, R.string.nav_search, AppIcons.Search),
+    Section(Routes.PLAYLISTS, R.string.nav_playlists, AppIcons.Playlist),
+    Section(Routes.SETTINGS, R.string.nav_settings, AppIcons.Settings),
 )
+private val RAIL = SECTIONS
+
+/** Phone bottom bar: the five main sections; the others are on the home screen grid. */
+private val BOTTOM = SECTIONS.take(5)
 
 /** Navigation actions shared by screens. */
 class Navigator(private val nav: NavHostController) {
@@ -134,10 +140,10 @@ fun AppRoot(playback: PlaybackController) {
     }
 
     if (compact) {
-        // Portrait phone: sections as a scrollable tab strip on top, content below.
+        // Phone: content on top, a bottom bar with the main sections (thumb reach), no rail.
         Column(Modifier.fillMaxSize().background(Palette.Ink)) {
-            if (route != Routes.PLAYER) TopTabs(current = route, onSelect = navigator::go)
             host(Modifier.weight(1f).fillMaxWidth())
+            if (route != Routes.PLAYER) BottomBar(current = route, onSelect = navigator::go)
         }
     } else {
         Row(Modifier.fillMaxSize().background(Palette.Ink)) {
@@ -148,40 +154,45 @@ fun AppRoot(playback: PlaybackController) {
 }
 
 @Composable
-private fun TopTabs(current: String, onSelect: (String) -> Unit) {
+private fun BottomBar(current: String, onSelect: (String) -> Unit) {
     val type = LocalTallyType.current
-    val selectedIndex = RAIL.indexOfFirst { current.startsWith(it.route) }.coerceAtLeast(0)
-    LazyRow(
-        Modifier.fillMaxWidth().background(Palette.Graphite),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    val selectedRoute = BOTTOM.lastOrNull { current.startsWith(it.route) }?.route ?: Routes.HOME
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(Palette.Graphite)
+            .navigationBarsPadding()
+            .height(64.dp),
     ) {
-        itemsIndexed(RAIL, key = { _, e -> e.route }) { i, item ->
-            val selected = i == selectedIndex
-            TallyRow(onClick = { onSelect(item.route) }, selected = selected, modifier = Modifier.height(44.dp)) { focused ->
-                Text(
-                    stringResource(item.label),
-                    style = type.title.copy(color = if (focused || selected) Palette.Text else Palette.TextDim),
-                    maxLines = 1,
-                    modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp),
-                )
+        BOTTOM.forEach { item ->
+            val selected = item.route == selectedRoute
+            TallyRow(onClick = { onSelect(item.route) }, selected = selected, modifier = Modifier.weight(1f).fillMaxHeight()) { focused ->
+                Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                    AppIcon(item.icon, if (selected || focused) Palette.Tally else Palette.TextDim)
+                    Text(
+                        stringResource(item.label),
+                        style = type.label.copy(color = if (selected || focused) Palette.Text else Palette.TextDim),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * Collapsed, the rail is a strip of section numbers like a channel list; it widens with labels
- * only while it holds focus, so content keeps the whole screen the rest of the time.
+ * TV: collapsed, the rail is a column of icons; it widens with labels only while it holds focus,
+ * so content keeps the whole screen the rest of the time.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun Rail(current: String, onSelect: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val width by animateDpAsState(if (expanded) 236.dp else 76.dp, label = "rail")
+    val width by animateDpAsState(if (expanded) 240.dp else 72.dp, label = "rail")
     val type = LocalTallyType.current
     val requesters = remember { RAIL.map { FocusRequester() } }
-    val selectedIndex = RAIL.indexOfFirst { current.startsWith(it.route) }.coerceAtLeast(0)
+    val selectedIndex = RAIL.indexOfLast { current.startsWith(it.route) }.coerceAtLeast(0)
     Column(
         Modifier
             .width(width)
@@ -189,11 +200,11 @@ private fun Rail(current: String, onSelect: (String) -> Unit) {
             .background(Palette.Graphite)
             .onFocusChanged { expanded = it.hasFocus }
             .focusProperties { enter = { requesters[selectedIndex] } }
-            .padding(vertical = 28.dp),
+            .padding(vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Row(Modifier.padding(start = 22.dp, bottom = 26.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(14.dp).background(Palette.Tally))
+        Row(Modifier.padding(start = 24.dp, bottom = 22.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(16.dp).background(Palette.Tally))
             if (expanded) {
                 Spacer(Modifier.width(12.dp))
                 Text(stringResource(R.string.app_name), style = type.title, maxLines = 1)
@@ -206,14 +217,10 @@ private fun Rail(current: String, onSelect: (String) -> Unit) {
                 selected = selected,
                 modifier = Modifier.fillMaxWidth().height(48.dp).focusRequester(requesters[i]),
             ) { focused ->
-                Row(Modifier.fillMaxSize().padding(start = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "%02d".format(java.util.Locale.ROOT, i + 1),
-                        style = type.numeralSmall.copy(color = if (focused || selected) Palette.Text else Palette.TextFaint),
-                        modifier = Modifier.width(30.dp),
-                    )
+                Row(Modifier.fillMaxSize().padding(start = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                    AppIcon(item.icon, if (focused || selected) Palette.Text else Palette.TextFaint)
                     if (expanded) {
-                        Spacer(Modifier.width(14.dp))
+                        Spacer(Modifier.width(16.dp))
                         Text(
                             stringResource(item.label),
                             style = type.title.copy(color = if (focused || selected) Palette.Text else Palette.TextDim),

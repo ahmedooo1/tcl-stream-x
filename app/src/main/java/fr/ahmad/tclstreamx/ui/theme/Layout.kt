@@ -22,3 +22,12 @@ private const val MONITOR_MIN_DP = 900
 fun screenPadding(end: Dp = 40.dp): PaddingValues =
     if (isCompactWidth()) PaddingValues(start = 16.dp, end = if (end == 0.dp) 0.dp else 16.dp, top = 12.dp, bottom = 24.dp)
     else PaddingValues(start = 40.dp, end = end, top = 30.dp, bottom = 40.dp)
+
+/**
+ * True on Android TV / Google TV. Initial focus is only requested there: on a phone, requesting
+ * focus scrolls rows to bring the item into view, which crops the first cards.
+ */
+@Composable
+fun isTv(): Boolean =
+    (LocalConfiguration.current.uiMode and android.content.res.Configuration.UI_MODE_TYPE_MASK) ==
+        android.content.res.Configuration.UI_MODE_TYPE_TELEVISION

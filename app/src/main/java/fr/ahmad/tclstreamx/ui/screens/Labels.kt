@@ -19,13 +19,17 @@ fun groupLabel(raw: String): String {
     return if (raw in BUILTIN_CATEGORIES) categoryLabel(raw) else raw.ifEmpty { stringResource(R.string.group_none) }
 }
 
-private val BUILTIN_CATEGORIES = setOf("news", "sports", "entertainment")
+private val BUILTIN_CATEGORIES = setOf("news", "sports", "entertainment", "kids", "music", "religious", "documentary")
 
 @Composable
 private fun categoryLabel(c: String): String = stringResource(
     when (c) {
         "news" -> R.string.cat_news
         "sports" -> R.string.cat_sports
+        "kids" -> R.string.cat_kids
+        "music" -> R.string.cat_music
+        "religious" -> R.string.cat_religious
+        "documentary" -> R.string.cat_documentary
         else -> R.string.cat_entertainment
     }
 )
@@ -35,6 +39,10 @@ private fun languageLabel(code: String): String = when (code) {
     "ar" -> "العربية"
     "en" -> "English"
     "es" -> "Español"
+    "tr" -> "Türkçe"
+    "it" -> "Italiano"
+    "de" -> "Deutsch"
+    "pt" -> "Português"
     else -> code.uppercase()
 }
 

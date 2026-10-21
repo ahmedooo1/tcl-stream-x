@@ -64,7 +64,7 @@ class BuiltInCatalog(private val context: Context, private val db: AppDatabase) 
             PlaylistEntity(name = NAME, kind = PlaylistKind.BUILTIN, source = null)
         )
         val generation = (existing?.activeGeneration ?: 0) + 1
-        val order = listOf("news", "entertainment", "sports")
+        val order = listOf("news", "entertainment", "sports", "kids", "documentary", "music", "religious")
         val sorted = file.channels.sortedWith(compareBy({ order.indexOf(it.category) }, { languageRank(it.language) }))
         val rows = sorted.mapIndexed { index, ch ->
             val ordered = ch.streams.sortedBy { if (it.status == "ok") 0 else 1 }

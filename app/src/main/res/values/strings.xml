@@ -204,4 +204,17 @@
     <string name="vod_items">%1$d titres</string>
     <string name="vod_sections">Sections</string>
     <string name="vod_no_playlist_hint">Ajoutez une playlist M3U qui contient des films ou des séries : ils apparaîtront ici, triés par groupe.</string>
+    <string name="home_tile_channels">%1$d chaînes</string>
+    <string name="home_tile_titles">%1$d titres</string>
+    <string name="home_tile_public">Domaine public</string>
+    <string name="home_tile_matches">Matchs et chaînes gratuites</string>
+    <string name="home_tile_local">TV et clés USB</string>
+    <string name="home_tile_search">Chaînes, films, séries</string>
+    <string name="home_tile_playlists">%1$d listes</string>
+    <string name="home_tile_settings">Langue, guide, vérifications</string>
+    <string name="home_sections">Sections</string>
+    <string name="cat_kids">Jeunesse</string>
+    <string name="cat_music">Musique</string>
+    <string name="cat_religious">Religion</string>
+    <string name="cat_documentary">Découverte</string>
 </resources>
