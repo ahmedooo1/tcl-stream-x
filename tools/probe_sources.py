@@ -70,17 +70,20 @@ def main() -> int:
 
     guide = json.load(open("app/src/main/assets/sports_destinations.json", encoding="utf-8"))
     today = time.strftime("%Y%m%d")
-    lines.append("\n## Sports schedule (ESPN public scoreboard)\n\n| League | HTTP | Events (8 days) |\n|---|---|---|")
+    lines.append("\n## Sports schedule (ESPN public scoreboard, one request per day)\n\n| League | HTTP | Events (8 days) |\n|---|---|---|")
     end = time.strftime("%Y%m%d", time.gmtime(time.time() + 7 * 86400))
     for lg in guide["leagues"]:
-        url = f"https://site.api.espn.com/apis/site/v2/sports/{lg['sport']}/{lg['id']}/scoreboard?dates={today}-{end}&limit=200"
-        code, body = get(url, limit=20 * 1024 * 1024)
-        events = "?"
-        if code == 200:
-            try:
-                events = str(len(json.loads(body).get("events", [])))
-            except ValueError:
-                events = "invalid JSON"
+        total, codes = 0, set()
+        for k in range(8):
+            day = time.strftime("%Y%m%d", time.gmtime(time.time() + k * 86400))
+            code, body = get(f"https://site.api.espn.com/apis/site/v2/sports/{lg['sport']}/{lg['id']}/scoreboard?dates={day}", limit=20 * 1024 * 1024)
+            codes.add(code)
+            if code == 200:
+                try:
+                    total += len(json.loads(body).get("events", []))
+                except ValueError:
+                    codes.add("invalid JSON")
+        code, events = ",".join(map(str, sorted(codes, key=str))), str(total)
         lines.append(f"| {lg['id']} | {code} | {events} |")
 
     lines.append("\n### ESPN request variants (diagnostics)\n")

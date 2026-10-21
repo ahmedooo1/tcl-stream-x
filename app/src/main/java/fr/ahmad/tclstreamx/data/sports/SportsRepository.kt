@@ -5,6 +5,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -81,35 +83,39 @@ class SportsRepository(private val context: Context, private val http: OkHttpCli
     suspend fun schedule(force: Boolean = false): SportsResult = withContext(Dispatchers.IO) {
         cache?.let { if (!force && System.currentTimeMillis() - it.fetchedAt < CACHE_MS) return@withContext it }
         val today = LocalDate.now(ZoneId.systemDefault())
-        val range = "${today.minusDays(1).format(DAY)}-${today.plusDays(DAYS_AHEAD).format(DAY)}"
-        val failed = mutableListOf<String>()
+        // The endpoint rejects date ranges (HTTP 400, checked from CI): one request per league and day.
+        val days = (-1L..DAYS_AHEAD).map { today.plusDays(it).format(DAY) }
+        val failed = mutableSetOf<String>()
+        val gate = Semaphore(PARALLEL_REQUESTS)
         val matches = coroutineScope {
-            guide.leagues.map { league ->
+            guide.leagues.flatMap { league -> days.map { day -> league to day } }.map { (league, day) ->
                 async {
-                    try {
-                        fetchLeague(league, range)
-                    } catch (e: IOException) {
-                        synchronized(failed) { failed += league.id }
-                        emptyList()
-                    } catch (e: IllegalArgumentException) {
-                        synchronized(failed) { failed += league.id }
-                        emptyList()
+                    gate.withPermit {
+                        try {
+                            fetchLeague(league, day)
+                        } catch (e: IOException) {
+                            synchronized(failed) { failed += league.id }
+                            emptyList()
+                        } catch (e: IllegalArgumentException) {
+                            synchronized(failed) { failed += league.id }
+                            emptyList()
+                        }
                     }
                 }
-            }.awaitAll().flatten()
+            }.awaitAll().flatten().distinctBy { it.leagueId + it.id }
         }
         val now = Instant.now()
         val sorted = matches
             .filter { it.state != MatchState.FINISHED || it.start.isAfter(now.minusSeconds(6 * 3600)) }
             .sortedWith(compareBy<Match> { it.state != MatchState.LIVE }.thenBy { it.start })
-        SportsResult(sorted, failed, System.currentTimeMillis()).also { cache = it }
+        SportsResult(sorted, failed.toList(), System.currentTimeMillis()).also { cache = it }
     }
 
     fun rightsFor(region: String, leagueId: String): LeagueRights? =
         guide.regions[region]?.firstOrNull { it.league == leagueId }
 
-    private fun fetchLeague(league: LeagueRef, range: String): List<Match> {
-        val url = "$BASE/${league.sport}/${league.id}/scoreboard?dates=$range&limit=200"
+    private fun fetchLeague(league: LeagueRef, day: String): List<Match> {
+        val url = "$BASE/${league.sport}/${league.id}/scoreboard?dates=$day"
         val req = Request.Builder().url(url).header("User-Agent", "TCLStreamX/1.0").build()
         val body = http.newCall(req).execute().use { resp ->
             if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
@@ -163,6 +169,7 @@ class SportsRepository(private val context: Context, private val http: OkHttpCli
     companion object {
         private const val BASE = "https://site.api.espn.com/apis/site/v2/sports"
         private const val DAYS_AHEAD = 7L
+        private const val PARALLEL_REQUESTS = 6
         private const val CACHE_MS = 10 * 60_000L
         private val DAY = DateTimeFormatter.BASIC_ISO_DATE
 
