@@ -79,7 +79,13 @@ if pb:
                    f"{'yes' if r['firstFrameRendered'] else 'no'} | {r['video']} | {r['qualityOptions']} | {r['audioTracks']} | {r['textOptions']} | {r.get('error', '')} |")
 
 if os.path.exists("catalog/REPORT.md"):
-    out.append("\n" + open("catalog/REPORT.md", encoding="utf-8").read().replace("# Built-in catalog check", "## Built-in catalog check (from CI)"))
+    # Only the totals go in the notes (release notes are capped at 125 000 characters); REPORT.md is attached.
+    rep = open("catalog/REPORT.md", encoding="utf-8").read().splitlines()
+    head = [l for l in rep[:6] if l.strip() and not l.startswith("|")]
+    from collections import Counter
+    statuses = Counter(l.split("|")[3].strip() for l in rep if l.startswith("| ") and l.count("|") >= 5 and not l.startswith("| Channel"))
+    out.append("\n" + "\n".join(head).replace("# Built-in catalog check", "## Built-in catalog check (from CI)"))
+    out.append("\nResults: " + ", ".join(f"{k} {v}" for k, v in statuses.most_common()) + ". Full table: REPORT.md attached to this release.")
 if os.path.exists("catalog/SOURCES_REPORT.md"):
     out.append("\n" + open("catalog/SOURCES_REPORT.md", encoding="utf-8").read().replace("# Source probe", "## Other sources (from CI)"))
 

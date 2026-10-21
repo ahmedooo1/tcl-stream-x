@@ -75,7 +75,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cat catalog/REPORT.md > EARLY.md
+          # Release notes are limited to 125 000 characters: the full channel report is attached as a file.
+          head -n 6 catalog/REPORT.md > EARLY.md
           # A re-run of the same build reuses its release instead of failing on the existing tag.
           gh release create "build-${BUILD_NUMBER}" TCLStreamX-debug.apk catalog/REPORT.md \
             --title "TCL Stream X build ${BUILD_NUMBER}" --notes-file EARLY.md --prerelease \
@@ -157,7 +158,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           shopt -s nullglob
-          files=(RESULTS.md catalog/SOURCES_REPORT.md app/src/main/assets/catalog.json ci-out/*.json ci-out/*.png ci-out/*.txt)
+          files=(RESULTS.md catalog/REPORT.md catalog/SOURCES_REPORT.md app/src/main/assets/catalog.json ci-out/*.json ci-out/*.png ci-out/*.txt)
           gh release upload "build-${BUILD_NUMBER}" "${files[@]}" --clobber
           gh release edit "build-${BUILD_NUMBER}" --notes-file RESULTS.md
 
