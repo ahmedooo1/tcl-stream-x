@@ -37,6 +37,9 @@ class UiTourTest {
     @Test
     fun remoteOnlyTour() {
         inst.runOnMainSync { AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("fr")) }
+        // The phone tour before this one taps the screen, which leaves the device in touch mode; a TV
+        // never is. One key press first puts the emulator back in remote (non-touch) mode.
+        key(KeyEvent.KEYCODE_DPAD_UP)
         ActivityScenario.launch(MainActivity::class.java).use {
             shot("01-home-fr", 12_000)
             key(KeyEvent.KEYCODE_DPAD_CENTER, waitMs = 2_000)  // first section button: Chaînes
