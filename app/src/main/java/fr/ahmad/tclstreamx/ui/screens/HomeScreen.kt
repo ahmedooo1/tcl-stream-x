@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -57,6 +58,7 @@ import fr.ahmad.tclstreamx.ui.theme.Palette
 import fr.ahmad.tclstreamx.ui.theme.isCompactWidth
 import fr.ahmad.tclstreamx.ui.theme.isTv
 import fr.ahmad.tclstreamx.ui.theme.screenPadding
+import kotlinx.coroutines.delay
 import java.text.DateFormat
 import java.util.Date
 
@@ -89,7 +91,16 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     }
 
     // Remote only: on a phone, requesting focus would scroll rows and crop the first cards.
-    LaunchedEffect(tv) { if (tv) runCatching { firstTile.requestFocus() } }
+    // The first frame can come before the tiles are attached (cold start while the catalog installs):
+    // retry for a moment instead of leaving the focus on the rail.
+    LaunchedEffect(tv) {
+        if (!tv) return@LaunchedEffect
+        repeat(20) {
+            withFrameNanos { }
+            if (runCatching { firstTile.requestFocus() }.isSuccess) return@LaunchedEffect
+            delay(50)
+        }
+    }
 
     val tiles = SECTIONS.filter { it.route != Routes.HOME }
     val subtitles = tiles.associate { s ->
