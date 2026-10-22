@@ -274,4 +274,11 @@
     <string name="settings_receive_address">Adresse de cette TV : %1$s. Sur le téléphone, ouvrez une chaîne puis le bouton de diffusion.</string>
     <string name="settings_receive_off">Actif sur la TV quand l\'application est ouverte.</string>
     <string name="import_error_MISSING_LOGIN">serveur, nom d\'utilisateur et mot de passe sont nécessaires</string>
+    <string name="settings_history">Historique</string>
+    <string name="settings_history_clear">Effacer l\'historique (chaînes récentes, reprise des films)</string>
+    <string name="settings_history_confirm">Appuyer encore pour effacer</string>
+    <string name="settings_history_done">Historique effacé</string>
+    <string name="search_filter_all">Tout</string>
+    <string name="search_filter_online">Disponibles seulement</string>
+    <string name="search_filter_sources">Toutes les sources</string>
 </resources>

@@ -14,6 +14,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,22 +66,31 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
     val c = (LocalContext.current.applicationContext as TclApp).container
     val type = LocalTallyType.current
     var query by remember { mutableStateOf("") }
+    // Filters: section (-1 = all), source playlist (0 = all), country or language, available channels only.
+    var kind by remember { mutableIntStateOf(-1) }
+    var source by remember { mutableLongStateOf(0L) }
+    var region by remember { mutableStateOf<String?>(null) }
+    var onlineOnly by remember { mutableStateOf(false) }
     var results by remember { mutableStateOf(SearchResults(emptyList(), emptyList(), emptyList())) }
     var openSeries by remember { mutableStateOf<ChannelEntity?>(null) }
     val first = remember { FocusRequester() }
+    val playlists by c.db.playlists().observeAll().collectAsState(initial = emptyList())
+    val regions by remember(kind, source) { c.db.channels().observeRegions(source, kind) }.collectAsState(initial = emptyList())
 
-    LaunchedEffect(query) {
+    // Results follow the typing (short pause so every key does not start a query).
+    LaunchedEffect(query, kind, source, region, onlineOnly) {
         val q = M3uParser.normalize(query)
-        results = if (q.length < 2) {
-            SearchResults(emptyList(), emptyList(), emptyList())
-        } else {
-            val dao = c.db.channels()
-            SearchResults(
-                dao.searchKind(q, ContentKind.LIVE, PER_SECTION),
-                dao.searchKind(q, ContentKind.MOVIE, PER_SECTION),
-                dao.searchKind(q, ContentKind.SERIES, PER_SECTION),
-            )
+        if (q.length < 2) {
+            results = SearchResults(emptyList(), emptyList(), emptyList())
+            return@LaunchedEffect
         }
+        delay(250)
+        val dao = c.db.channels()
+        val online = if (onlineOnly) 1 else 0
+        suspend fun section(k: Int, limit: Int) =
+            if (kind < 0 || kind == k) dao.searchFiltered(q, k, source, region, online, limit) else emptyList()
+        val limit = if (kind < 0) PER_SECTION else PER_SECTION * 4
+        results = SearchResults(section(ContentKind.LIVE, limit), section(ContentKind.MOVIE, limit), section(ContentKind.SERIES, limit))
     }
     LaunchedEffect(Unit) { runCatching { first.requestFocus() } }
 
@@ -96,9 +111,37 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
         ) {
             item { Text(stringResource(R.string.nav_search), style = type.display, modifier = Modifier.padding(bottom = 12.dp)) }
             item {
-                InputField(query, stringResource(R.string.search_hint), onSubmit = { query = it }, rowModifier = Modifier.focusRequester(first))
-                Spacer(Modifier.height(12.dp))
+                InputField(
+                    query,
+                    stringResource(R.string.search_hint),
+                    onSubmit = { query = it },
+                    onChange = { query = it },
+                    rowModifier = Modifier.focusRequester(first),
+                )
+                Spacer(Modifier.height(10.dp))
             }
+            // ---- filters ----
+            item {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val kinds = listOf(-1 to R.string.search_filter_all, ContentKind.LIVE to R.string.search_live, ContentKind.MOVIE to R.string.search_movies, ContentKind.SERIES to R.string.search_series)
+                    items(kinds, key = { "k" + it.first }) { (k, label) ->
+                        FilterChip(stringResource(label), kind == k) { kind = k; region = null }
+                    }
+                    item(key = "online") {
+                        FilterChip("● " + stringResource(R.string.search_filter_online), onlineOnly) { onlineOnly = !onlineOnly }
+                    }
+                    item(key = "source") {
+                        val ids = listOf(0L) + playlists.map { it.id }
+                        val label = playlists.firstOrNull { it.id == source }?.name ?: stringResource(R.string.search_filter_sources)
+                        FilterChip("$label  ⇄", source != 0L) {
+                            source = ids[(ids.indexOf(source) + 1) % ids.size]
+                            region = null
+                        }
+                    }
+                }
+            }
+            item { RegionStrip(regions, region, { region = it }, Modifier.padding(top = 6.dp, bottom = 6.dp), PaddingValues(0.dp)) }
+
             if (query.length >= 2 && results.isEmpty) {
                 item { Text(stringResource(R.string.search_empty), style = type.body) }
             }
@@ -125,6 +168,18 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
                 navigator.openPlayer()
             }
         }
+    }
+}
+
+@Composable
+private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    TallyRow(onClick = onClick, selected = selected, modifier = Modifier.height(40.dp)) { focused ->
+        Text(
+            label,
+            style = LocalTallyType.current.label.copy(color = if (focused || selected) Palette.Text else Palette.TextDim),
+            maxLines = 1,
+            modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp),
+        )
     }
 }
 

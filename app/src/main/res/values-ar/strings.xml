@@ -274,4 +274,11 @@
     <string name="settings_receive_address">عنوان هذا التلفاز: %1$s. على الهاتف افتح قناة ثم زر الإرسال.</string>
     <string name="settings_receive_off">يعمل على التلفاز عندما يكون التطبيق مفتوحًا.</string>
     <string name="import_error_MISSING_LOGIN">يجب إدخال الخادم واسم المستخدم وكلمة المرور</string>
+    <string name="settings_history">السجل</string>
+    <string name="settings_history_clear">مسح السجل (القنوات الأخيرة ومتابعة المشاهدة)</string>
+    <string name="settings_history_confirm">اضغط مرة أخرى للمسح</string>
+    <string name="settings_history_done">تم مسح السجل</string>
+    <string name="search_filter_all">الكل</string>
+    <string name="search_filter_online">المتاحة فقط</string>
+    <string name="search_filter_sources">كل المصادر</string>
 </resources>

@@ -50,6 +50,7 @@ class SettingsStore(private val context: Context) {
     suspend fun current(): AppSettings = settings.first()
 
     suspend fun setLastChannel(key: String) = context.dataStore.edit { it[Keys.LAST_CHANNEL] = key }
+    suspend fun clearLastChannel() = context.dataStore.edit { it.remove(Keys.LAST_CHANNEL) }
     suspend fun setEpgUrl(url: String) = context.dataStore.edit { it[Keys.EPG_URL] = url.trim() }
     suspend fun setPreviewOnFocus(v: Boolean) = context.dataStore.edit { it[Keys.PREVIEW] = v }
     suspend fun setAutoCheck(v: Boolean) = context.dataStore.edit { it[Keys.AUTO_CHECK] = v }

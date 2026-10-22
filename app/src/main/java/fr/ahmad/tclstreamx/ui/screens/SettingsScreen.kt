@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -65,6 +67,40 @@ fun SettingsScreen() {
                         if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
                     )
                 }
+            }
+        }
+
+        item { Section(stringResource(R.string.settings_history)) }
+        item {
+            // Two presses: the first arms, the second clears.
+            var armed by remember { mutableStateOf(false) }
+            var cleared by remember { mutableStateOf(false) }
+            TallyRow(
+                onClick = {
+                    if (!armed) {
+                        armed = true
+                        cleared = false
+                    } else {
+                        armed = false
+                        c.appScope.launch {
+                            c.db.history().clear()
+                            c.db.vodProgress().clear()
+                            c.settings.clearLastChannel()
+                            cleared = true
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                Text(
+                    when {
+                        armed -> stringResource(R.string.settings_history_confirm)
+                        cleared -> stringResource(R.string.settings_history_done)
+                        else -> stringResource(R.string.settings_history_clear)
+                    },
+                    style = type.body.copy(color = if (armed) Palette.Tally else if (cleared) Palette.Signal else Palette.Text),
+                    modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp),
+                )
             }
         }
 

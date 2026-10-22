@@ -86,11 +86,11 @@ interface ChannelDao {
     @Query(
         """SELECT code, SUM(n) AS count FROM (
              SELECT c.country AS code, COUNT(*) AS n FROM channels c $ACTIVE
-             WHERE c.kind = :kind AND (:playlistId = 0 OR c.playlistId = :playlistId) AND c.country IS NOT NULL AND c.country != ''
+             WHERE (:kind < 0 OR c.kind = :kind) AND (:playlistId = 0 OR c.playlistId = :playlistId) AND c.country IS NOT NULL AND c.country != ''
              GROUP BY c.country
              UNION ALL
              SELECT c.language AS code, COUNT(*) AS n FROM channels c $ACTIVE
-             WHERE c.kind = :kind AND (:playlistId = 0 OR c.playlistId = :playlistId) AND c.language IS NOT NULL AND c.language != ''
+             WHERE (:kind < 0 OR c.kind = :kind) AND (:playlistId = 0 OR c.playlistId = :playlistId) AND c.language IS NOT NULL AND c.language != ''
              GROUP BY c.language
            ) GROUP BY code ORDER BY count DESC LIMIT 80"""
     )
@@ -139,6 +139,20 @@ interface ChannelDao {
            ORDER BY (c.nameNorm LIKE :query || '%') DESC, length(c.nameNorm), c.position LIMIT :limit"""
     )
     suspend fun search(query: String, limit: Int): List<ChannelEntity>
+
+    /**
+     * Search with filters: kind < 0 for every section, playlistId = 0 for every source, region = null for every
+     * country and language, online = 1 for channels that answered at their last check.
+     */
+    @Query(
+        """SELECT c.* FROM channels c $ACTIVE WHERE c.nameNorm LIKE '%' || :query || '%'
+           AND (:kind < 0 OR c.kind = :kind)
+           AND (:playlistId = 0 OR c.playlistId = :playlistId)
+           AND (:region IS NULL OR c.country = :region OR c.language = :region)
+           AND (:online = 0 OR c.status = 1)
+           ORDER BY (c.nameNorm LIKE :query || '%') DESC, length(c.nameNorm), c.position LIMIT :limit"""
+    )
+    suspend fun searchFiltered(query: String, kind: Int, playlistId: Long, region: String?, online: Int, limit: Int): List<ChannelEntity>
 
     /** Unified search restricted to one section (live, movies or series). */
     @Query(
@@ -195,6 +209,9 @@ interface HistoryDao {
     @Upsert
     suspend fun touch(h: HistoryEntity)
 
+    @Query("DELETE FROM history")
+    suspend fun clear()
+
     @Query("DELETE FROM history WHERE channelKey NOT IN (SELECT channelKey FROM history ORDER BY watchedAt DESC LIMIT :keep)")
     suspend fun trim(keep: Int)
 }
@@ -236,4 +253,7 @@ interface VodProgressDao {
 
     @Query("DELETE FROM vod_progress WHERE `key` = :key")
     suspend fun delete(key: String)
+
+    @Query("DELETE FROM vod_progress")
+    suspend fun clear()
 }
