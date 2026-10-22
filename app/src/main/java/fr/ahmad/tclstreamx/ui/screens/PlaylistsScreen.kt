@@ -152,11 +152,14 @@ fun PlaylistsScreen(navigator: Navigator) {
                 val server = xServer
                 val user = xUser
                 val pass = xPass
-                // The password leaves the screen state at once; only the encrypted copy is kept.
-                xPass = ""
                 c.appScope.launch {
                     try {
                         c.importer.addXtream(n, server, user, pass)
+                        // Saved (encrypted): the form is emptied only now, so a failed attempt can be corrected.
+                        xPass = ""
+                        xUser = ""
+                        xServer = ""
+                        xName = ""
                     } catch (e: ImportException) {
                         android.util.Log.i("TclStreamX", "xtream account rejected: ${e.error}")
                     }
