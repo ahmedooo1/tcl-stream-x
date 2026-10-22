@@ -150,17 +150,6 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
     }
     // Number entry: commit 1.8 s after the last digit.
     LaunchedEffect(digits) {
-        // Seek feedback in the middle of the picture: direction, amount and target time.
-        if (seekTotal != 0L && item != null && !item.isLive) {
-            Column(
-                Modifier.align(Alignment.Center).background(Palette.Ink.copy(alpha = 0.72f), androidx.compose.foundation.shape.RoundedCornerShape(14.dp)).padding(horizontal = 22.dp, vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text((if (seekTotal < 0) "⏪  −" else "⏩  +") + formatTime(kotlin.math.abs(seekTotal)), style = type.headline.copy(color = Palette.Text))
-                Text(formatTime(pendingSeek ?: position) + " / " + formatTime(duration), style = type.mono.copy(color = Palette.Text))
-            }
-        }
-
         if (digits.isNotEmpty()) {
             delay(1_800)
             digits.toIntOrNull()?.let(playback::playNumber)
