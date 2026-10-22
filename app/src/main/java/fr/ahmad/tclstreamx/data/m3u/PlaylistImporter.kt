@@ -39,7 +39,7 @@ sealed interface ImportState {
     data class Failed(val playlistName: String, val reason: ImportError) : ImportState
 }
 
-enum class ImportError { INVALID_URL, NETWORK, HTTP, EMPTY, TOO_LARGE, UNREADABLE, AUTH, INACTIVE, EXPIRED, FORMAT, KEY_LOST }
+enum class ImportError { INVALID_URL, NETWORK, HTTP, EMPTY, TOO_LARGE, UNREADABLE, AUTH, INACTIVE, EXPIRED, FORMAT, KEY_LOST, MISSING_LOGIN }
 
 class ImportException(val error: ImportError, message: String) : IOException(message)
 
@@ -96,8 +96,15 @@ class PlaylistImporter(
      * is stored in clear; the username and password are encrypted with a Keystore key.
      */
     suspend fun addXtream(name: String, serverInput: String, username: String, password: String): Long {
-        val server = XtreamUrls.normalizeServer(serverInput) ?: throw ImportException(ImportError.INVALID_URL, "invalid server")
-        if (username.isBlank() || password.isEmpty()) throw ImportException(ImportError.AUTH, "missing login")
+        val server = XtreamUrls.normalizeServer(serverInput)
+        if (server == null) {
+            _state.value = ImportState.Failed(name.ifBlank { serverInput.ifBlank { "Xtream" } }, ImportError.INVALID_URL)
+            throw ImportException(ImportError.INVALID_URL, "invalid server")
+        }
+        if (username.isBlank() || password.isEmpty()) {
+            _state.value = ImportState.Failed(name.ifBlank { hostOf(server) }, ImportError.MISSING_LOGIN)
+            throw ImportException(ImportError.MISSING_LOGIN, "missing login")
+        }
         val creds = XtreamCredentials(username.trim(), password)
         val label = name.ifBlank { hostOf(server) }
         _state.value = ImportState.Running(label, 0)

@@ -44,6 +44,7 @@ import fr.ahmad.tclstreamx.data.m3u.ImportException
 import fr.ahmad.tclstreamx.data.m3u.ImportState
 import fr.ahmad.tclstreamx.data.xtream.XtreamAccount
 import fr.ahmad.tclstreamx.ui.components.InputField
+import fr.ahmad.tclstreamx.ui.components.RowShape
 import fr.ahmad.tclstreamx.ui.components.TallyRow
 import fr.ahmad.tclstreamx.ui.nav.Navigator
 import fr.ahmad.tclstreamx.ui.nav.Routes
@@ -86,19 +87,7 @@ fun PlaylistsScreen(navigator: Navigator) {
         item { Text(stringResource(R.string.playlists_title), style = type.display) }
         item { Text(stringResource(R.string.playlists_legal), style = type.bodySmall, modifier = Modifier.padding(bottom = 14.dp)) }
 
-        item {
-            val text = when (val s = state) {
-                is ImportState.Running -> stringResource(R.string.import_running, s.playlistName, s.parsed)
-                is ImportState.Done -> stringResource(R.string.import_done, s.playlistName, s.channels, s.skipped)
-                is ImportState.Failed -> stringResource(R.string.import_failed, s.playlistName, importErrorText(s.reason))
-                ImportState.Idle -> null
-            }
-            if (text != null) {
-                Box(Modifier.fillMaxWidth().background(Palette.Raised).padding(14.dp)) {
-                    Text(text, style = type.body.copy(color = if (state is ImportState.Failed) Palette.Caution else Palette.Text))
-                }
-            }
-        }
+        item { ImportStatus(state) }
 
         item { Text(stringResource(R.string.playlists_add_url), style = type.headline, modifier = Modifier.padding(top = 10.dp)) }
         item {
@@ -117,16 +106,16 @@ fun PlaylistsScreen(navigator: Navigator) {
             }
             if (compact) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    InputField(name, stringResource(R.string.playlists_name_hint), onSubmit = { name = it }, rowModifier = Modifier.focusRequester(first))
-                    InputField(url, stringResource(R.string.playlists_url_hint), onSubmit = { url = it }, keyboardType = KeyboardType.Uri)
+                    InputField(name, stringResource(R.string.playlists_name_hint), onSubmit = { name = it }, onChange = { name = it }, rowModifier = Modifier.focusRequester(first))
+                    InputField(url, stringResource(R.string.playlists_url_hint), onSubmit = { url = it }, onChange = { url = it }, keyboardType = KeyboardType.Uri)
                     TallyRow(onClick = importNow, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                         Text(stringResource(R.string.playlists_add), style = type.title.copy(color = Palette.Tally), modifier = Modifier.align(Alignment.Center))
                     }
                 }
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    InputField(name, stringResource(R.string.playlists_name_hint), onSubmit = { name = it }, modifier = Modifier.width(260.dp), rowModifier = Modifier.focusRequester(first))
-                    InputField(url, stringResource(R.string.playlists_url_hint), onSubmit = { url = it }, modifier = Modifier.weight(1f), keyboardType = KeyboardType.Uri)
+                    InputField(name, stringResource(R.string.playlists_name_hint), onSubmit = { name = it }, onChange = { name = it }, modifier = Modifier.width(260.dp), rowModifier = Modifier.focusRequester(first))
+                    InputField(url, stringResource(R.string.playlists_url_hint), onSubmit = { url = it }, onChange = { url = it }, modifier = Modifier.weight(1f), keyboardType = KeyboardType.Uri)
                     TallyRow(onClick = importNow, modifier = Modifier.width(150.dp).height(52.dp)) {
                         Text(stringResource(R.string.playlists_add), style = type.title.copy(color = Palette.Tally), modifier = Modifier.align(Alignment.Center))
                     }
@@ -175,13 +164,13 @@ fun PlaylistsScreen(navigator: Navigator) {
                 Unit
             }
             val fields: @Composable (Modifier) -> Unit = { m ->
-                InputField(xServer, stringResource(R.string.xtream_server_hint), onSubmit = { xServer = it }, modifier = m, keyboardType = KeyboardType.Uri)
-                InputField(xUser, stringResource(R.string.xtream_user_hint), onSubmit = { xUser = it }, modifier = m)
-                InputField(xPass, stringResource(R.string.xtream_pass_hint), onSubmit = { xPass = it }, modifier = m, secret = true)
+                InputField(xServer, stringResource(R.string.xtream_server_hint), onSubmit = { xServer = it }, onChange = { xServer = it }, modifier = m, keyboardType = KeyboardType.Uri)
+                InputField(xUser, stringResource(R.string.xtream_user_hint), onSubmit = { xUser = it }, onChange = { xUser = it }, modifier = m)
+                InputField(xPass, stringResource(R.string.xtream_pass_hint), onSubmit = { xPass = it }, onChange = { xPass = it }, modifier = m, secret = true)
             }
             if (compact) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    InputField(xName, stringResource(R.string.playlists_name_hint), onSubmit = { xName = it })
+                    InputField(xName, stringResource(R.string.playlists_name_hint), onSubmit = { xName = it }, onChange = { xName = it })
                     fields(Modifier)
                     TallyRow(onClick = connect, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                         Text(stringResource(R.string.xtream_add), style = type.title.copy(color = Palette.Tally), modifier = Modifier.align(Alignment.Center))
@@ -190,12 +179,12 @@ fun PlaylistsScreen(navigator: Navigator) {
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        InputField(xName, stringResource(R.string.playlists_name_hint), onSubmit = { xName = it }, modifier = Modifier.width(260.dp))
-                        InputField(xServer, stringResource(R.string.xtream_server_hint), onSubmit = { xServer = it }, modifier = Modifier.weight(1f), keyboardType = KeyboardType.Uri)
+                        InputField(xName, stringResource(R.string.playlists_name_hint), onSubmit = { xName = it }, onChange = { xName = it }, modifier = Modifier.width(260.dp))
+                        InputField(xServer, stringResource(R.string.xtream_server_hint), onSubmit = { xServer = it }, onChange = { xServer = it }, modifier = Modifier.weight(1f), keyboardType = KeyboardType.Uri)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        InputField(xUser, stringResource(R.string.xtream_user_hint), onSubmit = { xUser = it }, modifier = Modifier.weight(1f))
-                        InputField(xPass, stringResource(R.string.xtream_pass_hint), onSubmit = { xPass = it }, modifier = Modifier.weight(1f), secret = true)
+                        InputField(xUser, stringResource(R.string.xtream_user_hint), onSubmit = { xUser = it }, onChange = { xUser = it }, modifier = Modifier.weight(1f))
+                        InputField(xPass, stringResource(R.string.xtream_pass_hint), onSubmit = { xPass = it }, onChange = { xPass = it }, modifier = Modifier.weight(1f), secret = true)
                         TallyRow(onClick = connect, modifier = Modifier.width(180.dp).height(52.dp)) {
                             Text(stringResource(R.string.xtream_add), style = type.title.copy(color = Palette.Tally), modifier = Modifier.align(Alignment.Center))
                         }
@@ -204,6 +193,8 @@ fun PlaylistsScreen(navigator: Navigator) {
             }
         }
 
+        // Feedback next to the form too (the status at the top is off screen once scrolled down).
+        item { ImportStatus(state) }
         item { Spacer(Modifier.height(18.dp)) }
         items(playlists, key = { it.id }) { p ->
             Column(Modifier.fillMaxWidth().background(Palette.Graphite).padding(vertical = 10.dp)) {
@@ -270,4 +261,24 @@ private fun AccountLine(a: XtreamAccount) {
         if (a.isTrial) stringResource(R.string.xtream_trial) else null,
     )
     Text(parts.joinToString(" · "), style = type.bodySmall.copy(color = if (a.status.equals("Active", true)) Palette.Signal else Palette.Caution))
+}
+
+/** Import or login progress: running (with the count read so far), done, or the reason it failed. */
+@Composable
+private fun ImportStatus(state: ImportState) {
+    val type = LocalTallyType.current
+    val text = when (state) {
+        is ImportState.Running -> stringResource(R.string.import_running, state.playlistName, state.parsed)
+        is ImportState.Done -> stringResource(R.string.import_done, state.playlistName, state.channels, state.skipped)
+        is ImportState.Failed -> stringResource(R.string.import_failed, state.playlistName, importErrorText(state.reason))
+        ImportState.Idle -> null
+    } ?: return
+    val color = when (state) {
+        is ImportState.Failed -> Palette.Caution
+        is ImportState.Done -> Palette.Signal
+        else -> Palette.Text
+    }
+    Box(Modifier.fillMaxWidth().background(Palette.Raised, RowShape).padding(14.dp)) {
+        Text((if (state is ImportState.Running) "⏳  " else "") + text, style = type.body.copy(color = color))
+    }
 }

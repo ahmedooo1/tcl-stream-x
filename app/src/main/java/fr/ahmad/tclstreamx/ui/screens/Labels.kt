@@ -87,6 +87,7 @@ fun importErrorText(e: ImportError): String = stringResource(
         ImportError.EXPIRED -> R.string.import_error_EXPIRED
         ImportError.FORMAT -> R.string.import_error_FORMAT
         ImportError.KEY_LOST -> R.string.import_error_KEY_LOST
+        ImportError.MISSING_LOGIN -> R.string.import_error_MISSING_LOGIN
     }
 )
 

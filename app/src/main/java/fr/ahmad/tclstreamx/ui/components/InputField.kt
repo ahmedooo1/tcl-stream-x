@@ -47,6 +47,8 @@ fun InputField(
     rowModifier: Modifier = Modifier,
     /** Password entry: masked on screen, no suggestions or learning by the keyboard. */
     secret: Boolean = false,
+    /** Reports every keystroke, so a form button pressed while the keyboard is open sees the text. */
+    onChange: ((String) -> Unit)? = null,
 ) {
     var editing by remember { mutableStateOf(false) }
     var edited by remember { mutableStateOf(false) }
@@ -75,7 +77,10 @@ fun InputField(
         LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
         BasicTextField(
             value = field,
-            onValueChange = { field = it.copy(text = it.text.take(MAX_LEN)) },
+            onValueChange = {
+                field = it.copy(text = it.text.take(MAX_LEN))
+                onChange?.invoke(field.text.trim())
+            },
             singleLine = true,
             textStyle = type.body.copy(color = Palette.Text),
             cursorBrush = SolidColor(Palette.Tally),

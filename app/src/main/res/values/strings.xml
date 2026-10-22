@@ -273,4 +273,5 @@
     <string name="settings_receive">Recevoir depuis le téléphone</string>
     <string name="settings_receive_address">Adresse de cette TV : %1$s. Sur le téléphone, ouvrez une chaîne puis le bouton de diffusion.</string>
     <string name="settings_receive_off">Actif sur la TV quand l\'application est ouverte.</string>
+    <string name="import_error_MISSING_LOGIN">serveur, nom d\'utilisateur et mot de passe sont nécessaires</string>
 </resources>
