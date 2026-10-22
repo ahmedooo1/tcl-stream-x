@@ -425,7 +425,8 @@ private fun PlaylistEpisodeShows(group: String, navigator: Navigator, playback: 
     }
     open?.let { show ->
         EpisodesPanel(show, Modifier.align(Alignment.CenterEnd), onClose = { open = null }) { ep ->
-            playback.play(PlayItem.fromChannel(ep, Lineup(0, group, false, ContentKind.SERIES)))
+            val following = show.episodes.drop(show.episodes.indexOf(ep) + 1).take(60).map { PlayItem.fromChannel(it, null) }
+            playback.play(PlayItem.fromChannel(ep, Lineup(0, group, false, ContentKind.SERIES)).copy(upNext = following))
             navigator.openPlayer()
         }
     }

@@ -83,7 +83,7 @@
     <string name="player_aspect_stretch">تمديد</string>
     <string name="player_trying">تجربة المصدر %1$s</string>
     <string name="player_hint">▲▼ تغيير القناة · OK المعلومات · ◀ القائمة · ▶ الخيارات</string>
-    <string name="player_hint_vod">OK تشغيل/إيقاف مؤقت · ◀▶ تقديم/ترجيع · ▲ الخيارات</string>
+    <string name="player_hint_vod">OK تشغيل/إيقاف مؤقت · ◀▶ تقديم/ترجيع (الضغط المطوّل أسرع) · ▲ الخيارات</string>
     <string name="player_no_tracks">لا توجد مسارات متاحة</string>
 
     <string name="sports_title">الرياضة</string>
@@ -284,4 +284,7 @@
     <string name="sports_all_channels">القنوات الرياضية</string>
     <string name="search_categories">التصنيفات</string>
     <string name="search_back">العودة إلى النتائج</string>
+    <string name="player_speed">السرعة</string>
+    <string name="player_sleep">إيقاف تلقائي</string>
+    <string name="player_sleep_left">بعد %1$d دقيقة</string>
 </resources>

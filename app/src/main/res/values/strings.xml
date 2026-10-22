@@ -83,7 +83,7 @@
     <string name="player_aspect_stretch">Étirer</string>
     <string name="player_trying">Essai de la source %1$s</string>
     <string name="player_hint">▲▼ changer de chaîne · OK infos · ◀ liste · ▶ options</string>
-    <string name="player_hint_vod">OK lecture/pause · ◀▶ reculer/avancer · ▲ options</string>
+    <string name="player_hint_vod">OK lecture/pause · ◀▶ reculer/avancer (maintenir = plus vite) · ▲ options</string>
     <string name="player_no_tracks">Aucune piste disponible</string>
 
     <string name="sports_title">Sport</string>
@@ -284,4 +284,7 @@
     <string name="sports_all_channels">Chaînes sport</string>
     <string name="search_categories">Catégories</string>
     <string name="search_back">Retour aux résultats</string>
+    <string name="player_speed">Vitesse</string>
+    <string name="player_sleep">Arrêt automatique</string>
+    <string name="player_sleep_left">dans %1$d min</string>
 </resources>

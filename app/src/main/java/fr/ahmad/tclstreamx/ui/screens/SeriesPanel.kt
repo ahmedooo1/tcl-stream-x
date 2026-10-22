@@ -67,12 +67,20 @@ fun SeriesPanel(series: ChannelEntity, modifier: Modifier, onClose: () -> Unit, 
     val episodes = info?.episodes.orEmpty().filter { it.season == season }
     LaunchedEffect(season, info) { if (episodes.isNotEmpty()) runCatching { firstEpisode.requestFocus() } }
 
-    fun play(ep: XtreamEpisode) {
-        val ref = c.xtream.episodeRef(series.url, ep) ?: return
+    fun itemFor(ep: XtreamEpisode): PlayItem? {
+        val ref = c.xtream.episodeRef(series.url, ep) ?: return null
         val code = "S%02dE%02d".format(Locale.ROOT, ep.season, ep.number)
         val title = listOf(series.name, code, ep.title.takeIf { it.isNotBlank() && !it.contains(series.name, true) })
             .filterNotNull().joinToString(" · ")
-        onPlay(PlayItem(key = "${series.channelKey}:e${ep.id}", title = title, urls = listOf(ref), isLive = false, poster = ep.image ?: series.logo))
+        return PlayItem(key = "${series.channelKey}:e${ep.id}", title = title, urls = listOf(ref), isLive = false, poster = ep.image ?: series.logo)
+    }
+
+    fun play(ep: XtreamEpisode) {
+        val all = info?.episodes.orEmpty()
+        val index = all.indexOf(ep)
+        // The following episodes, across seasons, play one after another.
+        val upNext = all.drop(index + 1).take(MAX_UP_NEXT).mapNotNull(::itemFor)
+        onPlay(itemFor(ep)?.copy(upNext = upNext) ?: return)
     }
 
     LazyColumn(
@@ -124,3 +132,5 @@ fun SeriesPanel(series: ChannelEntity, modifier: Modifier, onClose: () -> Unit, 
         }
     }
 }
+
+private const val MAX_UP_NEXT = 60

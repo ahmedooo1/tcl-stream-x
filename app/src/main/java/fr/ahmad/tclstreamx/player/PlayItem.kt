@@ -29,6 +29,8 @@ data class PlayItem(
     val tvgId: String? = null,
     val channel: ChannelEntity? = null,
     val lineup: Lineup? = null,
+    /** Episodes that follow this one, played automatically at the end (series). */
+    val upNext: List<PlayItem> = emptyList(),
 ) {
     companion object {
         fun fromChannel(c: ChannelEntity, lineup: Lineup?): PlayItem = PlayItem(

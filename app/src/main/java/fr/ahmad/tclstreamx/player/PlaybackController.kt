@@ -54,6 +54,10 @@ data class PlayerUi(
     val text: List<TrackOption> = emptyList(),
     val resizeMode: Int = 0,
     val isFavorite: Boolean = false,
+    /** Playback speed of films and episodes. */
+    val speed: Float = 1f,
+    /** Minutes left before the sleep timer stops playback, null when off. */
+    val sleepMinutes: Int? = null,
 )
 
 /**
@@ -85,7 +89,10 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
                 _ui.update { it.copy(issue = null, attempt = null) }
                 _ui.value.item?.channel?.let { markStatus(it, StreamStatus.ONLINE, "playback") }
             }
-            if (state == Player.STATE_ENDED) saveProgress(completed = true)
+            if (state == Player.STATE_ENDED) {
+                saveProgress(completed = true)
+                playNext()
+            }
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -127,7 +134,9 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
         urlIndex = 0
         forceHls = false
         autoRetries = 0
-        _ui.update { PlayerUi(item = item, resizeMode = it.resizeMode) }
+        _ui.update { PlayerUi(item = item, resizeMode = it.resizeMode, sleepMinutes = it.sleepMinutes) }
+        // Speed is per title: live channels always run at normal speed.
+        _player.value?.setPlaybackSpeed(1f)
         if (item.drm) {
             _ui.update { it.copy(issue = PlaybackIssue.DRM) }
             _player.value?.stop()
@@ -326,6 +335,52 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
         refreshTracks()
     }
 
+    /** Next episode of a series, if there is one. */
+    fun playNext(): Boolean {
+        val next = _ui.value.item?.upNext?.firstOrNull() ?: return false
+        play(next.copy(upNext = _ui.value.item!!.upNext.drop(1)))
+        return true
+    }
+
+    fun seekBy(deltaMs: Long) {
+        val p = _player.value ?: return
+        val duration = p.duration.takeIf { it != C.TIME_UNSET && it > 0 }
+        val target = (p.currentPosition + deltaMs).coerceAtLeast(0).let { if (duration != null) it.coerceAtMost(duration - 1_000) else it }
+        p.seekTo(target)
+    }
+
+    fun seekTo(positionMs: Long) {
+        _player.value?.seekTo(positionMs.coerceAtLeast(0))
+    }
+
+    fun cycleSpeed() {
+        val speeds = listOf(1f, 1.25f, 1.5f, 2f, 0.75f)
+        val next = speeds[(speeds.indexOf(_ui.value.speed).coerceAtLeast(0) + 1) % speeds.size]
+        _player.value?.setPlaybackSpeed(next)
+        _ui.update { it.copy(speed = next) }
+    }
+
+    private var sleepJob: Job? = null
+
+    /** Sleep timer: off, 15, 30, 60, 90 minutes, then off again. Stops playback when it runs out. */
+    fun cycleSleep() {
+        val steps = listOf(null, 15, 30, 60, 90)
+        val next = steps[(steps.indexOf(_ui.value.sleepMinutes) + 1) % steps.size]
+        sleepJob?.cancel()
+        _ui.update { it.copy(sleepMinutes = next) }
+        if (next == null) return
+        sleepJob = viewModelScope.launch {
+            var left = next
+            while (left > 0) {
+                delay(60_000)
+                left--
+                _ui.update { it.copy(sleepMinutes = left) }
+            }
+            _player.value?.pause()
+            _ui.update { it.copy(sleepMinutes = null) }
+        }
+    }
+
     fun cycleResize() {
         _ui.update { it.copy(resizeMode = (it.resizeMode + 1) % 3) }
     }
@@ -413,6 +468,7 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
         resolveJob?.cancel()
         progressJob?.cancel()
         _player.value?.stop()
+        sleepJob?.cancel()
         _ui.update { PlayerUi(resizeMode = it.resizeMode) }
     }
 

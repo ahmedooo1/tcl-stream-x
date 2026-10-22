@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
@@ -146,6 +149,17 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
     }
     // Number entry: commit 1.8 s after the last digit.
     LaunchedEffect(digits) {
+        // Seek feedback in the middle of the picture: direction, amount and target time.
+        if (seekTotal != 0L && item != null && !item.isLive) {
+            Column(
+                Modifier.align(Alignment.Center).background(Palette.Ink.copy(alpha = 0.72f), androidx.compose.foundation.shape.RoundedCornerShape(14.dp)).padding(horizontal = 22.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text((if (seekTotal < 0) "⏪  −" else "⏩  +") + formatTime(kotlin.math.abs(seekTotal)), style = type.headline.copy(color = Palette.Text))
+                Text(formatTime(pendingSeek ?: position) + " / " + formatTime(duration), style = type.mono.copy(color = Palette.Text))
+            }
+        }
+
         if (digits.isNotEmpty()) {
             delay(1_800)
             digits.toIntOrNull()?.let(playback::playNumber)
@@ -176,6 +190,38 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
         overlay = true
     }
 
+    // ---- seeking: presses and double taps add up, the player jumps once the user stops ----
+    var pendingSeek by remember { mutableStateOf<Long?>(null) }
+    var seekTotal by remember { mutableLongStateOf(0L) }
+    fun nudge(delta: Long) {
+        val p = player ?: return
+        val dur = p.duration.takeIf { it != C.TIME_UNSET && it > 0 }
+        val base = pendingSeek ?: p.currentPosition
+        pendingSeek = (base + delta).coerceAtLeast(0).let { if (dur != null) it.coerceAtMost(dur - 1_000) else it }
+        seekTotal += delta
+        touch()
+    }
+    LaunchedEffect(pendingSeek) {
+        val target = pendingSeek ?: return@LaunchedEffect
+        delay(SEEK_COMMIT_MS)
+        playback.seekTo(target)
+        position = target
+        pendingSeek = null
+    }
+    LaunchedEffect(seekTotal, pendingSeek) {
+        if (seekTotal != 0L && pendingSeek == null) {
+            delay(900)
+            seekTotal = 0
+        }
+    }
+    /** Holding the key speeds up: 10 s steps, then 30 s, 1 min, 2 min. */
+    fun stepFor(repeat: Int): Long = when {
+        repeat >= 20 -> 120_000
+        repeat >= 8 -> 60_000
+        repeat >= 3 -> 30_000
+        else -> 10_000
+    }
+
     Box(
         Modifier
             .fillMaxSize()
@@ -195,10 +241,11 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
                         true
                     }
                     e.key == Key.MediaPlayPause -> { player?.let { if (it.isPlaying) it.pause() else it.play() }; touch(); true }
-                    !isLive && e.key == Key.DirectionLeft -> { player?.let { it.seekTo((it.currentPosition - 10_000).coerceAtLeast(0)) }; touch(); true }
-                    !isLive && e.key == Key.DirectionRight -> { player?.let { it.seekTo(it.currentPosition + 30_000) }; touch(); true }
-                    e.key == Key.MediaRewind -> { player?.let { it.seekTo((it.currentPosition - 30_000).coerceAtLeast(0)) }; touch(); true }
-                    e.key == Key.MediaFastForward -> { player?.let { it.seekTo(it.currentPosition + 30_000) }; touch(); true }
+                    !isLive && e.key == Key.DirectionLeft -> { nudge(-stepFor(e.nativeKeyEvent.repeatCount)); true }
+                    !isLive && e.key == Key.DirectionRight -> { nudge(stepFor(e.nativeKeyEvent.repeatCount)); true }
+                    e.key == Key.MediaRewind -> { nudge(-30_000); true }
+                    e.key == Key.MediaFastForward -> { nudge(30_000); true }
+                    e.key == Key.MediaNext -> { if (!playback.playNext()) playback.zap(+1); touch(); true }
                     isLive && e.key == Key.DirectionLeft -> { panel = Panel.CHANNELS; true }
                     e.key == Key.DirectionRight || e.key == Key.Menu || (!isLive && e.key == Key.DirectionUp) -> { panel = Panel.OPTIONS; true }
                     e.key == Key.Info || e.key == Key.DirectionDown -> { touch(); true }
@@ -207,8 +254,19 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
             }
             .focusable()
             // Touch: a tap shows or hides the controls, or closes an open panel.
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {
+            .pointerInput(item?.isLive) {
+                detectTapGestures(
+                    // Double tap on the left or right third: back or forward 10 s (adds up when repeated).
+                    onDoubleTap = { o ->
+                        if (item != null && !item.isLive && panel == Panel.NONE) {
+                            when {
+                                o.x < size.width / 3f -> nudge(-10_000)
+                                o.x > size.width * 2f / 3f -> nudge(10_000)
+                                else -> { player?.let { if (it.isPlaying) it.pause() else it.play() }; touch() }
+                            }
+                        }
+                    },
+                    onTap = {
                     if (panel != Panel.NONE) {
                         panel = Panel.NONE
                     } else {
@@ -226,6 +284,17 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
             }
         }
 
+        // Seek feedback in the middle of the picture: direction, amount and target time.
+        if (seekTotal != 0L && item != null && !item.isLive) {
+            Column(
+                Modifier.align(Alignment.Center).background(Palette.Ink.copy(alpha = 0.72f), androidx.compose.foundation.shape.RoundedCornerShape(14.dp)).padding(horizontal = 22.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text((if (seekTotal < 0) "⏪  −" else "⏩  +") + formatTime(kotlin.math.abs(seekTotal)), style = type.headline.copy(color = Palette.Text))
+                Text(formatTime(pendingSeek ?: position) + " / " + formatTime(duration), style = type.mono.copy(color = Palette.Text))
+            }
+        }
+
         if (digits.isNotEmpty()) {
             Text(
                 digits,
@@ -235,7 +304,11 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
         }
 
         if (item != null && overlay && ui.issue == null) {
-            InfoBar(item, ui, live, position, duration, Modifier.align(Alignment.BottomCenter).windowInsetsPadding(BottomBars))
+            InfoBar(
+                item, ui, live, pendingSeek ?: position, duration,
+                Modifier.align(Alignment.BottomCenter).windowInsetsPadding(BottomBars),
+                onScrub = { target -> pendingSeek = target; touch() },
+            )
             TouchBar(
                 isLive = item.isLive,
                 playing = ui.playing,
@@ -246,8 +319,10 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
                 onPrev = { playback.zap(-1); touch() },
                 onNext = { playback.zap(+1); touch() },
                 onPlayPause = { player?.let { if (it.isPlaying) it.pause() else it.play() }; touch() },
-                onRewind = { player?.let { it.seekTo((it.currentPosition - 10_000).coerceAtLeast(0)) }; touch() },
-                onForward = { player?.let { it.seekTo(it.currentPosition + 30_000) }; touch() },
+                onRewind = { nudge(-10_000) },
+                onForward = { nudge(10_000) },
+                hasNext = item.upNext.isNotEmpty(),
+                onNextEpisode = { playback.playNext(); touch() },
                 onRotate = { landscape = !landscape; touch() },
                 onCast = { panel = Panel.CAST },
             )
@@ -325,6 +400,8 @@ private fun TouchBar(
     onForward: () -> Unit,
     onRotate: () -> Unit,
     onCast: () -> Unit,
+    hasNext: Boolean,
+    onNextEpisode: () -> Unit,
 ) {
     Row(
         modifier
@@ -343,7 +420,8 @@ private fun TouchBar(
         } else {
             TouchButton("−10", onRewind)
             TouchButton(if (playing) "❚❚" else "▶", onPlayPause)
-            TouchButton("+30", onForward)
+            TouchButton("+10", onForward)
+            if (hasNext) TouchButton("⏭", onNextEpisode)
         }
         TouchButton("⟳", onRotate)
         TouchIconButton(AppIcons.Cast, onCast)
@@ -380,7 +458,15 @@ private fun TouchButton(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun InfoBar(item: PlayItem, ui: fr.ahmad.tclstreamx.player.PlayerUi, live: LiveViewModel, position: Long, duration: Long, modifier: Modifier) {
+private fun InfoBar(
+    item: PlayItem,
+    ui: fr.ahmad.tclstreamx.player.PlayerUi,
+    live: LiveViewModel,
+    position: Long,
+    duration: Long,
+    modifier: Modifier,
+    onScrub: (Long) -> Unit,
+) {
     val type = LocalTallyType.current
     val epg by remember(item.tvgId) { live.epgFor(item.tvgId) }.collectAsState(initial = emptyList())
     val compact = isCompactWidth()
@@ -438,7 +524,7 @@ private fun InfoBar(item: PlayItem, ui: fr.ahmad.tclstreamx.player.PlayerUi, liv
             if (tv) Text(stringResource(R.string.player_hint), style = type.mono)
         } else {
             if (duration > 0) {
-                ProgressLine(position.toFloat() / duration, Modifier.fillMaxWidth())
+                SeekBar(position, duration, onScrub)
                 Row {
                     Text(formatTime(position), style = type.mono.copy(color = Palette.Text))
                     Spacer(Modifier.weight(1f))
@@ -515,6 +601,27 @@ private fun OptionsPanel(playback: PlaybackController, modifier: Modifier, onCas
                 }
             }
         }
+        if (ui.item?.isLive == false) {
+            item {
+                TallyRow(onClick = playback::cycleSpeed, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                    Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.player_speed), style = type.title, modifier = Modifier.weight(1f))
+                        Text("×" + ("%.2f".format(Locale.ROOT, ui.speed).trimEnd('0').trimEnd('.')), style = type.mono.copy(color = Palette.Text))
+                    }
+                }
+            }
+        }
+        item {
+            TallyRow(onClick = playback::cycleSleep, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.player_sleep), style = type.title, modifier = Modifier.weight(1f))
+                    Text(
+                        ui.sleepMinutes?.let { stringResource(R.string.player_sleep_left, it) } ?: stringResource(R.string.player_off),
+                        style = type.mono.copy(color = if (ui.sleepMinutes != null) Palette.Tally else Palette.Text),
+                    )
+                }
+            }
+        }
         item {
             val labels = listOf(R.string.player_aspect_fit, R.string.player_aspect_zoom, R.string.player_aspect_stretch)
             TallyRow(onClick = playback::cycleResize, modifier = Modifier.fillMaxWidth().height(50.dp)) {
@@ -584,3 +691,41 @@ private val TopBars: WindowInsets
     @Composable get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
 private val BottomBars: WindowInsets
     @Composable get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+
+private const val SEEK_COMMIT_MS = 450L
+
+/**
+ * Timeline of films and episodes: tap or drag anywhere on it to jump (touch). Always left to right,
+ * like every video timeline, also in the Arabic interface.
+ */
+@Composable
+private fun SeekBar(position: Long, duration: Long, onScrub: (Long) -> Unit) {
+    var width by remember { androidx.compose.runtime.mutableIntStateOf(1) }
+    val f = (position.toFloat() / duration).coerceIn(0f, 1f)
+    fun at(x: Float) = ((x.coerceIn(0f, width.toFloat()) / width) * duration).toLong()
+    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(30.dp)
+                .onSizeChanged { width = it.width.coerceAtLeast(1) }
+                .pointerInput(duration) { detectTapGestures { o -> onScrub(at(o.x)) } }
+                .pointerInput(duration) {
+                    detectHorizontalDragGestures { change, _ ->
+                        change.consume()
+                        onScrub(at(change.position.x))
+                    }
+                },
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Box(Modifier.fillMaxWidth().height(4.dp).background(Palette.Hairline, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)))
+            Box(Modifier.fillMaxWidth(f).height(4.dp).background(Palette.Tally, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)))
+            Box(
+                Modifier
+                    .offset { androidx.compose.ui.unit.IntOffset((f * width - 8.dp.toPx()).toInt(), 0) }
+                    .size(16.dp)
+                    .background(Palette.Text, androidx.compose.foundation.shape.CircleShape)
+            )
+        }
+    }
+}
