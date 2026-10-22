@@ -16,6 +16,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -183,12 +188,18 @@ fun AppRoot(playback: PlaybackController) {
     Box(Modifier.fillMaxSize().then(backdrop)) {
         if (compact) {
             // Phone: content on top, a bottom bar with the main sections (thumb reach), no rail.
-            Column(Modifier.fillMaxSize()) {
+            // Below the status bar and the notch, except in the player which draws edge to edge.
+            Column(
+                Modifier.fillMaxSize().then(
+                    if (route != Routes.PLAYER) Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                    else Modifier
+                )
+            ) {
                 host(Modifier.weight(1f).fillMaxWidth())
                 if (route != Routes.PLAYER) BottomBar(current = route, onSelect = navigator::go)
             }
         } else {
-            Row(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxSize().then(if (route != Routes.PLAYER) Modifier.windowInsetsPadding(WindowInsets.safeDrawing) else Modifier)) {
                 if (route != Routes.PLAYER) Rail(current = route, onSelect = navigator::go)
                 host(Modifier.weight(1f).fillMaxHeight())
             }

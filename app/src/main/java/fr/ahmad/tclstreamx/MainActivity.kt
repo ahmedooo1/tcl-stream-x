@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import fr.ahmad.tclstreamx.player.PlaybackController
@@ -15,6 +16,8 @@ class MainActivity : AppCompatActivity() {
     private val playback: PlaybackController by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Same drawing behind the system bars on every Android version; screens add the insets they need.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
             TallyTheme {

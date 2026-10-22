@@ -22,6 +22,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -112,6 +121,16 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
         onDispose { activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
     }
     LaunchedEffect(Unit) { runCatching { rootFocus.requestFocus() } }
+    // Phone: video fullscreen, status and navigation bars hidden (a swipe from the edge shows them);
+    // they come back when leaving the player.
+    val view = LocalView.current
+    DisposableEffect(Unit) {
+        val window = activity?.window
+        val bars = window?.let { WindowCompat.getInsetsController(it, view) }
+        bars?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        bars?.hide(WindowInsetsCompat.Type.systemBars())
+        onDispose { bars?.show(WindowInsetsCompat.Type.systemBars()) }
+    }
     // Also fires on first composition: rebuilds the pipeline after standby or an input switch.
     LifecycleEventEffect(Lifecycle.Event.ON_START) { playback.ensurePrepared() }
     DisposableEffect(Unit) {
@@ -216,11 +235,11 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
         }
 
         if (item != null && overlay && ui.issue == null) {
-            InfoBar(item, ui, live, position, duration, Modifier.align(Alignment.BottomCenter))
+            InfoBar(item, ui, live, position, duration, Modifier.align(Alignment.BottomCenter).windowInsetsPadding(BottomBars))
             TouchBar(
                 isLive = item.isLive,
                 playing = ui.playing,
-                modifier = Modifier.align(Alignment.TopCenter),
+                modifier = Modifier.align(Alignment.TopCenter).windowInsetsPadding(TopBars),
                 onBack = { navigator.back() },
                 onChannels = { panel = Panel.CHANNELS },
                 onOptions = { panel = Panel.OPTIONS },
@@ -279,9 +298,9 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
         }
 
         when (panel) {
-            Panel.CHANNELS -> ChannelPanel(live, playback, Modifier.align(Alignment.CenterStart)) { panel = Panel.NONE; runCatching { rootFocus.requestFocus() } }
-            Panel.OPTIONS -> OptionsPanel(playback, Modifier.align(Alignment.CenterEnd)) { panel = Panel.CAST }
-            Panel.CAST -> CastPanel(playback, Modifier.align(Alignment.CenterEnd))
+            Panel.CHANNELS -> ChannelPanel(live, playback, Modifier.align(Alignment.CenterStart).windowInsetsPadding(WindowInsets.safeDrawing)) { panel = Panel.NONE; runCatching { rootFocus.requestFocus() } }
+            Panel.OPTIONS -> OptionsPanel(playback, Modifier.align(Alignment.CenterEnd).windowInsetsPadding(WindowInsets.safeDrawing)) { panel = Panel.CAST }
+            Panel.CAST -> CastPanel(playback, Modifier.align(Alignment.CenterEnd).windowInsetsPadding(WindowInsets.safeDrawing))
             Panel.NONE -> Unit
         }
     }
@@ -559,3 +578,9 @@ private fun formatTime(ms: Long): String {
 }
 
 private const val OVERLAY_MS = 5_000L
+
+/** Overlays stay clear of the notch, the status bar and the navigation buttons when they are shown. */
+private val TopBars: WindowInsets
+    @Composable get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+private val BottomBars: WindowInsets
+    @Composable get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
