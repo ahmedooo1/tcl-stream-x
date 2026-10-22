@@ -2,6 +2,8 @@ package fr.ahmad.tclstreamx
 
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import androidx.lifecycle.ViewModelProvider
+import fr.ahmad.tclstreamx.player.PlaybackController
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -37,13 +39,30 @@ class PhoneTourTest {
     @Test
     fun touchTour() {
         inst.runOnMainSync { AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("fr")) }
-        ActivityScenario.launch(MainActivity::class.java).use {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            fun playing(): Boolean {
+                var result = false
+                scenario.onActivity { result = ViewModelProvider(it)[PlaybackController::class.java].player.value?.isPlaying == true }
+                return result
+            }
             shot("01-home-fr", 10_000)
             check(tap("Chaînes")) { "bottom bar 'Chaînes' not found" }
             shot("02-channels-fr")
             if (tap("France 24", waitMs = 10_000, prefix = true)) {
                 device.click(device.displayWidth / 2, device.displayHeight / 2)  // show controls
                 shot("03-player-fr", 800)
+                // Turning the phone must keep the same video playing (it used to go black).
+                val before = playing()
+                device.setOrientationLandscape()
+                Thread.sleep(5_000)
+                val after = playing()
+                CiReport.screenshot("phone-03b-player-rotated-fr")
+                device.setOrientationNatural()
+                device.unfreezeRotation()
+                Thread.sleep(3_000)
+                val back = playing()
+                CiReport.write("rotation.txt", "playing before=$before landscape=$after back=$back\n")
+                if (before) check(after && back) { "playback stopped after rotation (landscape=$after, back=$back)" }
                 device.pressBack()
                 Thread.sleep(1_500)
             }
