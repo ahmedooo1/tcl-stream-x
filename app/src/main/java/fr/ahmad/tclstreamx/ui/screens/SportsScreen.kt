@@ -113,7 +113,10 @@ fun SportsScreen(navigator: Navigator, playback: PlaybackController) {
     val scope = rememberCoroutineScope()
     val settings by c.settings.settings.collectAsState(initial = null)
     val region = settings?.sportsRegion ?: "FR"
-    val freeChannels by remember { c.db.channels().observeCategory("sports") }.collectAsState(initial = emptyList())
+    val builtinSports by remember { c.db.channels().observeCategory("sports") }.collectAsState(initial = emptyList())
+    // The user's own sports channels (subscription, playlists) first, then the free official ones.
+    val ownSports by remember { c.db.channels().observeOwnSports(600) }.collectAsState(initial = emptyList())
+    val freeChannels = ownSports + builtinSports
     var result by remember { mutableStateOf<SportsResult?>(null) }
     var selected by remember { mutableStateOf<Match?>(null) }
 
@@ -141,7 +144,7 @@ fun SportsScreen(navigator: Navigator, playback: PlaybackController) {
                 contentPadding = PaddingValues(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(freeChannels, key = { it.channelKey }) { ch ->
+                items(freeChannels, key = { it.id }) { ch ->
                     TallyRow(
                         onClick = {
                             playback.play(PlayItem.fromChannel(ch, null))
@@ -190,8 +193,14 @@ fun SportsScreen(navigator: Navigator, playback: PlaybackController) {
                     }
                 }
             }
-            item { Text(stringResource(R.string.sports_free_channels), style = type.headline, modifier = Modifier.padding(top = 22.dp, bottom = 8.dp)) }
-            items(freeChannels, key = { it.channelKey }) { ch ->
+            item {
+                Text(
+                    stringResource(if (ownSports.isNotEmpty()) R.string.sports_all_channels else R.string.sports_free_channels) + "  " + freeChannels.size,
+                    style = type.headline,
+                    modifier = Modifier.padding(top = 22.dp, bottom = 8.dp),
+                )
+            }
+            items(freeChannels, key = { it.id }) { ch ->
                 TallyRow(
                     onClick = {
                         playback.play(PlayItem.fromChannel(ch, null))

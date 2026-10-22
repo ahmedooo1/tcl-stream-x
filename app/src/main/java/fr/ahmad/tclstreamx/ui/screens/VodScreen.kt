@@ -713,7 +713,7 @@ private sealed interface Pick {
     data class Archive(val item: VodItem) : Pick
 }
 
-private const val MAX_PLAYLIST_ROWS = 14
+private const val MAX_PLAYLIST_ROWS = 300
 private const val ROW_ITEMS = 24
 
 /**

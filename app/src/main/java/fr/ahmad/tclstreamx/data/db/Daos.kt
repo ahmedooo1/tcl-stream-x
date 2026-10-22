@@ -154,6 +154,23 @@ interface ChannelDao {
     )
     suspend fun searchFiltered(query: String, kind: Int, playlistId: Long, region: String?, online: Int, limit: Int): List<ChannelEntity>
 
+    /** Categories whose name contains the text, in every section, largest first. */
+    @Query(
+        """SELECT c.kind AS kind, c.groupTitle AS groupTitle, COUNT(*) AS count FROM channels c $ACTIVE
+           WHERE c.groupTitle != '' AND c.groupTitle LIKE '%' || :query || '%'
+           GROUP BY c.kind, c.groupTitle ORDER BY count DESC LIMIT :limit"""
+    )
+    suspend fun searchGroups(query: String, limit: Int): List<GroupHit>
+
+    /** Live sports channels of the user's own sources (category or name mentions sport). */
+    @Query(
+        """SELECT c.* FROM channels c $ACTIVE WHERE p.kind != 'BUILTIN' AND c.kind = 0 AND (
+             c.groupTitle LIKE '%sport%' OR c.name LIKE '%sport%' OR c.groupTitle LIKE '%bein%' OR c.name LIKE '%bein%'
+             OR c.groupTitle LIKE '%رياض%' OR c.name LIKE '%رياض%' OR c.groupTitle LIKE '%foot%')
+           ORDER BY c.playlistId, c.position LIMIT :limit"""
+    )
+    fun observeOwnSports(limit: Int): Flow<List<ChannelEntity>>
+
     /** Unified search restricted to one section (live, movies or series). */
     @Query(
         """SELECT c.* FROM channels c $ACTIVE WHERE c.kind = :kind AND c.nameNorm LIKE '%' || :query || '%'

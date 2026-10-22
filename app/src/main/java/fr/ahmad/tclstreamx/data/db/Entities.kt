@@ -134,6 +134,13 @@ data class RegionCount(
     val count: Int,
 )
 
+/** A category found by the search, with its section and size. */
+data class GroupHit(
+    val kind: Int,
+    val groupTitle: String,
+    val count: Int,
+)
+
 data class GroupCount(
     val groupTitle: String,
     val count: Int,

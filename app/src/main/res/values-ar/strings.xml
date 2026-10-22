@@ -281,4 +281,7 @@
     <string name="search_filter_all">الكل</string>
     <string name="search_filter_online">المتاحة فقط</string>
     <string name="search_filter_sources">كل المصادر</string>
+    <string name="sports_all_channels">القنوات الرياضية</string>
+    <string name="search_categories">التصنيفات</string>
+    <string name="search_back">العودة إلى النتائج</string>
 </resources>

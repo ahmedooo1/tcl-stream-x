@@ -38,6 +38,7 @@ import fr.ahmad.tclstreamx.R
 import fr.ahmad.tclstreamx.TclApp
 import fr.ahmad.tclstreamx.data.db.ChannelEntity
 import fr.ahmad.tclstreamx.data.db.ContentKind
+import fr.ahmad.tclstreamx.data.db.GroupHit
 import fr.ahmad.tclstreamx.data.db.StreamStatus
 import fr.ahmad.tclstreamx.data.m3u.M3uParser
 import fr.ahmad.tclstreamx.data.xtream.XtreamRepository
@@ -73,6 +74,14 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
     var onlineOnly by remember { mutableStateOf(false) }
     var results by remember { mutableStateOf(SearchResults(emptyList(), emptyList(), emptyList())) }
     var openSeries by remember { mutableStateOf<ChannelEntity?>(null) }
+    var groups by remember { mutableStateOf<List<GroupHit>>(emptyList()) }
+    // A category opened from the results: its whole content replaces the result list until "back".
+    var openGroup by remember { mutableStateOf<GroupHit?>(null) }
+    var groupItems by remember { mutableStateOf<List<ChannelEntity>>(emptyList()) }
+    LaunchedEffect(openGroup) {
+        val g = openGroup ?: return@LaunchedEffect
+        groupItems = c.db.channels().firstOfLineup(0, g.groupTitle, 0, g.kind, null, 2000)
+    }
     val first = remember { FocusRequester() }
     val playlists by c.db.playlists().observeAll().collectAsState(initial = emptyList())
     val regions by remember(kind, source) { c.db.channels().observeRegions(source, kind) }.collectAsState(initial = emptyList())
@@ -82,6 +91,7 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
         val q = M3uParser.normalize(query)
         if (q.length < 2) {
             results = SearchResults(emptyList(), emptyList(), emptyList())
+            groups = emptyList()
             return@LaunchedEffect
         }
         delay(250)
@@ -91,6 +101,7 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
             if (kind < 0 || kind == k) dao.searchFiltered(q, k, source, region, online, limit) else emptyList()
         val limit = if (kind < 0) PER_SECTION else PER_SECTION * 4
         results = SearchResults(section(ContentKind.LIVE, limit), section(ContentKind.MOVIE, limit), section(ContentKind.SERIES, limit))
+        groups = dao.searchGroups(query.trim(), 40).filter { kind < 0 || it.kind == kind }
     }
     LaunchedEffect(Unit) { runCatching { first.requestFocus() } }
 
@@ -142,7 +153,36 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
             }
             item { RegionStrip(regions, region, { region = it }, Modifier.padding(top = 6.dp, bottom = 6.dp), PaddingValues(0.dp)) }
 
-            if (query.length >= 2 && results.isEmpty) {
+            openGroup?.let { g ->
+                item(key = "back") {
+                    FilterChip("←  " + stringResource(R.string.search_back), false) { openGroup = null }
+                }
+                item(key = "gtitle") {
+                    Text(groupLabel(g.groupTitle) + "  " + g.count, style = type.headline, modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
+                }
+                items(groupItems, key = { "gi" + it.id }) { ch -> ResultRow(ch) { open(ch) } }
+                return@LazyColumn
+            }
+            if (groups.isNotEmpty()) {
+                item(key = "hg") {
+                    Text(stringResource(R.string.search_categories) + "  " + groups.size, style = type.headline, modifier = Modifier.padding(top = 14.dp, bottom = 4.dp))
+                }
+                item(key = "groups") {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(groups, key = { "g${it.kind}:${it.groupTitle}" }) { g ->
+                            val section = stringResource(
+                                when (g.kind) {
+                                    ContentKind.MOVIE -> R.string.search_movies
+                                    ContentKind.SERIES -> R.string.search_series
+                                    else -> R.string.search_live
+                                }
+                            )
+                            FilterChip("${groupLabel(g.groupTitle)} · $section · ${g.count}", false) { openGroup = g }
+                        }
+                    }
+                }
+            }
+            if (query.length >= 2 && results.isEmpty && groups.isEmpty()) {
                 item { Text(stringResource(R.string.search_empty), style = type.body) }
             }
             listOf(

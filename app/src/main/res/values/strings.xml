@@ -281,4 +281,7 @@
     <string name="search_filter_all">Tout</string>
     <string name="search_filter_online">Disponibles seulement</string>
     <string name="search_filter_sources">Toutes les sources</string>
+    <string name="sports_all_channels">Chaînes sport</string>
+    <string name="search_categories">Catégories</string>
+    <string name="search_back">Retour aux résultats</string>
 </resources>
