@@ -318,4 +318,15 @@
     <string name="replay_yesterday">أمس</string>
     <string name="player_replay">إعادة مشاهدة برنامج</string>
     <string name="player_replay_days">%1$d أيام</string>
+    <string name="update_title">التحديث</string>
+    <string name="update_current">النسخة المثبتة: build %1$d</string>
+    <string name="update_check">البحث عن تحديث</string>
+    <string name="update_checking">جارٍ البحث…</string>
+    <string name="update_none">التطبيق محدّث (build %1$d)</string>
+    <string name="update_available">نسخة جديدة build %1$d · تثبيت</string>
+    <string name="update_downloading">جارٍ التنزيل… %1$d %%</string>
+    <string name="update_ready">build %1$d جاهز · أكّد التثبيت</string>
+    <string name="update_failed_network">تعذّر الوصول إلى خادم التحديثات · أعد المحاولة</string>
+    <string name="update_failed_signature">رُفضت الحزمة (توقيع أو نسخة مختلفة)</string>
+    <string name="update_failed_permission">اسمح لـ TCL Stream X بتثبيت التطبيقات، ثم اضغط مرة أخرى</string>
 </resources>

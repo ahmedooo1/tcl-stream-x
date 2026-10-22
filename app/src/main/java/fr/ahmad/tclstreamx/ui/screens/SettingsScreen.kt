@@ -269,6 +269,9 @@ fun SettingsScreen() {
             }
         }
 
+        item { Section(stringResource(R.string.update_title)) }
+        item { UpdateRow() }
+
         item { Section(stringResource(R.string.settings_about)) }
         item { Text(stringResource(R.string.settings_about_body), style = type.body.copy(color = Palette.TextDim)) }
         item { Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME), style = type.mono, modifier = Modifier.padding(top = 8.dp)) }

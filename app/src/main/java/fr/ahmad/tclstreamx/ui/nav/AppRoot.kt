@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -137,7 +138,10 @@ fun AppRoot(playback: PlaybackController) {
     val live: LiveViewModel = viewModel()
 
     val compact = isCompactWidth()
-    val host: @Composable (Modifier) -> Unit = { mod ->
+    // The screens move between the phone layout (bottom bar) and the wide one (rail) when the device
+    // turns; movable content keeps them alive instead of rebuilding them, so a rotation never stops
+    // the player or loses the place in a list.
+    val host: @Composable (Modifier) -> Unit = remember(nav) { movableContentOf { mod: Modifier ->
         Box(mod) {
             NavHost(navController = nav, startDestination = Routes.HOME) {
                 composable(Routes.HOME) { HomeScreen(navigator, playback, live) }
@@ -155,7 +159,7 @@ fun AppRoot(playback: PlaybackController) {
                 composable(Routes.GUIDE) { GuideScreen(navigator, playback, live) }
             }
         }
-    }
+    } }
 
     // Channels sent from a phone (TV side): play at once, fullscreen.
     val container = (LocalContext.current.applicationContext as TclApp).container

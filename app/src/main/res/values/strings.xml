@@ -318,4 +318,15 @@
     <string name="replay_yesterday">Hier</string>
     <string name="player_replay">Revoir une émission</string>
     <string name="player_replay_days">%1$d j</string>
+    <string name="update_title">Mise à jour</string>
+    <string name="update_current">Version installée : build %1$d</string>
+    <string name="update_check">Rechercher une mise à jour</string>
+    <string name="update_checking">Recherche…</string>
+    <string name="update_none">À jour (build %1$d)</string>
+    <string name="update_available">Nouvelle version build %1$d · installer</string>
+    <string name="update_downloading">Téléchargement… %1$d %%</string>
+    <string name="update_ready">Build %1$d prêt · confirmez l\'installation</string>
+    <string name="update_failed_network">Impossible de joindre le serveur des mises à jour · réessayer</string>
+    <string name="update_failed_signature">Paquet refusé (signature ou version différente)</string>
+    <string name="update_failed_permission">Autorisez TCL Stream X à installer des applications, puis appuyez encore</string>
 </resources>

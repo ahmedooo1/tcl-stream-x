@@ -165,6 +165,8 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
             }
         }
 
+        // Shown only when a newer build is available.
+        item(key = "update") { UpdateRow(compactBanner = true) }
         lastChannel?.let { ch ->
             item(key = "resume-live") { ResumeLive(ch, compact) { play(ch) } }
         }

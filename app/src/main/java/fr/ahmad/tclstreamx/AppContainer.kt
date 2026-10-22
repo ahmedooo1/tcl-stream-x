@@ -11,6 +11,7 @@ import fr.ahmad.tclstreamx.data.m3u.PlaylistImporter
 import fr.ahmad.tclstreamx.data.settings.SettingsStore
 import fr.ahmad.tclstreamx.data.sports.SportsRepository
 import fr.ahmad.tclstreamx.data.remote.RemoteHub
+import fr.ahmad.tclstreamx.data.update.Updater
 import fr.ahmad.tclstreamx.data.vod.VodRepository
 import fr.ahmad.tclstreamx.player.cast.ChromecastController
 import fr.ahmad.tclstreamx.data.xtream.KeystoreSecretBox
@@ -78,10 +79,13 @@ class AppContainer(private val context: Context) {
     val remote = RemoteHub(context, http)
     /** Chromecast / Google TV sender (lazy: needs the main thread and Google Play services). */
     val chromecast = ChromecastController(context)
+    /** New builds of the app from its GitHub releases (only builds whose tests passed). */
+    val updater = Updater(context, http)
 
     fun startup() {
         appScope.launch {
             catalog.installOrUpdate()
+            runCatching { updater.check() }
             val s = settings.current()
             val now = System.currentTimeMillis()
             if (s.autoCheckBuiltin && now - s.lastBuiltinCheck > BUILTIN_CHECK_EVERY_MS) {
