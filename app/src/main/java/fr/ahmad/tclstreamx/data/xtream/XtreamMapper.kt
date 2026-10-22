@@ -60,6 +60,9 @@ class XtreamMapper(
             country = region.country,
             kind = kind,
             channelKey = key(section, id),
+            archiveDays = if (section == XtreamSection.LIVE && e.text("tv_archive") == "1") (e.long("tv_archive_duration")?.toInt() ?: 0).coerceIn(0, 30) else 0,
+            addedAt = (e.long("added") ?: e.long("last_modified") ?: 0L).coerceAtLeast(0),
+            rating = (e.text("rating")?.toDoubleOrNull() ?: e.text("rating_5based")?.toDoubleOrNull()?.times(2) ?: 0.0).coerceIn(0.0, 10.0),
         )
     }
 

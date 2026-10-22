@@ -59,6 +59,7 @@ import fr.ahmad.tclstreamx.player.PlaybackController
 import fr.ahmad.tclstreamx.ui.components.AppIcon
 import fr.ahmad.tclstreamx.ui.components.AppIcons
 import fr.ahmad.tclstreamx.ui.components.TallyRow
+import fr.ahmad.tclstreamx.ui.screens.GuideScreen
 import fr.ahmad.tclstreamx.ui.screens.HomeScreen
 import fr.ahmad.tclstreamx.ui.screens.LanScreen
 import fr.ahmad.tclstreamx.ui.screens.LiveScreen
@@ -87,6 +88,7 @@ object Routes {
     const val PLAYLISTS = "playlists"
     const val SETTINGS = "settings"
     const val LAN = "lan"
+    const val GUIDE = "guide"
 }
 
 data class Section(val route: String, val label: Int, val icon: ImageVector)
@@ -150,6 +152,7 @@ fun AppRoot(playback: PlaybackController) {
                 composable(Routes.PLAYLISTS) { PlaylistsScreen(navigator) }
                 composable(Routes.SETTINGS) { SettingsScreen() }
                 composable(Routes.LAN) { LanScreen(navigator) }
+                composable(Routes.GUIDE) { GuideScreen(navigator, playback, live) }
             }
         }
     }

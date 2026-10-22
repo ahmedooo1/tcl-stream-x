@@ -70,6 +70,22 @@ class XtreamRepository(
         return XtreamUrls.ref(parsed.playlistId, XtreamRef.EPISODE, episode.id, episode.extension)
     }
 
+    /** Guide of a live channel with its replayable programmes, from the panel (on demand). */
+    suspend fun programmes(channelUrl: String): List<XtreamProgramme> {
+        val parsed = XtreamUrls.parse(channelUrl)?.takeIf { it.ref == XtreamRef.LIVE } ?: return emptyList()
+        val login = login(parsed.playlistId) ?: throw XtreamException(XtreamError.AUTH)
+        return withContext(Dispatchers.IO) { client.epgTable(login.server, login.credentials, parsed.id) }
+    }
+
+    /** Reference that replays [p] of the live channel behind [channelUrl]. */
+    fun replayRef(channelUrl: String, p: XtreamProgramme): String? {
+        val parsed = XtreamUrls.parse(channelUrl)?.takeIf { it.ref == XtreamRef.LIVE } ?: return null
+        val digits = p.startLocal.filter { it.isDigit() }
+        if (digits.length < 12) return null
+        val minutes = ((p.stop - p.start) / 60_000).coerceIn(1, 600)
+        return XtreamUrls.ref(parsed.playlistId, XtreamRef.TIMESHIFT, "${parsed.id}_${digits.take(12)}_$minutes", "ts")
+    }
+
     fun seal(c: XtreamCredentials): String = box.seal(c.encode())
 
     companion object {

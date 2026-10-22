@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 
 private const val ACTIVE = "INNER JOIN playlists p ON p.id = c.playlistId AND p.activeGeneration = c.generation"
 
+/** Channels of categories locked by the parental code are left out while the app is locked. */
+private const val UNLOCKED = "NOT EXISTS (SELECT 1 FROM locked_groups l WHERE l.groupTitle = c.groupTitle AND l.hidden = 1)"
+
 /**
  * Lineup filter shared by every channel query:
  * kind selects the section (live, movies, series); playlistId = 0 means every playlist, group = null means every group, fav = 1 keeps favorites only,
@@ -21,6 +24,7 @@ private const val LINEUP = """
     AND (:grp IS NULL OR c.groupTitle = :grp)
     AND (:fav = 0 OR c.channelKey IN (SELECT channelKey FROM favorites))
     AND (:region IS NULL OR c.country = :region OR c.language = :region)
+    AND $UNLOCKED
 """
 
 @Dao
@@ -71,14 +75,14 @@ interface ChannelDao {
     @Query(
         """SELECT c.groupTitle AS groupTitle, COUNT(*) AS count FROM channels c $ACTIVE
            WHERE c.kind = :kind AND (:playlistId = 0 OR c.playlistId = :playlistId)
-           AND (:region IS NULL OR c.country = :region OR c.language = :region)
+           AND (:region IS NULL OR c.country = :region OR c.language = :region) AND $UNLOCKED
            GROUP BY c.groupTitle ORDER BY MIN(c.playlistId), MIN(c.position)"""
     )
     fun observeGroups(playlistId: Long, kind: Int, region: String?): Flow<List<GroupCount>>
 
     @Query(
         """SELECT COUNT(*) FROM channels c $ACTIVE WHERE c.kind = :kind AND (:playlistId = 0 OR c.playlistId = :playlistId)
-           AND (:region IS NULL OR c.country = :region OR c.language = :region)"""
+           AND (:region IS NULL OR c.country = :region OR c.language = :region) AND $UNLOCKED"""
     )
     fun observeCount(playlistId: Long, kind: Int, region: String?): Flow<Int>
 
@@ -101,7 +105,7 @@ interface ChannelDao {
     suspend fun countPlainEntries(kind: Int, grp: String): Int
 
     /** Every entry of one series group, for grouping episodes by show in memory. */
-    @Query("SELECT c.* FROM channels c $ACTIVE WHERE c.kind = :kind AND c.groupTitle = :grp ORDER BY c.position LIMIT :limit")
+    @Query("SELECT c.* FROM channels c $ACTIVE WHERE c.kind = :kind AND c.groupTitle = :grp AND $UNLOCKED ORDER BY c.position LIMIT :limit")
     suspend fun allInGroup(kind: Int, grp: String, limit: Int): List<ChannelEntity>
 
     @Query("SELECT c.* FROM channels c $ACTIVE WHERE c.id = :id")
@@ -135,7 +139,7 @@ interface ChannelDao {
     suspend fun byNumber(playlistId: Long, number: Int): ChannelEntity?
 
     @Query(
-        """SELECT c.* FROM channels c $ACTIVE WHERE c.nameNorm LIKE '%' || :query || '%'
+        """SELECT c.* FROM channels c $ACTIVE WHERE c.nameNorm LIKE '%' || :query || '%' AND $UNLOCKED
            ORDER BY (c.nameNorm LIKE :query || '%') DESC, length(c.nameNorm), c.position LIMIT :limit"""
     )
     suspend fun search(query: String, limit: Int): List<ChannelEntity>
@@ -149,7 +153,7 @@ interface ChannelDao {
            AND (:kind < 0 OR c.kind = :kind)
            AND (:playlistId = 0 OR c.playlistId = :playlistId)
            AND (:region IS NULL OR c.country = :region OR c.language = :region)
-           AND (:online = 0 OR c.status = 1)
+           AND (:online = 0 OR c.status = 1) AND $UNLOCKED
            ORDER BY (c.nameNorm LIKE :query || '%') DESC, length(c.nameNorm), c.position LIMIT :limit"""
     )
     suspend fun searchFiltered(query: String, kind: Int, playlistId: Long, region: String?, online: Int, limit: Int): List<ChannelEntity>
@@ -157,14 +161,14 @@ interface ChannelDao {
     /** Categories whose name contains the text, in every section, largest first. */
     @Query(
         """SELECT c.kind AS kind, c.groupTitle AS groupTitle, COUNT(*) AS count FROM channels c $ACTIVE
-           WHERE c.groupTitle != '' AND c.groupTitle LIKE '%' || :query || '%'
+           WHERE c.groupTitle != '' AND c.groupTitle LIKE '%' || :query || '%' AND $UNLOCKED
            GROUP BY c.kind, c.groupTitle ORDER BY count DESC LIMIT :limit"""
     )
     suspend fun searchGroups(query: String, limit: Int): List<GroupHit>
 
     /** Live sports channels of the user's own sources (category or name mentions sport). */
     @Query(
-        """SELECT c.* FROM channels c $ACTIVE WHERE p.kind != 'BUILTIN' AND c.kind = 0 AND (
+        """SELECT c.* FROM channels c $ACTIVE WHERE p.kind != 'BUILTIN' AND c.kind = 0 AND $UNLOCKED AND (
              c.groupTitle LIKE '%sport%' OR c.name LIKE '%sport%' OR c.groupTitle LIKE '%bein%' OR c.name LIKE '%bein%'
              OR c.groupTitle LIKE '%رياض%' OR c.name LIKE '%رياض%' OR c.groupTitle LIKE '%foot%')
            ORDER BY c.playlistId, c.position LIMIT :limit"""
@@ -173,7 +177,7 @@ interface ChannelDao {
 
     /** Unified search restricted to one section (live, movies or series). */
     @Query(
-        """SELECT c.* FROM channels c $ACTIVE WHERE c.kind = :kind AND c.nameNorm LIKE '%' || :query || '%'
+        """SELECT c.* FROM channels c $ACTIVE WHERE c.kind = :kind AND c.nameNorm LIKE '%' || :query || '%' AND $UNLOCKED
            ORDER BY (c.nameNorm LIKE :query || '%') DESC, length(c.nameNorm), c.position LIMIT :limit"""
     )
     suspend fun searchKind(query: String, kind: Int, limit: Int): List<ChannelEntity>
@@ -182,16 +186,35 @@ interface ChannelDao {
     fun observeCategory(category: String): Flow<List<ChannelEntity>>
 
     @Query(
-        """SELECT c.* FROM channels c $ACTIVE INNER JOIN history h ON h.channelKey = c.channelKey
+        """SELECT c.* FROM channels c $ACTIVE INNER JOIN history h ON h.channelKey = c.channelKey WHERE $UNLOCKED
            GROUP BY c.channelKey ORDER BY h.watchedAt DESC LIMIT :limit"""
     )
     fun observeRecent(limit: Int): Flow<List<ChannelEntity>>
 
     @Query(
-        """SELECT c.* FROM channels c $ACTIVE INNER JOIN favorites f ON f.channelKey = c.channelKey
+        """SELECT c.* FROM channels c $ACTIVE INNER JOIN favorites f ON f.channelKey = c.channelKey WHERE $UNLOCKED
            GROUP BY c.channelKey ORDER BY f.addedAt DESC LIMIT :limit"""
     )
     fun observeFavorites(limit: Int): Flow<List<ChannelEntity>>
+
+    @Query(
+        """SELECT c.* FROM channels c $ACTIVE INNER JOIN favorites f ON f.channelKey = c.channelKey
+           WHERE c.kind = :kind AND $UNLOCKED GROUP BY c.channelKey ORDER BY f.addedAt DESC LIMIT :limit"""
+    )
+    fun observeFavoritesOfKind(kind: Int, limit: Int): Flow<List<ChannelEntity>>
+
+    /**
+     * A category in a chosen order: 0 = as the source lists it, 1 = by name, 2 = most recently added,
+     * 3 = best rated.
+     */
+    @Query(
+        """SELECT c.* FROM channels c $ACTIVE WHERE $LINEUP
+           ORDER BY CASE WHEN :sort = 1 THEN c.nameNorm END,
+                    CASE WHEN :sort = 2 THEN -c.addedAt END,
+                    CASE WHEN :sort = 3 THEN -c.rating END,
+                    c.playlistId, c.position"""
+    )
+    fun pagingSorted(playlistId: Long, grp: String?, fav: Int, kind: Int, region: String?, sort: Int): PagingSource<Int, ChannelEntity>
 
     @Query(
         """SELECT c.* FROM channels c $ACTIVE WHERE $LINEUP
@@ -204,6 +227,27 @@ interface ChannelDao {
 
     @Query("SELECT DISTINCT c.tvgId FROM channels c $ACTIVE WHERE c.tvgId IS NOT NULL AND c.tvgId != ''")
     suspend fun allTvgIds(): List<String>
+}
+
+@Dao
+interface LockDao {
+    @Query("SELECT * FROM locked_groups ORDER BY groupTitle")
+    fun observeAll(): Flow<List<LockedGroupEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun lock(g: LockedGroupEntity)
+
+    @Query("DELETE FROM locked_groups WHERE groupTitle = :group")
+    suspend fun unlockGroup(group: String)
+
+    /** 1 hides every locked category (locked app), 0 shows them for the session. */
+    @Query("UPDATE locked_groups SET hidden = :hidden")
+    suspend fun setHidden(hidden: Int)
+
+    @Query("SELECT DISTINCT c.groupTitle FROM channels c WHERE c.groupTitle != '' AND (" +
+        "lower(c.groupTitle) LIKE '%xxx%' OR lower(c.groupTitle) LIKE '%adult%' OR lower(c.groupTitle) LIKE '%18+%' " +
+        "OR lower(c.groupTitle) LIKE '%+18%' OR lower(c.groupTitle) LIKE '%porn%' OR c.groupTitle LIKE '%للكبار%')")
+    suspend fun adultLookingGroups(): List<String>
 }
 
 @Dao
@@ -255,6 +299,10 @@ interface EpgDao {
 
     @Query("SELECT COUNT(*) FROM programmes")
     fun observeCount(): Flow<Int>
+
+    /** Programmes overlapping a time window, for the guide grid. */
+    @Query("SELECT * FROM programmes WHERE channelTvgId = :tvgId AND stop > :from AND start < :to ORDER BY start")
+    suspend fun inRange(tvgId: String, from: Long, to: Long): List<ProgrammeEntity>
 }
 
 @Dao

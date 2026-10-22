@@ -58,6 +58,7 @@ import fr.ahmad.tclstreamx.ui.components.Tag
 import fr.ahmad.tclstreamx.ui.components.VideoSurface
 import fr.ahmad.tclstreamx.ui.components.statusLabel
 import fr.ahmad.tclstreamx.ui.nav.Navigator
+import fr.ahmad.tclstreamx.ui.nav.Routes
 import fr.ahmad.tclstreamx.ui.theme.LocalTallyType
 import fr.ahmad.tclstreamx.ui.theme.Palette
 import fr.ahmad.tclstreamx.ui.theme.hasRoomForMonitor
@@ -73,7 +74,8 @@ import java.util.Locale
 @Composable
 fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewModel) {
     val type = LocalTallyType.current
-    val app = androidx.compose.ui.platform.LocalContext.current.applicationContext as TclApp
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val app = context.applicationContext as TclApp
     val settings by app.container.settings.settings.collectAsState(initial = null)
     val playlists by vm.playlists.collectAsState()
     val playlistId by vm.playlistId.collectAsState()
@@ -129,6 +131,14 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
                 }
                 if (compact) Spacer(Modifier.weight(1f))
                 else Text(title, style = type.headline, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                TallyRow(onClick = { navigator.go(Routes.GUIDE) }, modifier = Modifier.height(40.dp).padding(end = 6.dp)) {
+                    Text(
+                        stringResource(R.string.live_guide),
+                        style = type.label.copy(color = Palette.Text),
+                        maxLines = 1,
+                        modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp),
+                    )
+                }
                 TallyRow(onClick = vm::checkCurrentLineup, modifier = Modifier.height(40.dp).widthIn(max = 170.dp)) {
                     Text(
                         if (progress.running) stringResource(R.string.live_checking, progress.done, progress.total)
@@ -195,7 +205,7 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
                 item { GroupChip(stringResource(R.string.group_favorites), group == GroupSel.Favorites) { chooseGroup(GroupSel.Favorites) } }
                 item { GroupChip(stringResource(R.string.group_all), group == GroupSel.All) { chooseGroup(GroupSel.All) } }
                 items(groups, key = { "g:" + it.groupTitle }) { g ->
-                    GroupChip(groupLabel(g.groupTitle), group == GroupSel.Named(g.groupTitle)) { chooseGroup(GroupSel.Named(g.groupTitle)) }
+                    GroupChip(groupLabel(g.groupTitle), group == GroupSel.Named(g.groupTitle), onLongClick = { lockCategory(context, app.container, g.groupTitle) }) { chooseGroup(GroupSel.Named(g.groupTitle)) }
                 }
             }
             channelColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp))
@@ -225,7 +235,7 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
                         GroupRow(stringResource(R.string.group_all), total, group == GroupSel.All) { chooseGroup(GroupSel.All) }
                     }
                     items(groups, key = { "g:" + it.groupTitle }) { g ->
-                        GroupRow(groupLabel(g.groupTitle), g.count, group == GroupSel.Named(g.groupTitle)) { chooseGroup(GroupSel.Named(g.groupTitle)) }
+                        GroupRow(groupLabel(g.groupTitle), g.count, group == GroupSel.Named(g.groupTitle), onLongClick = { lockCategory(context, app.container, g.groupTitle) }) { chooseGroup(GroupSel.Named(g.groupTitle)) }
                     }
                 }
             }
@@ -238,8 +248,8 @@ fun LiveScreen(navigator: Navigator, playback: PlaybackController, vm: LiveViewM
 }
 
 @Composable
-private fun GroupChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    TallyRow(onClick = onClick, selected = selected, modifier = Modifier.height(42.dp)) { focused ->
+private fun GroupChip(label: String, selected: Boolean, onLongClick: (() -> Unit)? = null, onClick: () -> Unit) {
+    TallyRow(onClick = onClick, onLongClick = onLongClick, selected = selected, modifier = Modifier.height(42.dp)) { focused ->
         Text(
             label,
             style = LocalTallyType.current.body.copy(color = if (focused || selected) Palette.Text else Palette.TextDim),
@@ -250,9 +260,9 @@ private fun GroupChip(label: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun GroupRow(label: String, count: Int, selected: Boolean, onClick: () -> Unit) {
+private fun GroupRow(label: String, count: Int, selected: Boolean, onLongClick: (() -> Unit)? = null, onClick: () -> Unit) {
     val type = LocalTallyType.current
-    TallyRow(onClick = onClick, selected = selected, modifier = Modifier.fillMaxWidth().height(44.dp)) { focused ->
+    TallyRow(onClick = onClick, onLongClick = onLongClick, selected = selected, modifier = Modifier.fillMaxWidth().height(44.dp)) { focused ->
         Row(Modifier.fillMaxSize().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 label,

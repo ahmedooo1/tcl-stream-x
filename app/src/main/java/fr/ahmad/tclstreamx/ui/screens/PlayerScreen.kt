@@ -91,7 +91,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-private enum class Panel { NONE, CHANNELS, OPTIONS, CAST }
+private enum class Panel { NONE, CHANNELS, OPTIONS, CAST, REPLAY }
 
 @Composable
 fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveViewModel) {
@@ -99,6 +99,7 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
     val player by playback.player.collectAsState()
     val type = LocalTallyType.current
     val item = ui.item
+    val appSettings by (LocalContext.current.applicationContext as fr.ahmad.tclstreamx.TclApp).container.settings.settings.collectAsState(initial = null)
     var overlay by remember { mutableStateOf(true) }
     var panel by remember { mutableStateOf(Panel.NONE) }
     var lastInput by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -276,7 +277,7 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
                 })
             }
     ) {
-        VideoSurface(player, ui.resizeMode, Modifier.fillMaxSize())
+        VideoSurface(player, ui.resizeMode, Modifier.fillMaxSize(), appSettings?.subtitleScale ?: 1f, appSettings?.subtitleStyle ?: 0)
 
         if (ui.buffering && ui.issue == null) {
             Box(Modifier.align(Alignment.Center).background(Palette.Ink.copy(alpha = 0.6f)).padding(horizontal = 16.dp, vertical = 10.dp)) {
@@ -374,8 +375,14 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
 
         when (panel) {
             Panel.CHANNELS -> ChannelPanel(live, playback, Modifier.align(Alignment.CenterStart).windowInsetsPadding(WindowInsets.safeDrawing)) { panel = Panel.NONE; runCatching { rootFocus.requestFocus() } }
-            Panel.OPTIONS -> OptionsPanel(playback, Modifier.align(Alignment.CenterEnd).windowInsetsPadding(WindowInsets.safeDrawing)) { panel = Panel.CAST }
+            Panel.OPTIONS -> OptionsPanel(playback, Modifier.align(Alignment.CenterEnd).windowInsetsPadding(WindowInsets.safeDrawing), onReplay = { panel = Panel.REPLAY }) { panel = Panel.CAST }
             Panel.CAST -> CastPanel(playback, Modifier.align(Alignment.CenterEnd).windowInsetsPadding(WindowInsets.safeDrawing))
+            Panel.REPLAY -> ui.item?.channel?.let { ch ->
+                ReplayPanel(ch, Modifier.align(Alignment.CenterEnd).windowInsetsPadding(WindowInsets.safeDrawing), onClose = { panel = Panel.NONE }) { replayItem ->
+                    panel = Panel.NONE
+                    playback.play(replayItem)
+                }
+            }
             Panel.NONE -> Unit
         }
     }
@@ -566,7 +573,7 @@ private fun ChannelPanel(live: LiveViewModel, playback: PlaybackController, modi
 }
 
 @Composable
-private fun OptionsPanel(playback: PlaybackController, modifier: Modifier, onCast: () -> Unit) {
+private fun OptionsPanel(playback: PlaybackController, modifier: Modifier, onReplay: () -> Unit, onCast: () -> Unit) {
     val ui by playback.ui.collectAsState()
     val type = LocalTallyType.current
     val first = remember { FocusRequester() }
@@ -598,6 +605,16 @@ private fun OptionsPanel(playback: PlaybackController, modifier: Modifier, onCas
                     AppIcon(AppIcons.Cast, Palette.Text, size = 22.dp)
                     Spacer(Modifier.width(10.dp))
                     Text(stringResource(R.string.cast_title), style = type.title)
+                }
+            }
+        }
+        if ((ui.item?.channel?.archiveDays ?: 0) > 0) {
+            item {
+                TallyRow(onClick = onReplay, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                    Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("⟲  " + stringResource(R.string.player_replay), style = type.title, modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.player_replay_days, ui.item?.channel?.archiveDays ?: 0), style = type.mono)
+                    }
                 }
             }
         }

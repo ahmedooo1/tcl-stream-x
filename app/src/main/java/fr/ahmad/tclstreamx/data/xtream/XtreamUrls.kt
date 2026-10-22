@@ -23,7 +23,10 @@ class XtreamCredentials(val username: String, val password: String) {
 
 /** What an internal `xtream://` reference points to. */
 enum class XtreamRef(val segment: String) {
-    LIVE("live"), MOVIE("movie"), SERIES("series"), EPISODE("episode"), EPG("epg");
+    LIVE("live"), MOVIE("movie"), SERIES("series"), EPISODE("episode"), EPG("epg"),
+
+    /** Replay of a past programme: id = "<stream>_<yyyyMMddHHmm start, server time>_<minutes>". */
+    TIMESHIFT("timeshift");
 
     companion object {
         fun of(segment: String): XtreamRef? = entries.firstOrNull { it.segment == segment }
@@ -122,6 +125,13 @@ object XtreamUrls {
             XtreamRef.EPISODE -> "$server/series$auth${parsed.id}$ext"
             XtreamRef.EPG -> epg(server, c)
             XtreamRef.SERIES -> null
+            XtreamRef.TIMESHIFT -> {
+                val parts = parsed.id.split('_')
+                if (parts.size != 3 || parts[1].length != 12) return null
+                val t = parts[1]
+                val start = "${t.substring(0, 4)}-${t.substring(4, 6)}-${t.substring(6, 8)}:${t.substring(8, 10)}-${t.substring(10, 12)}"
+                "$server/timeshift$auth${parts[2]}/$start/${parts[0]}.ts"
+            }
         }
     }
 

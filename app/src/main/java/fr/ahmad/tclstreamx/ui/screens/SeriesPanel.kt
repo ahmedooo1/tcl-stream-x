@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,7 +49,8 @@ import java.util.Locale
  */
 @Composable
 fun SeriesPanel(series: ChannelEntity, modifier: Modifier, onClose: () -> Unit, onPlay: (PlayItem) -> Unit) {
-    val c = (LocalContext.current.applicationContext as TclApp).container
+    val context = LocalContext.current
+    val c = (context.applicationContext as TclApp).container
     val type = LocalTallyType.current
     var info by remember(series.url) { mutableStateOf<XtreamSeriesInfo?>(null) }
     var failed by remember(series.url) { mutableStateOf(false) }
@@ -88,6 +90,17 @@ fun SeriesPanel(series: ChannelEntity, modifier: Modifier, onClose: () -> Unit, 
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item { Text(series.name, style = type.headline, maxLines = 3, overflow = TextOverflow.Ellipsis) }
+        item {
+            val favorite by remember(series.channelKey) { c.db.favorites().observeKeys() }.collectAsState(initial = emptyList())
+            val isFav = series.channelKey in favorite
+            TallyRow(onClick = { toggleFavorite(context, c, series.channelKey) }, modifier = Modifier.height(42.dp)) {
+                Text(
+                    (if (isFav) "★  " else "☆  ") + stringResource(if (isFav) R.string.live_remove_favorite else R.string.live_add_favorite),
+                    style = type.label.copy(color = if (isFav) Palette.Caution else Palette.Text),
+                    modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp),
+                )
+            }
+        }
         info?.let { i ->
             val meta = listOfNotNull(i.genre, i.releaseDate, i.rating?.takeIf { it != "0" }?.let { "★ $it" }).joinToString(" · ")
             if (meta.isNotEmpty()) item { Text(meta, style = type.mono) }

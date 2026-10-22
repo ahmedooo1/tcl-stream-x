@@ -103,7 +103,8 @@ private val ANIMATION_WORDS = listOf("anim", "cartoon", "kids", "enfant", "jeune
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackController) {
-    val c = (LocalContext.current.applicationContext as TclApp).container
+    val context = LocalContext.current
+    val c = (context.applicationContext as TclApp).container
     val type = LocalTallyType.current
     val compact = isCompactWidth()
 
@@ -168,7 +169,12 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 items(sections, key = { sectionKey(it) }) { s ->
-                    TallyRow(onClick = { pick(s) }, selected = s == selected, modifier = Modifier.height(44.dp)) {
+                    TallyRow(
+                        onClick = { pick(s) },
+                        onLongClick = (s as? VodSection.Playlist)?.let { pl -> { lockCategory(context, c, pl.group) } },
+                        selected = s == selected,
+                        modifier = Modifier.height(44.dp),
+                    ) {
                         Text(sectionLabel(s), style = type.body, maxLines = 1, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp))
                     }
                 }
@@ -186,7 +192,7 @@ fun VodScreen(shelf: VodShelf, navigator: Navigator, playback: PlaybackControlle
                 item { SectionRow(VodSection.Featured, selected == VodSection.Featured) { pick(VodSection.Featured) } }
                 if (playlistSections.isNotEmpty()) {
                     item { SectionHeader(stringResource(R.string.section_my_playlists)) }
-                    items(playlistSections, key = { sectionKey(it) }) { s -> SectionRow(s, s == selected) { pick(s) } }
+                    items(playlistSections, key = { sectionKey(it) }) { s -> SectionRow(s, s == selected, onLongClick = { lockCategory(context, c, s.group) }) { pick(s) } }
                 }
                 if (channelSections.isNotEmpty()) {
                     item { SectionHeader(stringResource(R.string.section_free_channels)) }
@@ -240,9 +246,9 @@ private fun SectionHeader(text: String) {
 }
 
 @Composable
-private fun SectionRow(s: VodSection, selected: Boolean, onClick: () -> Unit) {
+private fun SectionRow(s: VodSection, selected: Boolean, onLongClick: (() -> Unit)? = null, onClick: () -> Unit) {
     val type = LocalTallyType.current
-    TallyRow(onClick = onClick, selected = selected, modifier = Modifier.fillMaxWidth().height(44.dp)) { focused ->
+    TallyRow(onClick = onClick, onLongClick = onLongClick, selected = selected, modifier = Modifier.fillMaxWidth().height(44.dp)) { focused ->
         Row(Modifier.fillMaxSize().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 sectionLabel(s),
@@ -314,9 +320,10 @@ private val GRID_PADDING = PaddingValues(start = 16.dp, end = 24.dp, top = 8.dp,
 @Composable
 private fun PlaylistMovies(group: String, region: String?, navigator: Navigator, playback: PlaybackController) {
     val c = (LocalContext.current.applicationContext as TclApp).container
-    val flow = remember(group, region) {
+    var sort by remember(group) { mutableIntStateOf(0) }
+    val flow = remember(group, region, sort) {
         Pager(PagingConfig(pageSize = 60, prefetchDistance = 60, enablePlaceholders = true, maxSize = 600)) {
-            c.db.channels().paging(0, group, 0, ContentKind.MOVIE, region)
+            c.db.channels().pagingSorted(0, group, 0, ContentKind.MOVIE, region, sort)
         }.flow
     }
     val paged = flow.collectAsLazyPagingItems()
@@ -327,7 +334,12 @@ private fun PlaylistMovies(group: String, region: String?, navigator: Navigator,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item(span = { GridItemSpan(maxLineSpan) }) { GridTitle(group, stringResource(R.string.vod_items, paged.itemCount)) }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Column {
+                GridTitle(group, stringResource(R.string.vod_items, paged.itemCount))
+                SortChips(sort) { sort = it }
+            }
+        }
         items(count = paged.itemCount, key = paged.itemKey { it.id }) { i ->
             val ch = paged[i] ?: return@items
             ChannelPoster(ch) {
@@ -359,9 +371,10 @@ private fun PlaylistShows(group: String, region: String?, navigator: Navigator, 
 @Composable
 private fun AccountShows(group: String, region: String?, navigator: Navigator, playback: PlaybackController) {
     val c = (LocalContext.current.applicationContext as TclApp).container
-    val flow = remember(group, region) {
+    var sort by remember(group) { mutableIntStateOf(0) }
+    val flow = remember(group, region, sort) {
         Pager(PagingConfig(pageSize = 60, prefetchDistance = 60, enablePlaceholders = true, maxSize = 600)) {
-            c.db.channels().paging(0, group, 0, ContentKind.SERIES, region)
+            c.db.channels().pagingSorted(0, group, 0, ContentKind.SERIES, region, sort)
         }.flow
     }
     val paged = flow.collectAsLazyPagingItems()
@@ -374,7 +387,12 @@ private fun AccountShows(group: String, region: String?, navigator: Navigator, p
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            item(span = { GridItemSpan(maxLineSpan) }) { GridTitle(group, stringResource(R.string.vod_shows, paged.itemCount)) }
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column {
+                    GridTitle(group, stringResource(R.string.vod_shows, paged.itemCount))
+                    SortChips(sort) { sort = it }
+                }
+            }
             items(count = paged.itemCount, key = paged.itemKey { it.id }) { i ->
                 val ch = paged[i] ?: return@items
                 ChannelPoster(ch) { open = ch }
@@ -629,13 +647,17 @@ private fun GridTitle(title: String, subtitle: String) {
 
 @Composable
 private fun ChannelPoster(ch: ChannelEntity, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    PosterTile(VodItem(ch.channelKey, ch.name, null, ch.logo, null, null), modifier, onClick)
+    val context = LocalContext.current
+    val c = (context.applicationContext as TclApp).container
+    val year = if (ch.rating > 0) "★ %.1f".format(java.util.Locale.ROOT, ch.rating) else null
+    // Long press (remote: hold OK): add to or remove from the favorites.
+    PosterTile(VodItem(ch.channelKey, ch.name, year, ch.logo, null, null), modifier, onLongClick = { toggleFavorite(context, c, ch.channelKey) }, onClick = onClick)
 }
 
 @Composable
-private fun PosterTile(item: VodItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun PosterTile(item: VodItem, modifier: Modifier = Modifier, onLongClick: (() -> Unit)? = null, onClick: () -> Unit) {
     val type = LocalTallyType.current
-    TallyCard(onClick = onClick, modifier = modifier) { focused ->
+    TallyCard(onClick = onClick, onLongClick = onLongClick, modifier = modifier) { focused ->
         Column {
             Box(Modifier.fillMaxWidth().aspectRatio(16f / 10f).background(Palette.Raised)) {
                 Text(
@@ -739,6 +761,9 @@ private fun FeaturedHome(
     var detail by remember { mutableStateOf<VodItem?>(null) }
     var series by remember { mutableStateOf<ChannelEntity?>(null) }
     val resume by remember { c.db.vodProgress().observeContinue(20) }.collectAsState(initial = emptyList())
+    val favoriteTitles by remember(shelf) {
+        c.db.channels().observeFavoritesOfKind(if (shelf == VodShelf.SERIES) ContentKind.SERIES else ContentKind.MOVIE, 40)
+    }.collectAsState(initial = emptyList())
     val category = when (shelf) {
         VodShelf.MOVIES -> "movies"
         VodShelf.SERIES -> "series"
@@ -799,11 +824,18 @@ private fun FeaturedHome(
                 item(key = "resume") {
                     ShelfRow(stringResource(R.string.home_continue), null) {
                         items(resume, key = { "r:" + it.key }) { r ->
-                            PosterTile(VodItem(r.key, r.title, null, r.poster, null, null), Modifier.width(tileWidth)) {
+                            PosterTile(VodItem(r.key, r.title, null, r.poster, null, null), Modifier.width(tileWidth), onLongClick = { forgetResume(c, r.key) }) {
                                 playback.play(PlayItem(key = r.key, title = r.title, urls = listOf(r.uri), isLive = false, poster = r.poster))
                                 navigator.openPlayer()
                             }
                         }
+                    }
+                }
+            }
+            if (favoriteTitles.isNotEmpty()) {
+                item(key = "favs") {
+                    ShelfRow(stringResource(R.string.home_favorites), null) {
+                        items(favoriteTitles, key = { "fav:" + it.id }) { ch -> ChannelPoster(ch, Modifier.width(tileWidth)) { open(Pick.Channel(ch)) } }
                     }
                 }
             }
@@ -972,5 +1004,23 @@ private fun ArchiveRow(
     if (list.isEmpty()) return
     ShelfRow(genreLabel(genre), onAll) {
         items(list.take(ROW_ITEMS), key = { "a:" + it.key }) { v -> PosterTile(v, Modifier.width(tileWidth)) { open(Pick.Archive(v)) } }
+    }
+}
+
+/** Order of a category: as the source lists it, by name, newest first, best rated first. */
+@Composable
+private fun SortChips(sort: Int, onSort: (Int) -> Unit) {
+    val labels = listOf(R.string.sort_source, R.string.sort_name, R.string.sort_recent, R.string.sort_rating)
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 6.dp, bottom = 4.dp)) {
+        items(labels.indices.toList(), key = { "sort$it" }) { i ->
+            TallyRow(onClick = { onSort(i) }, selected = sort == i, modifier = Modifier.height(38.dp)) { focused ->
+                Text(
+                    stringResource(labels[i]),
+                    style = LocalTallyType.current.label.copy(color = if (focused || sort == i) Palette.Text else Palette.TextDim),
+                    maxLines = 1,
+                    modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp),
+                )
+            }
+        }
     }
 }

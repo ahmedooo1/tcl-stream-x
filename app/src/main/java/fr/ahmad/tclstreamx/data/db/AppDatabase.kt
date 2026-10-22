@@ -25,8 +25,9 @@ class Converters {
         HistoryEntity::class,
         ProgrammeEntity::class,
         VodProgressEntity::class,
+        LockedGroupEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -37,13 +38,14 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun history(): HistoryDao
     abstract fun epg(): EpgDao
     abstract fun vodProgress(): VodProgressDao
+    abstract fun locks(): LockDao
 
     companion object {
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "tclstreamx.db")
                 // Write-ahead logging lets the UI read while a large playlist is being imported.
                 .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
 
         /** v2: content kind (live / movie / series). Existing rows are live channels until re-imported. */
@@ -51,6 +53,16 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE channels ADD COLUMN kind INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_channels_kind_groupTitle_position ON channels (kind, groupTitle, position)")
+            }
+        }
+
+        /** v4: replay (catch-up) days, date added and rating of titles; categories locked by the parental code. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE channels ADD COLUMN archiveDays INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE channels ADD COLUMN addedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE channels ADD COLUMN rating REAL NOT NULL DEFAULT 0")
+                db.execSQL("CREATE TABLE IF NOT EXISTS locked_groups (groupTitle TEXT NOT NULL, hidden INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(groupTitle))")
             }
         }
 

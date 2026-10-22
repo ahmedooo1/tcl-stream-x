@@ -2,6 +2,7 @@ package fr.ahmad.tclstreamx.ui.screens
 
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -104,6 +105,112 @@ fun SettingsScreen() {
             }
         }
 
+        // ---- parental code ----
+        item { Section(stringResource(R.string.settings_parental)) }
+        item {
+            val locked by c.db.locks().observeAll().collectAsState(initial = emptyList())
+            val sessionOpen = locked.isNotEmpty() && locked.all { it.hidden == 0 }
+            var message by remember { mutableStateOf<String?>(null) }
+            val wrong = stringResource(R.string.parental_wrong)
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(stringResource(R.string.parental_explain), style = type.bodySmall)
+                if (settings?.pinSet != true) {
+                    InputField(
+                        value = "",
+                        placeholder = stringResource(R.string.parental_set_hint),
+                        keyboardType = KeyboardType.NumberPassword,
+                        secret = true,
+                        onSubmit = { pin ->
+                            if (pin.length in 4..8 && pin.all { it.isDigit() }) {
+                                c.appScope.launch {
+                                    c.settings.setPin(pin)
+                                    // Categories that look adult-only are locked right away; others can be added by a long press.
+                                    c.db.locks().adultLookingGroups().forEach { c.db.locks().lock(fr.ahmad.tclstreamx.data.db.LockedGroupEntity(it, 1)) }
+                                    c.db.locks().setHidden(1)
+                                }
+                            }
+                        },
+                    )
+                } else {
+                    Text(
+                        stringResource(if (sessionOpen) R.string.parental_open else R.string.parental_locked, locked.size),
+                        style = type.body.copy(color = if (sessionOpen) Palette.Caution else Palette.Signal),
+                    )
+                    if (!sessionOpen) {
+                        InputField(
+                            value = "",
+                            placeholder = stringResource(R.string.parental_unlock_hint),
+                            keyboardType = KeyboardType.NumberPassword,
+                            secret = true,
+                            onSubmit = { pin ->
+                                c.appScope.launch {
+                                    if (c.settings.checkPin(pin)) {
+                                        c.db.locks().setHidden(0)
+                                        message = null
+                                    } else {
+                                        message = wrong
+                                    }
+                                }
+                            },
+                        )
+                    } else {
+                        TallyRow(onClick = { c.appScope.launch { c.db.locks().setHidden(1) } }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                            Text(stringResource(R.string.parental_lock_now), style = type.body, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp))
+                        }
+                        locked.forEach { g ->
+                            TallyRow(onClick = { c.appScope.launch { c.db.locks().unlockGroup(g.groupTitle) } }, modifier = Modifier.fillMaxWidth().height(46.dp)) {
+                                Row(Modifier.fillMaxSize().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Text(groupLabel(g.groupTitle), style = type.body, maxLines = 1, modifier = Modifier.weight(1f))
+                                    Text(stringResource(R.string.parental_remove), style = type.mono.copy(color = Palette.Tally))
+                                }
+                            }
+                        }
+                        TallyRow(
+                            onClick = {
+                                c.appScope.launch {
+                                    c.settings.clearPin()
+                                    c.db.locks().setHidden(0)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().height(50.dp),
+                        ) {
+                            Text(stringResource(R.string.parental_clear), style = type.body.copy(color = Palette.Tally), modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp))
+                        }
+                    }
+                }
+                message?.let { Text(it, style = type.bodySmall.copy(color = Palette.Caution)) }
+            }
+        }
+
+        // ---- subtitles ----
+        item { Section(stringResource(R.string.settings_subtitles)) }
+        item {
+            val scales = listOf(0.8f, 1f, 1.25f, 1.5f, 1.8f)
+            val current = settings?.subtitleScale ?: 1f
+            TallyRow(
+                onClick = { c.appScope.launch { c.settings.setSubtitleScale(scales[(scales.indexOf(current).coerceAtLeast(0) + 1) % scales.size]) } },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+            ) {
+                Row(Modifier.fillMaxSize().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.settings_subtitle_size), style = type.body, modifier = Modifier.weight(1f))
+                    Text("${(current * 100).toInt()} %", style = type.mono.copy(color = Palette.Text))
+                }
+            }
+        }
+        item {
+            val styles = listOf(R.string.subtitle_style_white, R.string.subtitle_style_yellow, R.string.subtitle_style_box)
+            val current = settings?.subtitleStyle ?: 0
+            TallyRow(
+                onClick = { c.appScope.launch { c.settings.setSubtitleStyle((current + 1) % styles.size) } },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+            ) {
+                Row(Modifier.fillMaxSize().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.settings_subtitle_style), style = type.body, modifier = Modifier.weight(1f))
+                    Text(stringResource(styles[current.coerceIn(0, 2)]), style = type.mono.copy(color = Palette.Text))
+                }
+            }
+        }
+
         item { Section(stringResource(R.string.settings_receive)) }
         item {
             val address by c.remote.receiverAddress.collectAsState()
@@ -154,6 +261,11 @@ fun SettingsScreen() {
         item {
             ToggleRow(stringResource(R.string.settings_autocheck), settings?.autoCheckBuiltin ?: true) {
                 c.appScope.launch { c.settings.setAutoCheck(it) }
+            }
+        }
+        item {
+            ToggleRow(stringResource(R.string.settings_autorefresh), settings?.autoRefresh ?: true) {
+                c.appScope.launch { c.settings.setAutoRefresh(it) }
             }
         }
 

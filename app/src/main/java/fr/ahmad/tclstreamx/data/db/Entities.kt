@@ -73,6 +73,22 @@ data class ChannelEntity(
     @ColumnInfo(defaultValue = "0") val status: Int = StreamStatus.UNKNOWN.code,
     val statusDetail: String? = null,
     @ColumnInfo(defaultValue = "0") val statusCheckedAt: Long = 0,
+    /** Days of replay (catch-up) the source keeps for this live channel, 0 when none. */
+    @ColumnInfo(defaultValue = "0") val archiveDays: Int = 0,
+    /** When the source added this title (epoch seconds), for "recently added" ordering; 0 when unknown. */
+    @ColumnInfo(defaultValue = "0") val addedAt: Long = 0,
+    /** Rating given by the source (0 to 10), 0 when unknown. */
+    @ColumnInfo(defaultValue = "0") val rating: Double = 0.0,
+)
+
+/**
+ * Categories locked by the parental code. [hidden] is 1 while the app is locked and 0 for the
+ * session after the code was entered; queries skip channels of hidden categories.
+ */
+@Entity(tableName = "locked_groups")
+data class LockedGroupEntity(
+    @PrimaryKey val groupTitle: String,
+    @ColumnInfo(defaultValue = "1") val hidden: Int = 1,
 )
 
 /** Top-level sections: playlists mixing live channels, films and series are split on import. */

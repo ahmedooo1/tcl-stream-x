@@ -5,6 +5,7 @@ import fr.ahmad.tclstreamx.data.catalog.BuiltInCatalog
 import fr.ahmad.tclstreamx.data.check.AvailabilityChecker
 import fr.ahmad.tclstreamx.data.check.StreamProbe
 import fr.ahmad.tclstreamx.data.db.AppDatabase
+import fr.ahmad.tclstreamx.data.db.PlaylistKind
 import fr.ahmad.tclstreamx.data.epg.EpgRepository
 import fr.ahmad.tclstreamx.data.m3u.PlaylistImporter
 import fr.ahmad.tclstreamx.data.settings.SettingsStore
@@ -87,6 +88,14 @@ class AppContainer(private val context: Context) {
                 db.playlists().builtin()?.let { checker.checkLineup(it.id, null, false) }
                 settings.markBuiltinChecked(now)
             }
+            // Parental lock: locked categories start hidden at every launch.
+            if (s.pinSet) db.locks().setHidden(1)
+            // Playlists and accounts older than a day are refreshed (new films, episodes, channels).
+            if (s.autoRefresh) {
+                db.playlists().all()
+                    .filter { (it.kind == PlaylistKind.URL || it.kind == PlaylistKind.XTREAM) && now - it.updatedAt > REFRESH_EVERY_MS }
+                    .forEach { runCatching { importer.refresh(it.id) } }
+            }
             if (now - s.lastEpgRefresh > EPG_EVERY_MS) {
                 epg.refresh(s.epgUrl)
                 settings.markEpgRefreshed(now)
@@ -97,5 +106,6 @@ class AppContainer(private val context: Context) {
     companion object {
         private const val BUILTIN_CHECK_EVERY_MS = 6 * 3600_000L
         private const val EPG_EVERY_MS = 12 * 3600_000L
+        private const val REFRESH_EVERY_MS = 24 * 3600_000L
     }
 }

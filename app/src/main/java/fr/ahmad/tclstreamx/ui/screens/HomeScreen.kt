@@ -100,7 +100,13 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     }
     val firstTile = remember { FocusRequester() }
 
+    var series by remember { mutableStateOf<ChannelEntity?>(null) }
     fun play(ch: ChannelEntity) {
+        // A series of an account is not playable itself: its seasons and episodes open instead.
+        if (fr.ahmad.tclstreamx.data.xtream.XtreamRepository.isSeries(ch.url)) {
+            series = ch
+            return
+        }
         playback.play(PlayItem.fromChannel(ch, null))
         navigator.openPlayer()
     }
@@ -141,6 +147,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     ).filter { it.second.isNotEmpty() }
     val continueTitle = stringResource(R.string.home_continue)
 
+    Box(Modifier.fillMaxSize()) {
     LazyColumn(
         Modifier.fillMaxSize().focusRestorer(),
         contentPadding = screenPadding(),
@@ -182,7 +189,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                 Shelf(continueTitle) {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(resume, key = { it.key }) { r ->
-                            ResumeTile(r, tileWidth) {
+                            ResumeTile(r, tileWidth, onLongClick = { forgetResume(c, r.key) }) {
                                 playback.play(PlayItem(key = r.key, title = r.title, urls = listOf(r.uri), isLive = false, poster = r.poster))
                                 navigator.openPlayer()
                             }
@@ -200,6 +207,13 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                 }
             }
         }
+    }
+    series?.let { show ->
+        SeriesPanel(show, Modifier.align(Alignment.CenterEnd), onClose = { series = null }) { item ->
+            playback.play(item)
+            navigator.openPlayer()
+        }
+    }
     }
 }
 
@@ -296,9 +310,10 @@ fun ChannelTile(ch: ChannelEntity, modifier: Modifier = Modifier, onClick: () ->
 }
 
 @Composable
-private fun ResumeTile(r: VodProgressEntity, width: Dp, onClick: () -> Unit) {
+private fun ResumeTile(r: VodProgressEntity, width: Dp, onLongClick: () -> Unit, onClick: () -> Unit) {
     val type = LocalTallyType.current
-    TallyCard(onClick = onClick, modifier = Modifier.width(width)) {
+    // Long press (remote: hold OK): remove from "continue watching".
+    TallyCard(onClick = onClick, onLongClick = onLongClick, modifier = Modifier.width(width)) {
         Column {
             Box(Modifier.fillMaxWidth().height(96.dp).background(Palette.Raised)) {
                 if (r.poster != null) {

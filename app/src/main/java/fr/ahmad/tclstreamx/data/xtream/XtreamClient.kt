@@ -65,6 +65,17 @@ data class XtreamSeriesInfo(
     val episodes: List<XtreamEpisode>,
 )
 
+/** One programme of a channel's guide as the panel gives it, with replay availability. */
+data class XtreamProgramme(
+    val title: String,
+    val description: String?,
+    /** Start in the panel's own time zone, "yyyy-MM-dd HH:mm:ss" (what the replay address needs). */
+    val startLocal: String,
+    val start: Long,
+    val stop: Long,
+    val hasArchive: Boolean,
+)
+
 data class XtreamMovieInfo(val plot: String?, val genre: String?, val releaseDate: String?, val durationSecs: Long?, val rating: String?, val cast: String?, val director: String?)
 
 /**
@@ -123,6 +134,28 @@ class XtreamClient(private val http: OkHttpClient, private val userAgent: String
         return parseSeriesInfo(obj)
     }
 
+    /** Full guide of one channel, past programmes included (titles are base64 in this API). */
+    fun epgTable(server: String, c: XtreamCredentials, streamId: String): List<XtreamProgramme> {
+        val root = get(XtreamUrls.api(server, c, "get_simple_data_table", mapOf("stream_id" to streamId))) { JsonStream(it).readRoot() }
+        @Suppress("UNCHECKED_CAST")
+        val listings = ((root as? Map<String, Any?>)?.get("epg_listings") as? List<*>).orEmpty()
+        return listings.mapNotNull { raw ->
+            @Suppress("UNCHECKED_CAST")
+            val e = raw as? Map<String, Any?> ?: return@mapNotNull null
+            val start = e.long("start_timestamp") ?: return@mapNotNull null
+            val stop = e.long("stop_timestamp") ?: return@mapNotNull null
+            val startLocal = e.text("start") ?: return@mapNotNull null
+            XtreamProgramme(
+                title = decode64(e.text("title")) ?: return@mapNotNull null,
+                description = decode64(e.text("description")),
+                startLocal = startLocal,
+                start = start * 1000,
+                stop = stop * 1000,
+                hasArchive = e.text("has_archive") == "1",
+            )
+        }.sortedBy { it.start }
+    }
+
     fun movieInfo(server: String, c: XtreamCredentials, vodId: String): XtreamMovieInfo {
         val root = get(XtreamUrls.api(server, c, "get_vod_info", mapOf("vod_id" to vodId))) { JsonStream(it).readRoot() }
         @Suppress("UNCHECKED_CAST")
@@ -165,6 +198,10 @@ class XtreamClient(private val http: OkHttpClient, private val userAgent: String
 
     companion object {
         const val DEFAULT_UA = "TCLStreamX/1.0 (Linux; Android TV)"
+
+        fun decode64(s: String?): String? = s?.let {
+            runCatching { String(java.util.Base64.getDecoder().decode(it.trim()), Charsets.UTF_8) }.getOrElse { _ -> it }
+        }?.trim()?.ifEmpty { null }
 
         @Suppress("UNCHECKED_CAST")
         fun parseSeriesInfo(obj: Map<String, Any?>): XtreamSeriesInfo {
