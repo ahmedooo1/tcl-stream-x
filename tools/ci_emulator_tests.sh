@@ -49,7 +49,12 @@ adb shell dumpsys window displays 2>/dev/null | grep -m2 -E "cur=|init=" >> "$OU
 run_test UiTourTest
 adb shell wm size >> "$OUT/display.txt" 2>&1 || true
 # The tested build is not debuggable (no run-as): reports live in the app's external files dir.
-adb pull "/sdcard/Android/data/$PKG/files/ci/." "$OUT/" || true
+REPORTS="/sdcard/Android/data/$PKG/files/ci"
+adb shell ls -la "$REPORTS" | head -5 || true
+adb exec-out sh -c "cd $REPORTS && tar -cf - ." > "$OUT/device-files.tar" || true
+tar -xf "$OUT/device-files.tar" -C "$OUT" 2>/dev/null || { mkdir -p "$OUT/pulled" && adb pull "$REPORTS" "$OUT/pulled" && cp -r "$OUT"/pulled/*/. "$OUT/" ; } || true
+rm -rf "$OUT/device-files.tar" "$OUT/pulled"
+echo "::notice::reports pulled: $(ls "$OUT" | grep -c -E '\.(png|json)$') files"
 adb logcat -d -v time > "$OUT/logcat.txt" || true
 ls -la "$OUT"
 echo "$status" > "$OUT/instrumented-status.txt"
