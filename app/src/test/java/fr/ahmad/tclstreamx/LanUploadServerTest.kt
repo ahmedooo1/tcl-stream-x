@@ -49,7 +49,7 @@ class LanUploadServerTest {
     @Test
     fun servesPage() {
         val html = http.newCall(Request.Builder().url("http://127.0.0.1:$port/").build()).execute().use { it.body!!.string() }
-        assertTrue(html.contains("TCL Stream X"))
+        assertTrue(html.contains("StreamX"))
     }
 
     @Test
