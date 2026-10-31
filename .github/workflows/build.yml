@@ -161,7 +161,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           shopt -s nullglob
-          files=(RESULTS.md catalog/REPORT.md catalog/SOURCES_REPORT.md app/src/main/assets/catalog.json ci-out/*.json ci-out/*.png ci-out/*.txt)
+          files=(RESULTS.md catalog/REPORT.md catalog/SOURCES_REPORT.md app/src/main/assets/catalog.json ci-out/*.json ci-out/*.png ci-out/*.jpg ci-out/*.txt)
           gh release upload "build-${BUILD_NUMBER}" "${files[@]}" --clobber
           gh release edit "build-${BUILD_NUMBER}" --notes-file RESULTS.md
 

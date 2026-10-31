@@ -48,13 +48,24 @@ sleep 4
 adb shell dumpsys window displays 2>/dev/null | grep -m2 -E "cur=|init=" >> "$OUT/display.txt" || true
 run_test UiTourTest
 adb shell wm size >> "$OUT/display.txt" 2>&1 || true
-# The tested build is not debuggable (no run-as): reports live in the app's external files dir.
-REPORTS="/sdcard/Android/data/$PKG/files/ci"
-adb shell ls -la "$REPORTS" | head -5 || true
-adb exec-out sh -c "cd $REPORTS && tar -cf - ." > "$OUT/device-files.tar" || true
-tar -xf "$OUT/device-files.tar" -C "$OUT" 2>/dev/null || { mkdir -p "$OUT/pulled" && adb pull "$REPORTS" "$OUT/pulled" && cp -r "$OUT"/pulled/*/. "$OUT/" ; } || true
-rm -rf "$OUT/device-files.tar" "$OUT/pulled"
-echo "::notice::reports pulled: $(ls "$OUT" | grep -c -E '\.(png|json)$') files"
+# Reports and screenshots come back in the instrumentation output (see CiReport.kt).
+python3 - "$OUT" <<'PY'
+import base64, glob, os, sys
+out = sys.argv[1]; n = 0
+for f in glob.glob(os.path.join(out, "*Test.txt")):
+    for line in open(f, errors="replace"):
+        if line.startswith("INSTRUMENTATION_STATUS: cireport:"):
+            name, _, data = line[len("INSTRUMENTATION_STATUS: cireport:"):].strip().partition("=")
+            if "/" in name or name.startswith("."):
+                continue
+            with open(os.path.join(out, name), "wb") as w:
+                w.write(base64.b64decode(data))
+            n += 1
+    # Keep the test logs readable: drop the encoded payloads from them.
+    lines = [l if not l.startswith("INSTRUMENTATION_STATUS: cireport:") else l.split("=", 1)[0] + "=<decoded>\n" for l in open(f, errors="replace")]
+    open(f, "w").writelines(lines)
+print(f"::notice::reports received: {n} files")
+PY
 adb logcat -d -v time > "$OUT/logcat.txt" || true
 ls -la "$OUT"
 echo "$status" > "$OUT/instrumented-status.txt"
