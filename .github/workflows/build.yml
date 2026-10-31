@@ -53,6 +53,7 @@ jobs:
         if: steps.unit.outcome == 'failure'
         run: |
           grep -E "^e: |error:" unit.log | head -40 | while read -r l; do echo "::error::$l"; done
+          grep -E "FAILED|What went wrong|Could not|> " unit.log | head -20 | while read -r l; do echo "::error::unit: $l"; done
           python3 - <<'PY'
           import glob, xml.etree.ElementTree as ET
           for f in glob.glob("app/build/test-results/testDebugUnitTest/*.xml"):
