@@ -332,4 +332,8 @@
     <string name="exit_title">Quitter StreamX ?</string>
     <string name="exit_stay">Rester</string>
     <string name="exit_quit">Quitter</string>
+    <string name="home_live_tag">En direct</string>
+    <string name="home_new_movies">Nouveaux films</string>
+    <string name="home_new_series">Nouvelles séries</string>
+    <string name="home_top_rated">Les mieux notés</string>
 </resources>

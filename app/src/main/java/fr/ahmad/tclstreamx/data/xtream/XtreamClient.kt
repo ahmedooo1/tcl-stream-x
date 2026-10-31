@@ -63,6 +63,8 @@ data class XtreamSeriesInfo(
     /** Season numbers in order, with their display names when the panel provides them. */
     val seasons: List<Pair<Int, String?>>,
     val episodes: List<XtreamEpisode>,
+    /** Wide picture of the series (16:9), when the panel has one. */
+    val backdrop: String? = null,
 )
 
 /** One programme of a channel's guide as the panel gives it, with replay availability. */
@@ -76,7 +78,7 @@ data class XtreamProgramme(
     val hasArchive: Boolean,
 )
 
-data class XtreamMovieInfo(val plot: String?, val genre: String?, val releaseDate: String?, val durationSecs: Long?, val rating: String?, val cast: String?, val director: String?)
+data class XtreamMovieInfo(val plot: String?, val genre: String?, val releaseDate: String?, val durationSecs: Long?, val rating: String?, val cast: String?, val director: String?, val backdrop: String? = null)
 
 /**
  * Client of the Xtream Codes `player_api.php` interface.
@@ -168,6 +170,7 @@ class XtreamClient(private val http: OkHttpClient, private val userAgent: String
             rating = info.text("rating"),
             cast = info.text("cast") ?: info.text("actors"),
             director = info.text("director"),
+            backdrop = firstImage(info["backdrop_path"]),
         )
     }
 
@@ -204,6 +207,16 @@ class XtreamClient(private val http: OkHttpClient, private val userAgent: String
         }?.trim()?.ifEmpty { null }
 
         @Suppress("UNCHECKED_CAST")
+        /** `backdrop_path` is a list of addresses on most panels, a single one on some. */
+        fun firstImage(raw: Any?): String? {
+            val first = when (raw) {
+                is List<*> -> raw.firstOrNull { it is String && it.isNotBlank() } as String?
+                is String -> raw
+                else -> null
+            }
+            return first?.trim()?.takeIf { it.startsWith("https://") || it.startsWith("http://") }?.take(2048)
+        }
+
         fun parseSeriesInfo(obj: Map<String, Any?>): XtreamSeriesInfo {
             val info = obj.obj("info")
             val seasonNames = HashMap<Int, String?>()
@@ -252,6 +265,7 @@ class XtreamClient(private val http: OkHttpClient, private val userAgent: String
                 rating = info?.text("rating"),
                 seasons = seasons,
                 episodes = episodes,
+                backdrop = firstImage(info?.get("backdrop_path")),
             )
         }
     }

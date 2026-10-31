@@ -44,7 +44,13 @@ class UiTourTest {
         key(KeyEvent.KEYCODE_DPAD_UP)
         ActivityScenario.launch(MainActivity::class.java).use {
             shot("01-home-fr", 12_000)
-            key(KeyEvent.KEYCODE_DPAD_CENTER, waitMs = 2_000)  // first section button: Chaînes
+            key(KeyEvent.KEYCODE_DPAD_DOWN)                    // next row: the stage follows the focus
+            key(KeyEvent.KEYCODE_DPAD_RIGHT)
+            shot("01b-home-focus-fr", 3_000)
+            key(KeyEvent.KEYCODE_DPAD_LEFT, times = 4)         // into the rail (lands on Accueil)
+            key(KeyEvent.KEYCODE_DPAD_DOWN)                    // Chaînes
+            key(KeyEvent.KEYCODE_DPAD_CENTER, waitMs = 2_000)
+            key(KeyEvent.KEYCODE_DPAD_RIGHT)                   // into the channels screen
             key(KeyEvent.KEYCODE_DPAD_DOWN, times = 2)
             shot("02-live-fr", 9_000)                          // preview starts after the focus dwell
             key(KeyEvent.KEYCODE_DPAD_CENTER)                  // fullscreen
@@ -75,7 +81,10 @@ class UiTourTest {
         inst.runOnMainSync { AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("ar")) }
         ActivityScenario.launch(MainActivity::class.java).use {
             shot("08-home-ar", 8_000)
-            key(KeyEvent.KEYCODE_DPAD_CENTER, waitMs = 2_000)  // القنوات
+            key(KeyEvent.KEYCODE_DPAD_RIGHT, times = 4)        // the rail is on the right in Arabic
+            key(KeyEvent.KEYCODE_DPAD_DOWN)                    // القنوات
+            key(KeyEvent.KEYCODE_DPAD_CENTER, waitMs = 2_000)
+            key(KeyEvent.KEYCODE_DPAD_LEFT)
             key(KeyEvent.KEYCODE_DPAD_DOWN, times = 2)
             shot("09-live-ar", 9_000)
         }

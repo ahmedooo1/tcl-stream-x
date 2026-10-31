@@ -332,4 +332,8 @@
     <string name="exit_title">الخروج من StreamX؟</string>
     <string name="exit_stay">البقاء</string>
     <string name="exit_quit">خروج</string>
+    <string name="home_live_tag">مباشر</string>
+    <string name="home_new_movies">أفلام جديدة</string>
+    <string name="home_new_series">مسلسلات جديدة</string>
+    <string name="home_top_rated">الأعلى تقييمًا</string>
 </resources>

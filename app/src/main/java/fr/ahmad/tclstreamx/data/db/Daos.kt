@@ -203,6 +203,20 @@ interface ChannelDao {
     )
     fun observeFavoritesOfKind(kind: Int, limit: Int): Flow<List<ChannelEntity>>
 
+    /** Newest titles of the user's own sources (movies or series), for the home rows. */
+    @Query(
+        """SELECT c.* FROM channels c $ACTIVE WHERE c.kind = :kind AND c.addedAt > 0 AND $UNLOCKED
+           ORDER BY c.addedAt DESC LIMIT :limit"""
+    )
+    fun observeNewest(kind: Int, limit: Int): Flow<List<ChannelEntity>>
+
+    /** Best rated titles of the user's own sources; recent ones first among equal ratings. */
+    @Query(
+        """SELECT c.* FROM channels c $ACTIVE WHERE c.kind = :kind AND c.rating > 0 AND $UNLOCKED
+           ORDER BY c.rating DESC, c.addedAt DESC LIMIT :limit"""
+    )
+    fun observeTopRated(kind: Int, limit: Int): Flow<List<ChannelEntity>>
+
     /**
      * A category in a chosen order: 0 = as the source lists it, 1 = by name, 2 = most recently added,
      * 3 = best rated.

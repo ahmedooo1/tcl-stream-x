@@ -26,6 +26,10 @@ class XtreamRepository(
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, XtreamSeriesInfo>?) = size > SERIES_CACHE
     }
 
+    private val movieCache = object : LinkedHashMap<String, XtreamMovieInfo>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, XtreamMovieInfo>?) = size > MOVIE_CACHE
+    }
+
     suspend fun login(playlistId: Long): XtreamLogin? {
         logins[playlistId]?.let { return it }
         val p = db.playlists().byId(playlistId) ?: return null
@@ -39,6 +43,7 @@ class XtreamRepository(
     fun forget(playlistId: Long) {
         logins.remove(playlistId)
         synchronized(seriesCache) { seriesCache.keys.removeAll { it.startsWith("$playlistId/") } }
+        synchronized(movieCache) { movieCache.keys.removeAll { it.startsWith("$playlistId/") } }
     }
 
     /** Returns [url] unchanged when it is not an internal reference; null when it cannot be resolved. */
@@ -60,8 +65,12 @@ class XtreamRepository(
 
     suspend fun movieInfo(movieUrl: String): XtreamMovieInfo? {
         val parsed = XtreamUrls.parse(movieUrl)?.takeIf { it.ref == XtreamRef.MOVIE } ?: return null
+        val cacheKey = "${parsed.playlistId}/${parsed.id}"
+        synchronized(movieCache) { movieCache[cacheKey] }?.let { return it }
         val login = login(parsed.playlistId) ?: return null
-        return withContext(Dispatchers.IO) { client.movieInfo(login.server, login.credentials, parsed.id) }
+        val info = withContext(Dispatchers.IO) { client.movieInfo(login.server, login.credentials, parsed.id) }
+        synchronized(movieCache) { movieCache[cacheKey] = info }
+        return info
     }
 
     /** Reference of an episode of the series behind [seriesUrl]. */
@@ -90,6 +99,7 @@ class XtreamRepository(
 
     companion object {
         private const val SERIES_CACHE = 40
+        private const val MOVIE_CACHE = 120
 
         fun isSeries(url: String): Boolean = XtreamUrls.parse(url)?.ref == XtreamRef.SERIES
     }
