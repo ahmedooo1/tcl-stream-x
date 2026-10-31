@@ -61,15 +61,17 @@ jobs:
                       print(f"::error::{tc.get('classname','').split('.')[-1]}.{tc.get('name')}: {(fl.get('message') or '')[:300]}")
           PY
 
-      - name: Build debug APK and test APK
+      - name: Build release APK and test APK
         id: build
         run: |
           set -o pipefail
-          if ! ./gradlew --no-daemon assembleDebug assembleDebugAndroidTest 2>&1 | tee build.log; then
+          if ! ./gradlew --no-daemon assembleRelease assembleReleaseAndroidTest 2>&1 | tee build.log; then
             grep -E "^e: |error:|What went wrong" -A2 build.log | head -60 | while read -r l; do echo "::error::$l"; done
             exit 1
           fi
-          cp app/build/outputs/apk/debug/app-debug.apk TCLStreamX-debug.apk
+          cp app/build/outputs/apk/release/app-release.apk StreamX.apk
+          # Same file under the old name: build 45 and earlier look for this name when updating.
+          cp StreamX.apk TCLStreamX-debug.apk
 
       - name: Publish APK early (tests results are attached later to the same release)
         env:
@@ -78,9 +80,9 @@ jobs:
           # Release notes are limited to 125 000 characters: the full channel report is attached as a file.
           head -n 6 catalog/REPORT.md > EARLY.md
           # A re-run of the same build reuses its release instead of failing on the existing tag.
-          gh release create "build-${BUILD_NUMBER}" TCLStreamX-debug.apk catalog/REPORT.md \
+          gh release create "build-${BUILD_NUMBER}" StreamX.apk TCLStreamX-debug.apk catalog/REPORT.md \
             --title "TCL Stream X build ${BUILD_NUMBER}" --notes-file EARLY.md --prerelease \
-            || gh release upload "build-${BUILD_NUMBER}" TCLStreamX-debug.apk catalog/REPORT.md --clobber
+            || gh release upload "build-${BUILD_NUMBER}" StreamX.apk TCLStreamX-debug.apk catalog/REPORT.md --clobber
 
       - name: Enable KVM
         run: |

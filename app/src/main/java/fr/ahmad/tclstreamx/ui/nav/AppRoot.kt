@@ -1,5 +1,7 @@
 package fr.ahmad.tclstreamx.ui.nav
 
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.zIndex
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -206,9 +208,11 @@ fun AppRoot(playback: PlaybackController) {
                 if (route != Routes.PLAYER) BottomBar(current = route, onSelect = navigator::go)
             }
         } else {
-            Row(Modifier.fillMaxSize().then(if (route != Routes.PLAYER) Modifier.windowInsetsPadding(WindowInsets.safeDrawing) else Modifier)) {
-                if (route != Routes.PLAYER) Rail(current = route, onSelect = navigator::go)
-                host(Modifier.weight(1f).fillMaxHeight())
+            // The rail keeps a fixed 72 dp slot and opens over the content: moving the focus into it
+            // animates the rail alone instead of re-laying out the whole screen on every frame.
+            Box(Modifier.fillMaxSize().then(if (route != Routes.PLAYER) Modifier.windowInsetsPadding(WindowInsets.safeDrawing) else Modifier)) {
+                host(Modifier.fillMaxSize().padding(start = if (route != Routes.PLAYER) RAIL_COLLAPSED else 0.dp))
+                if (route != Routes.PLAYER) Rail(current = route, onSelect = navigator::go, modifier = Modifier.align(Alignment.CenterStart).zIndex(1f))
             }
         }
         pairingCode?.let { code -> PairingCode(code, Modifier.align(Alignment.TopEnd)) }
@@ -263,14 +267,14 @@ private fun BottomBar(current: String, onSelect: (String) -> Unit) {
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun Rail(current: String, onSelect: (String) -> Unit) {
+private fun Rail(current: String, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
-    val width by animateDpAsState(if (expanded) 240.dp else 72.dp, label = "rail")
+    val width by animateDpAsState(if (expanded) 240.dp else RAIL_COLLAPSED, animationSpec = tween(140), label = "rail")
     val type = LocalTallyType.current
     val requesters = remember { RAIL.map { FocusRequester() } }
     val selectedIndex = RAIL.indexOfLast { current.startsWith(it.route) }.coerceAtLeast(0)
     Column(
-        Modifier
+        modifier
             .width(width)
             .fillMaxHeight()
             .background(Palette.Graphite)
@@ -313,3 +317,5 @@ private fun Rail(current: String, onSelect: (String) -> Unit) {
         }
     }
 }
+
+private val RAIL_COLLAPSED = 72.dp

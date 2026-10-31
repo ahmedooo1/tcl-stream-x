@@ -7,6 +7,8 @@ import androidx.core.os.LocaleListCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -64,6 +66,11 @@ class UiTourTest {
             key(KeyEvent.KEYCODE_DPAD_DOWN, times = 2)         // Sport
             key(KeyEvent.KEYCODE_DPAD_CENTER)
             shot("07-sports-fr", 10_000)
+            key(KeyEvent.KEYCODE_BACK, waitMs = 2_000)         // back to Home
+            key(KeyEvent.KEYCODE_BACK)                         // asks before leaving
+            shot("10-exit-fr", 1_200)
+            key(KeyEvent.KEYCODE_DPAD_CENTER, waitMs = 1_500)  // "Rester" has the focus
+            check(UiDevice.getInstance(inst).hasObject(By.text("StreamX"))) { "the app closed instead of staying" }
         }
         inst.runOnMainSync { AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("ar")) }
         ActivityScenario.launch(MainActivity::class.java).use {

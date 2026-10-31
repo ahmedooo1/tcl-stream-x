@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draws the TCL Stream X brand assets (launcher icons, TV banner, in-app mark) from code.
+"""Draws the StreamX brand assets (launcher icons, TV banner, in-app mark) from code.
 
 The mark: a screen frame whose picture is a play sign built from scan lines, with the red
 "on air" tally light of a studio camera on its corner. Run from the repository root:
@@ -79,8 +79,8 @@ def banner(w=640, h=360) -> Image.Image:
     big = ImageFont.truetype(f"{RES}/font/barlowcondensed_bold.ttf", round(H * 0.30))
     small = ImageFont.truetype(f"{RES}/font/ibmplexmono_medium.ttf", round(H * 0.075))
     tx = W * 0.06 + m + W * 0.035
-    d.text((tx, H * 0.24), "Stream", font=big, fill=TEXT)
-    d.text((tx + W * 0.004, H * 0.60), "TCL  ·  LIVE  ·  FILMS", font=small, fill=DIM)
+    d.text((tx, H * 0.24), "StreamX", font=big, fill=TEXT)
+    d.text((tx + W * 0.004, H * 0.60), "Live · Films · Séries", font=small, fill=DIM)
     return img.resize((w, h), Image.LANCZOS)
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs on the Android TV emulator started by reactivecircus/android-emulator-runner.
-# The app stays installed after the tests so the reports can be pulled with run-as.
+# The app stays installed after the tests so the reports can be pulled.
 set -u
 PKG=fr.ahmad.tclstreamx
 OUT=ci-out
@@ -9,8 +9,8 @@ adb wait-for-device
 adb shell getprop ro.build.characteristics > "$OUT/device.txt"
 adb shell getprop ro.product.model >> "$OUT/device.txt"
 adb shell getprop ro.build.version.sdk >> "$OUT/device.txt"
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+adb install -r app/build/outputs/apk/release/app-release.apk
+adb install -r app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
 adb shell wm size > "$OUT/display.txt" 2>&1 || true
 adb shell wm density >> "$OUT/display.txt" 2>&1 || true
 adb shell settings put global stay_on_while_plugged_in 7 || true
@@ -48,9 +48,8 @@ sleep 4
 adb shell dumpsys window displays 2>/dev/null | grep -m2 -E "cur=|init=" >> "$OUT/display.txt" || true
 run_test UiTourTest
 adb shell wm size >> "$OUT/display.txt" 2>&1 || true
-adb exec-out run-as "$PKG" sh -c 'cd files/ci && tar -cf - .' > "$OUT/device-files.tar" || true
-tar -xf "$OUT/device-files.tar" -C "$OUT" || true
-rm -f "$OUT/device-files.tar"
+# The tested build is not debuggable (no run-as): reports live in the app's external files dir.
+adb pull "/sdcard/Android/data/$PKG/files/ci/." "$OUT/" || true
 adb logcat -d -v time > "$OUT/logcat.txt" || true
 ls -la "$OUT"
 echo "$status" > "$OUT/instrumented-status.txt"

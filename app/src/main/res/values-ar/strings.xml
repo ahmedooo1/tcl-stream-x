@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">TCL Stream X</string>
+    <string name="app_name">StreamX</string>
 
     <string name="nav_home">الرئيسية</string>
     <string name="nav_live">القنوات</string>
@@ -61,7 +61,7 @@
     <string name="player_error_title">تعذّر التشغيل</string>
     <string name="player_issue_network">الخادم لا يستجيب. تحقق من اتصال التلفاز أو أعد المحاولة لاحقًا.</string>
     <string name="player_issue_timeout">البث يستغرق وقتًا طويلًا في الاستجابة.</string>
-    <string name="player_issue_forbidden">الجهة الناشرة ترفض الوصول من اتصالك (قيد جغرافي أو تصريح). لا يتجاوز TCL Stream X هذه القيود.</string>
+    <string name="player_issue_forbidden">الجهة الناشرة ترفض الوصول من اتصالك (قيد جغرافي أو تصريح). لا يتجاوز StreamX هذه القيود.</string>
     <string name="player_issue_auth">هذا البث يتطلب بيانات دخول.</string>
     <string name="player_issue_not_found">هذا البث لم يعد موجودًا على هذا العنوان.</string>
     <string name="player_issue_server">خادم البث في حالة خطأ.</string>
@@ -121,7 +121,7 @@
 
     <string name="local_title">ملفاتي</string>
     <string name="local_permission">السماح بالوصول إلى الفيديوهات</string>
-    <string name="local_permission_body">يقرأ TCL Stream X الفيديوهات الموجودة على التلفاز وذاكرات USB. لا يُرسل أي شيء إلى الإنترنت.</string>
+    <string name="local_permission_body">يقرأ StreamX الفيديوهات الموجودة على التلفاز وذاكرات USB. لا يُرسل أي شيء إلى الإنترنت.</string>
     <string name="local_open_picker">افتح ملفًا…</string>
     <string name="local_empty">لم يُعثر على فيديوهات في التلفاز أو أجهزة USB.</string>
     <string name="local_no_picker">لا يوجد منتقي ملفات على هذا التلفاز.</string>
@@ -172,7 +172,7 @@
     <string name="settings_autocheck">افحص القنوات الرسمية عند التشغيل</string>
     <string name="settings_save">حفظ</string>
     <string name="settings_about">حول التطبيق</string>
-    <string name="settings_about_body">يشغّل TCL Stream X بثوثًا عامة مجانية تنشرها جهاتها، وقوائم التشغيل الخاصة بك. لا يتجاوز تسجيل الدخول ولا DRM ولا القيود الجغرافية.</string>
+    <string name="settings_about_body">يشغّل StreamX بثوثًا عامة مجانية تنشرها جهاتها، وقوائم التشغيل الخاصة بك. لا يتجاوز تسجيل الدخول ولا DRM ولا القيود الجغرافية.</string>
     <string name="settings_version">الإصدار %1$s</string>
     <string name="on">مفعّل</string>
     <string name="off">معطّل</string>
@@ -248,8 +248,8 @@
     <string name="section_free_channels">قنوات مجانية على مدار الساعة</string>
     <string name="section_free_channels_note">قنوات رسمية مجانية بث مباشر. بعضها متاح في بلده فقط.</string>
     <string name="cast_title">العرض على شاشة</string>
-    <string name="cast_tv_app">TCL Stream X على التلفاز (واي فاي)</string>
-    <string name="cast_tv_app_empty">افتح TCL Stream X على التلفاز المتصل بنفس شبكة الواي فاي.</string>
+    <string name="cast_tv_app">StreamX على التلفاز (واي فاي)</string>
+    <string name="cast_tv_app_empty">افتح StreamX على التلفاز المتصل بنفس شبكة الواي فاي.</string>
     <string name="cast_pair_needed">يحتاج إلى ربط</string>
     <string name="cast_code_hint">الرمز الظاهر على التلفاز</string>
     <string name="cast_sent">أُرسلت إلى %1$s</string>
@@ -264,11 +264,11 @@
     <string name="cast_share">مشاركة الرابط</string>
     <string name="cast_note">بعض القنوات تتطلب ترويسات خاصة أو منطقة جغرافية معيّنة، فقد لا تعمل عبر Chromecast.</string>
     <string name="remote_pair_title">ربط هاتف</string>
-    <string name="remote_pair_hint">أدخل هذا الرمز في TCL Stream X على الهاتف.</string>
+    <string name="remote_pair_hint">أدخل هذا الرمز في StreamX على الهاتف.</string>
     <string name="vod_featured">الواجهة</string>
     <string name="vod_see_all">عرض الكل</string>
     <string name="home_resume_live">تابع البث المباشر</string>
-    <string name="cast_none_found">لم يُعثر على أي جهاز. تأكّد أن الهاتف والتلفاز على نفس شبكة الواي فاي (لا شبكة الضيوف)، وأن TCL Stream X مفتوح على التلفاز، أو أدخل العنوان الظاهر في إعدادات التلفاز.</string>
+    <string name="cast_none_found">لم يُعثر على أي جهاز. تأكّد أن الهاتف والتلفاز على نفس شبكة الواي فاي (لا شبكة الضيوف)، وأن StreamX مفتوح على التلفاز، أو أدخل العنوان الظاهر في إعدادات التلفاز.</string>
     <string name="cast_manual_hint">عنوان التلفاز (مثل 192.168.1.50)</string>
     <string name="settings_receive">الاستقبال من الهاتف</string>
     <string name="settings_receive_address">عنوان هذا التلفاز: %1$s. على الهاتف افتح قناة ثم زر الإرسال.</string>
@@ -328,5 +328,8 @@
     <string name="update_ready">build %1$d جاهز · أكّد التثبيت</string>
     <string name="update_failed_network">تعذّر الوصول إلى خادم التحديثات · أعد المحاولة</string>
     <string name="update_failed_signature">رُفضت الحزمة (توقيع أو نسخة مختلفة)</string>
-    <string name="update_failed_permission">اسمح لـ TCL Stream X بتثبيت التطبيقات، ثم اضغط مرة أخرى</string>
+    <string name="update_failed_permission">اسمح لـ StreamX بتثبيت التطبيقات، ثم اضغط مرة أخرى</string>
+    <string name="exit_title">الخروج من StreamX؟</string>
+    <string name="exit_stay">البقاء</string>
+    <string name="exit_quit">خروج</string>
 </resources>

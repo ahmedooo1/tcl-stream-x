@@ -160,13 +160,13 @@ class LanUploadServer(
         }
 
         private val PAGE = """<!doctype html><html lang="fr"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>TCL Stream X</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>StreamX</title>
 <style>body{font-family:system-ui,sans-serif;background:#0c0d0f;color:#f2f3f4;margin:0;padding:24px;max-width:520px}
 h1{font-size:28px;margin:0 0 4px}p{color:#9aa0a6}label{display:block;margin:18px 0 6px}
 input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #2b2f35;background:#15171a;color:#f2f3f4;font-size:16px}
 button{margin-top:12px;padding:12px 18px;border:0;background:#ff4d2e;color:#0c0d0f;font-weight:700;font-size:16px}
 #s{margin-top:16px;color:#59d98e}</style></head><body>
-<h1>TCL Stream X</h1><p>Envoyer une playlist M3U vers la TV · إرسال قائمة تشغيل إلى التلفاز</p>
+<h1>StreamX</h1><p>Envoyer une playlist M3U vers la TV · إرسال قائمة تشغيل إلى التلفاز</p>
 <label>PIN</label><input id="pin" inputmode="numeric" maxlength="6">
 <label>Nom · الاسم</label><input id="nm" value="Ma playlist">
 <label>Fichier .m3u / .m3u8</label><input id="file" type="file" accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain">

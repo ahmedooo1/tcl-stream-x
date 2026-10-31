@@ -29,7 +29,7 @@ interface TokenStore {
 }
 
 /**
- * Receiver running on the TV while the app is in the foreground: a phone running TCL Stream X sends
+ * Receiver running on the TV while the app is in the foreground: a phone running StreamX sends
  * the channel it is watching and the TV plays it.
  *
  * Pairing: the phone asks to pair, the TV shows a 4-digit code on screen, the user types it on the
@@ -176,7 +176,7 @@ class RemotePlayServer(
                 ?.take(5).orEmpty()
             if (urls.isEmpty()) return null
             return RemoteMedia(
-                title = (m.text("title") ?: "TCL Stream X").take(200),
+                title = (m.text("title") ?: "StreamX").take(200),
                 urls = urls,
                 userAgent = m.text("userAgent")?.take(300),
                 referrer = m.text("referrer")?.takeIf { it.startsWith("http") }?.take(1000),

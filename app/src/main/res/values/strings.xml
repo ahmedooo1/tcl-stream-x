@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">TCL Stream X</string>
+    <string name="app_name">StreamX</string>
 
     <string name="nav_home">Accueil</string>
     <string name="nav_live">Chaînes</string>
@@ -61,7 +61,7 @@
     <string name="player_error_title">Lecture impossible</string>
     <string name="player_issue_network">Le serveur ne répond pas. Vérifiez la connexion de la TV ou réessayez plus tard.</string>
     <string name="player_issue_timeout">Le flux met trop de temps à répondre.</string>
-    <string name="player_issue_forbidden">Le diffuseur refuse l\'accès depuis votre connexion (restriction géographique ou autorisation). TCL Stream X ne contourne pas ces restrictions.</string>
+    <string name="player_issue_forbidden">Le diffuseur refuse l\'accès depuis votre connexion (restriction géographique ou autorisation). StreamX ne contourne pas ces restrictions.</string>
     <string name="player_issue_auth">Ce flux demande des identifiants.</string>
     <string name="player_issue_not_found">Ce flux n\'existe plus à cette adresse.</string>
     <string name="player_issue_server">Le serveur du flux est en erreur.</string>
@@ -121,7 +121,7 @@
 
     <string name="local_title">Mes fichiers</string>
     <string name="local_permission">Autoriser l\'accès aux vidéos</string>
-    <string name="local_permission_body">TCL Stream X lit les vidéos de la TV et des clés USB. Rien n\'est envoyé sur Internet.</string>
+    <string name="local_permission_body">StreamX lit les vidéos de la TV et des clés USB. Rien n\'est envoyé sur Internet.</string>
     <string name="local_open_picker">Ouvrir un fichier…</string>
     <string name="local_empty">Aucune vidéo trouvée sur la TV ou les périphériques USB.</string>
     <string name="local_no_picker">Aucun sélecteur de fichiers sur cette TV.</string>
@@ -172,7 +172,7 @@
     <string name="settings_autocheck">Vérifier les chaînes officielles au démarrage</string>
     <string name="settings_save">Enregistrer</string>
     <string name="settings_about">À propos</string>
-    <string name="settings_about_body">TCL Stream X lit des flux publics gratuits publiés par leurs diffuseurs et vos propres playlists. Il ne contourne ni identification, ni DRM, ni restriction géographique.</string>
+    <string name="settings_about_body">StreamX lit des flux publics gratuits publiés par leurs diffuseurs et vos propres playlists. Il ne contourne ni identification, ni DRM, ni restriction géographique.</string>
     <string name="settings_version">Version %1$s</string>
     <string name="on">Activé</string>
     <string name="off">Désactivé</string>
@@ -248,8 +248,8 @@
     <string name="section_free_channels">Chaînes gratuites 24 h/24</string>
     <string name="section_free_channels_note">Chaînes officielles gratuites, en direct. Certaines ne sont disponibles que dans leur pays.</string>
     <string name="cast_title">Diffuser sur un écran</string>
-    <string name="cast_tv_app">TCL Stream X sur la TV (Wi‑Fi)</string>
-    <string name="cast_tv_app_empty">Ouvrez TCL Stream X sur la TV, connectée au même Wi‑Fi.</string>
+    <string name="cast_tv_app">StreamX sur la TV (Wi‑Fi)</string>
+    <string name="cast_tv_app_empty">Ouvrez StreamX sur la TV, connectée au même Wi‑Fi.</string>
     <string name="cast_pair_needed">à associer</string>
     <string name="cast_code_hint">Code affiché sur la TV</string>
     <string name="cast_sent">Envoyé à %1$s</string>
@@ -264,11 +264,11 @@
     <string name="cast_share">Partager le lien</string>
     <string name="cast_note">Certaines chaînes exigent des en-têtes particuliers ou une région : elles peuvent ne pas passer par Chromecast.</string>
     <string name="remote_pair_title">Associer un téléphone</string>
-    <string name="remote_pair_hint">Saisissez ce code dans TCL Stream X sur le téléphone.</string>
+    <string name="remote_pair_hint">Saisissez ce code dans StreamX sur le téléphone.</string>
     <string name="vod_featured">À la une</string>
     <string name="vod_see_all">Tout voir</string>
     <string name="home_resume_live">Reprendre en direct</string>
-    <string name="cast_none_found">Aucun appareil trouvé. Vérifiez que le téléphone et la TV sont sur le même Wi‑Fi (pas un Wi‑Fi invité) et que TCL Stream X est ouvert sur la TV, ou saisissez l\'adresse affichée dans Réglages sur la TV.</string>
+    <string name="cast_none_found">Aucun appareil trouvé. Vérifiez que le téléphone et la TV sont sur le même Wi‑Fi (pas un Wi‑Fi invité) et que StreamX est ouvert sur la TV, ou saisissez l\'adresse affichée dans Réglages sur la TV.</string>
     <string name="cast_manual_hint">Adresse de la TV (ex. 192.168.1.50)</string>
     <string name="settings_receive">Recevoir depuis le téléphone</string>
     <string name="settings_receive_address">Adresse de cette TV : %1$s. Sur le téléphone, ouvrez une chaîne puis le bouton de diffusion.</string>
@@ -328,5 +328,8 @@
     <string name="update_ready">Build %1$d prêt · confirmez l\'installation</string>
     <string name="update_failed_network">Impossible de joindre le serveur des mises à jour · réessayer</string>
     <string name="update_failed_signature">Paquet refusé (signature ou version différente)</string>
-    <string name="update_failed_permission">Autorisez TCL Stream X à installer des applications, puis appuyez encore</string>
+    <string name="update_failed_permission">Autorisez StreamX à installer des applications, puis appuyez encore</string>
+    <string name="exit_title">Quitter StreamX ?</string>
+    <string name="exit_stay">Rester</string>
+    <string name="exit_quit">Quitter</string>
 </resources>

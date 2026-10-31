@@ -1,5 +1,6 @@
 package fr.ahmad.tclstreamx.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.offset
@@ -99,6 +100,11 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
         lastChannel = settings?.lastChannelKey?.let { dao.byKey(it) }
     }
     val firstTile = remember { FocusRequester() }
+    var askExit by remember { mutableStateOf(false) }
+    // Back on Home asks before leaving the app (a panel open on Home closes first: its own
+    // back handler is registered later and wins).
+    BackHandler { askExit = true }
+    if (askExit) ExitDialog(onStay = { askExit = false })
 
     var series by remember { mutableStateOf<ChannelEntity?>(null) }
     fun play(ch: ChannelEntity) {

@@ -60,7 +60,7 @@ private sealed interface CastStatus {
 
 /**
  * Three ways to put what is playing on another screen:
- * 1. TCL Stream X on the TV, over Wi-Fi (paired once with a code shown on the TV);
+ * 1. StreamX on the TV, over Wi-Fi (paired once with a code shown on the TV);
  * 2. Chromecast and Google TV "Chromecast built-in", with Google's default receiver;
  * 3. any other installed app (VLC, a DLNA/UPnP caster…) through the system chooser.
  */

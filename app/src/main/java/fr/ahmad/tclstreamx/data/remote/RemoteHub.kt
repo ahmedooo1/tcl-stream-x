@@ -18,13 +18,13 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-/** A TV running TCL Stream X found on the local network. */
+/** A TV running StreamX found on the local network. */
 data class RemoteTv(val name: String, val host: String, val port: Int, val paired: Boolean)
 
 enum class SendResult { OK, NOT_PAIRED, NETWORK }
 
 /**
- * "Send to the TV" between two devices running TCL Stream X on the same Wi-Fi:
+ * "Send to the TV" between two devices running StreamX on the same Wi-Fi:
  * the TV side runs [RemotePlayServer] and announces itself with DNS-SD (NSD); the phone side finds
  * it, pairs once with the code shown on the TV, then sends the channel it is playing.
  */

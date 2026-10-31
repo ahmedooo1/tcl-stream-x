@@ -37,13 +37,17 @@ android {
         debug {
             signingConfig = signingConfigs.getByName("debug")
         }
+        // The APK people install: not debuggable (a debuggable app runs Compose several times
+        // slower, which is felt on TV processors), with the libraries' baseline profiles compiled
+        // ahead of time by profileinstaller. Same key as before, so it installs over older builds.
+        // Code shrinking stays off so the instrumented tests run against this very build.
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = false
+            isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+    testBuildType = "release"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -108,6 +112,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
+    implementation(libs.androidx.profileinstaller)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

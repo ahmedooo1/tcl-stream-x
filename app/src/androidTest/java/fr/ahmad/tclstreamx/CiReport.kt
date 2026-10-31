@@ -4,10 +4,11 @@ import android.graphics.Bitmap
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 
-/** Results are written to the app's private files dir; CI pulls them with `adb exec-out run-as`. */
+/** Results are written to the app's external files dir, which CI pulls with `adb pull`. */
 object CiReport {
     val dir: File by lazy {
-        File(InstrumentationRegistry.getInstrumentation().targetContext.filesDir, "ci").apply { mkdirs() }
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        File(ctx.getExternalFilesDir(null) ?: ctx.filesDir, "ci").apply { mkdirs() }
     }
 
     fun write(name: String, text: String) = File(dir, name).writeText(text)

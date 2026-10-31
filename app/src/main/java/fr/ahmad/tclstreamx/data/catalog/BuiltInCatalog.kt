@@ -119,7 +119,7 @@ class BuiltInCatalog(private val context: Context, private val db: AppDatabase) 
 
     companion object {
         const val ASSET = "catalog.json"
-        const val NAME = "TCL Stream X"
+        const val NAME = "StreamX"
 
         fun statusOf(s: String): StreamStatus = when (s) {
             "ok" -> StreamStatus.ONLINE

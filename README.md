@@ -48,7 +48,7 @@ En local (Android Studio ou SDK installé) : `./gradlew assembleDebug` puis `app
 
 ```bash
 adb connect 192.168.1.50:5555        # remplacez par l'IP de la TV, acceptez la demande sur l'écran
-adb install -r TCLStreamX-debug.apk
+adb install -r StreamX.apk
 adb shell am start -n fr.ahmad.tclstreamx/.MainActivity
 ```
 

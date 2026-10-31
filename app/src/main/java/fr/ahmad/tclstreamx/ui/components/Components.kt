@@ -1,6 +1,7 @@
 package fr.ahmad.tclstreamx.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -124,17 +125,19 @@ fun TallyCard(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (focused) 1.05f else if (pressed) 0.97f else 1f, label = "card")
+    val scale by animateFloatAsState(
+        if (focused) 1.04f else if (pressed) 0.97f else 1f,
+        animationSpec = tween(durationMillis = 110),
+        label = "card",
+    )
     val shape = CardShape
     Box(
         modifier
             .graphicsLayer {
+                // Scale on the card's own layer: moving the focus redraws two cards, not the screen.
+                // No shadow: a large animated shadow costs a lot on TV graphics chips.
                 scaleX = scale
                 scaleY = scale
-                // Focused card floats above its neighbours.
-                shadowElevation = if (focused) 18.dp.toPx() else 0f
-                this.shape = shape
-                clip = false
             }
             .clip(shape)
             .background(if (focused) Palette.Raised else Palette.Graphite)

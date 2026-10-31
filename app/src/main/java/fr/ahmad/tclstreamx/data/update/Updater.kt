@@ -76,7 +76,7 @@ class Updater(private val context: Context, http: OkHttpClient) {
         val file = withContext(Dispatchers.IO) {
             val dir = File(context.cacheDir, "updates").apply { mkdirs() }
             dir.listFiles()?.forEach { it.delete() }
-            val target = File(dir, "TCLStreamX-${update.build}.apk")
+            val target = File(dir, "StreamX-${update.build}.apk")
             try {
                 client.newCall(Request.Builder().url(update.url).build()).execute().use { resp ->
                     if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
@@ -154,7 +154,7 @@ class Updater(private val context: Context, http: OkHttpClient) {
     companion object {
         private const val REPO = "ahmedooo1/tcl-stream-x"
         private const val LATEST = "https://api.github.com/repos/$REPO/releases/latest"
-        private const val ASSET = "TCLStreamX-debug.apk"
+        private const val ASSET = "StreamX.apk"
         private const val MAX_SIZE = 200L * 1024 * 1024
     }
 }
