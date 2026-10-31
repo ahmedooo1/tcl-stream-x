@@ -29,6 +29,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
@@ -51,6 +55,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -121,7 +126,7 @@ private class SpotState {
  * own sources hold (newest films and series, best rated), and the channels people come back to.
  * On a TV the stage stays in place while the rows scroll under it.
  */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveViewModel) {
     val context = LocalContext.current
@@ -278,13 +283,13 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
         }
     }
 
-    fun LazyListScope.rowItems() {
+    fun LazyListScope.rowItems(inner: BringIntoViewSpec?) {
         rows.forEachIndexed { rowIndex, row ->
             val first = rowIndex == 0
             fun Modifier.firstFocus(i: Int) = if (first && i == 0) focusRequester(firstItem) else this
             when (row) {
                 HomeRow.Continue -> item(key = "continue") {
-                    RowShelf(stringResource(R.string.home_continue)) {
+                    RowShelf(stringResource(R.string.home_continue), inner) {
                         lastChannel?.let { ch ->
                             item(key = "live:" + ch.channelKey) {
                                 LiveResumeCard(ch, Modifier.width(wideWidth).firstFocus(0), onFocus = { spot.current = channelSpot(ch) }) { play(ch) }
@@ -301,7 +306,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                     }
                 }
                 HomeRow.Sections -> item(key = "sections") {
-                    RowShelf(stringResource(R.string.home_sections)) {
+                    RowShelf(stringResource(R.string.home_sections), inner) {
                         itemsIndexed(tiles, key = { _, s -> s.route }) { i, s ->
                             SectionCard(
                                 s, sectionNames.getValue(s.route), subtitles.getValue(s.route),
@@ -312,7 +317,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                     }
                 }
                 is HomeRow.Posters -> item(key = "posters:" + row.title) {
-                    RowShelf(stringResource(row.title)) {
+                    RowShelf(stringResource(row.title), inner) {
                         itemsIndexed(row.list, key = { _, ch -> ch.channelKey }) { i, ch ->
                             PosterCard(
                                 ch, Modifier.width(posterWidth).firstFocus(i),
@@ -323,7 +328,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                     }
                 }
                 is HomeRow.Channels -> item(key = "channels:" + row.title) {
-                    RowShelf(stringResource(row.title)) {
+                    RowShelf(stringResource(row.title), inner) {
                         itemsIndexed(row.list, key = { _, ch -> ch.channelKey }) { i, ch ->
                             ChannelTile(ch, Modifier.width(tileWidth).firstFocus(i), onFocus = { spot.current = channelSpot(ch) }) { play(ch) }
                         }
@@ -332,6 +337,10 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
             }
         }
     }
+
+    val noFocus = remember { SpotState() }
+    // Facts that change after the spot was taken (counts once the library is loaded) are read again.
+    val refresh: (Spot) -> Spot = { s -> tiles.firstOrNull { "section:" + it.route == s.key }?.let(::sectionSpot) ?: s }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val stageHeight = if (compact) 300.dp else (maxHeight * 0.44f).coerceIn(200.dp, 300.dp)
@@ -343,27 +352,41 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                 contentPadding = PaddingValues(bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp),
             ) {
-                // Phone: the stage is the top of the page and scrolls with it.
+                // Phone: touch never moves a focus, so the stage shows the featured item and
+                // scrolls with the page; without one, only the header.
                 item(key = "stage") {
-                    Box(Modifier.fillMaxWidth().height(stageHeight)) {
-                        StageBackdrop(spot, featured, Modifier.fillMaxSize())
+                    if (featured == null) {
                         HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
-                        StageInfo(spot, featured, compact = true, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 16.dp))
+                    } else {
+                        Box(Modifier.fillMaxWidth().height(stageHeight)) {
+                            StageBackdrop(noFocus, featured, Modifier.fillMaxSize())
+                            HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
+                            StageInfo(noFocus, featured, compact = true, refresh, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 16.dp))
+                        }
                     }
                 }
                 item(key = "update") { Box(Modifier.padding(horizontal = 16.dp)) { UpdateRow(compactBanner = true) } }
-                rowItems()
+                rowItems(null)
             }
         } else {
             Column(Modifier.fillMaxSize()) {
                 HomeHeader(compact = false, Modifier.padding(start = 36.dp, end = 40.dp, top = 20.dp))
                 UpdateRow(compactBanner = true)
-                StageInfo(spot, featured, compact = false, Modifier.fillMaxWidth().height(stageHeight - 70.dp).padding(start = 36.dp, end = 40.dp))
-                LazyColumn(
-                    Modifier.fillMaxWidth().weight(1f).focusRestorer(),
-                    contentPadding = PaddingValues(top = 6.dp, bottom = 40.dp),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
-                ) { rowItems() }
+                StageInfo(spot, featured, compact = false, refresh, Modifier.fillMaxWidth().height(stageHeight - 70.dp).padding(start = 36.dp, end = 40.dp))
+                // The focused row always comes to the top of the list, under the stage, instead
+                // of stopping half cut; inside a row, scrolling keeps its usual behaviour.
+                val rowsDefault = LocalBringIntoViewSpec.current
+                val density = LocalDensity.current
+                val toTop = remember(density) { RowToTop(with(density) { 40.dp.toPx() }) }
+                CompositionLocalProvider(LocalBringIntoViewSpec provides toTop) {
+                    LazyColumn(
+                        Modifier.fillMaxWidth().weight(1f).focusRestorer(),
+                        contentPadding = PaddingValues(top = 6.dp, bottom = 400.dp),
+                        verticalArrangement = Arrangement.spacedBy(18.dp),
+                    ) {
+                        rowItems(rowsDefault)
+                    }
+                }
             }
         }
         series?.let { show ->
@@ -388,7 +411,8 @@ private fun HomeHeader(compact: Boolean, modifier: Modifier) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Image(painterResource(R.drawable.logo_mark), contentDescription = null, modifier = Modifier.size(if (compact) 34.dp else 38.dp))
         Spacer(Modifier.width(10.dp))
-        Text(stringResource(R.string.app_name), style = type.title, maxLines = 1, modifier = Modifier.weight(1f))
+        Text(stringResource(R.string.app_name), style = type.title, maxLines = 1)
+        Spacer(Modifier.weight(1f))
         Clock()
     }
 }
@@ -461,10 +485,10 @@ private fun StageBackdrop(state: SpotState, featured: Spot?, modifier: Modifier)
 
 /** Title, facts and summary of the focused item, in the reading side of the stage. */
 @Composable
-private fun StageInfo(state: SpotState, featured: Spot?, compact: Boolean, modifier: Modifier) {
+private fun StageInfo(state: SpotState, featured: Spot?, compact: Boolean, refresh: (Spot) -> Spot, modifier: Modifier) {
     val type = LocalTallyType.current
     val c = (LocalContext.current.applicationContext as TclApp).container
-    val s = state.current ?: featured
+    val s = (state.current ?: featured)?.let(refresh)
     var plot by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(s?.key) {
         plot = null
@@ -514,20 +538,32 @@ private fun accentOf(route: String): Color = when (route) {
 }
 
 /** Title over one horizontal row of cards; the row remembers its focused card. */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
-private fun RowShelf(title: String, content: LazyListScope.() -> Unit) {
+private fun RowShelf(title: String, inner: BringIntoViewSpec?, content: LazyListScope.() -> Unit) {
     val compact = isCompactWidth()
     val side = if (compact) 16.dp else 36.dp
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(title, style = LocalTallyType.current.title, modifier = Modifier.padding(horizontal = side))
-        LazyRow(
-            Modifier.fillMaxWidth().focusRestorer(),
-            contentPadding = PaddingValues(horizontal = side, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            content = content,
-        )
+        val row = @Composable {
+            LazyRow(
+                Modifier.fillMaxWidth().focusRestorer(),
+                contentPadding = PaddingValues(horizontal = side, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                content = content,
+            )
+        }
+        if (inner != null) CompositionLocalProvider(LocalBringIntoViewSpec provides inner) { row() } else row()
     }
+}
+
+/**
+ * Brings the focused card's row to the top of the list: the card goes [above] px below the top,
+ * which leaves room for the row title.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+private class RowToTop(private val above: Float) : BringIntoViewSpec {
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = offset - above
 }
 
 @Composable
