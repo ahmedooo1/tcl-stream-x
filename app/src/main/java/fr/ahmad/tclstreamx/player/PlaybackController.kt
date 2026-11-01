@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
@@ -22,6 +23,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.session.MediaSession
 import fr.ahmad.tclstreamx.TclApp
 import fr.ahmad.tclstreamx.data.db.ChannelEntity
 import fr.ahmad.tclstreamx.data.db.HistoryEntity
@@ -80,10 +82,13 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
     private var retryJob: Job? = null
     private var resolveJob: Job? = null
     private var progressJob: Job? = null
+    private var stallJob: Job? = null
+    private var session: MediaSession? = null
 
     private val listener = object : Player.Listener {
         override fun onPlaybackStateChanged(state: Int) {
             _ui.update { it.copy(buffering = state == Player.STATE_BUFFERING) }
+            watchStall(state == Player.STATE_BUFFERING)
             if (state == Player.STATE_READY) {
                 autoRetries = 0
                 _ui.update { it.copy(issue = null, attempt = null) }
@@ -122,10 +127,43 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
         val p = ExoPlayer.Builder(ctx, renderers)
             .setLoadControl(loadControl)
             .setTrackSelector(selector)
+            // Pauses for other apps' audio (voice assistant, calls) and when headphones are unplugged.
+            .setAudioAttributes(
+                AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(),
+                true,
+            )
+            .setHandleAudioBecomingNoisy(true)
+            // Keeps Wi-Fi and CPU awake while a channel plays, so the stream does not stall when the TV idles.
+            .setWakeMode(C.WAKE_MODE_NETWORK)
             .build()
         p.addListener(listener)
+        // An active media session tells Google TV that something is playing: no screen saver, remote media keys work.
+        session = MediaSession.Builder(ctx, p).build()
         _player.value = p
         return p
+    }
+
+    /**
+     * A live stream that stays in "loading" forever (server accepts the connection but sends nothing)
+     * raises no player error. After STALL_MS the load is retried, then the failure is shown.
+     */
+    private fun watchStall(buffering: Boolean) {
+        stallJob?.cancel()
+        if (!buffering || _ui.value.item?.isLive != true) return
+        stallJob = viewModelScope.launch {
+            delay(STALL_MS)
+            val p = _player.value ?: return@launch
+            if (p.playbackState != Player.STATE_BUFFERING || _ui.value.issue != null) return@launch
+            if (autoRetries < MAX_AUTO_RETRIES) {
+                autoRetries++
+                urlIndex = 0
+                forceHls = false
+                load(resumeFromSaved = false)
+            } else {
+                p.stop()
+                _ui.update { it.copy(issue = PlaybackIssue.TIMEOUT, buffering = false) }
+            }
+        }
     }
 
     fun play(item: PlayItem) {
@@ -467,6 +505,7 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
         retryJob?.cancel()
         resolveJob?.cancel()
         progressJob?.cancel()
+        stallJob?.cancel()
         _player.value?.stop()
         sleepJob?.cancel()
         _ui.update { PlayerUi(resizeMode = it.resizeMode) }
@@ -476,6 +515,9 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
     fun onBackground() {
         saveProgress(completed = false)
         retryJob?.cancel()
+        stallJob?.cancel()
+        session?.release()
+        session = null
         _player.value?.let {
             it.removeListener(listener)
             it.release()
@@ -493,6 +535,7 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
         const val AUTO = "auto"
         const val OFF = "off"
         private const val MAX_AUTO_RETRIES = 2
+        private const val STALL_MS = 25_000L
         private const val RETRY_DELAY_MS = 2_500L
         private const val PROGRESS_EVERY_MS = 10_000L
         private const val KEEP_HISTORY = 50
