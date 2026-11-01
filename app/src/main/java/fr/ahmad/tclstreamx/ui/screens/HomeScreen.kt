@@ -259,17 +259,21 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     val tileWidth: Dp = if (compact) 160.dp else 186.dp
 
     // Rows in order; the first item of the first row takes the focus on a TV.
+    // A source can list the same title twice (one entry per category): lists keyed by title must
+    // hold each key once, or Compose stops the app ("Key ... was already used").
+    fun List<ChannelEntity>.once() = distinctBy { it.channelKey }
     val rows = buildList<HomeRow> {
         if (lastChannel != null || resume.isNotEmpty()) add(HomeRow.Continue)
         add(HomeRow.Sections)
-        if (newMovies.isNotEmpty()) add(HomeRow.Posters(R.string.home_new_movies, newMovies))
-        if (newSeries.isNotEmpty()) add(HomeRow.Posters(R.string.home_new_series, newSeries))
-        if (topMovies.isNotEmpty()) add(HomeRow.Posters(R.string.home_top_rated, topMovies))
-        if (recent.isNotEmpty()) add(HomeRow.Channels(R.string.home_recent, recent))
-        if (favorites.isNotEmpty()) add(HomeRow.Channels(R.string.home_favorites, favorites))
-        if (news.isNotEmpty()) add(HomeRow.Channels(R.string.home_news, news))
-        if (sports.isNotEmpty()) add(HomeRow.Channels(R.string.home_free_sports, sports))
+        if (newMovies.isNotEmpty()) add(HomeRow.Posters(R.string.home_new_movies, newMovies.once()))
+        if (newSeries.isNotEmpty()) add(HomeRow.Posters(R.string.home_new_series, newSeries.once()))
+        if (topMovies.isNotEmpty()) add(HomeRow.Posters(R.string.home_top_rated, topMovies.once()))
+        if (recent.isNotEmpty()) add(HomeRow.Channels(R.string.home_recent, recent.once()))
+        if (favorites.isNotEmpty()) add(HomeRow.Channels(R.string.home_favorites, favorites.once()))
+        if (news.isNotEmpty()) add(HomeRow.Channels(R.string.home_news, news.once()))
+        if (sports.isNotEmpty()) add(HomeRow.Channels(R.string.home_free_sports, sports.once()))
     }
+    val resumeOnce = resume.distinctBy { it.key }
 
     // Remote only: on a phone, requesting focus would scroll rows and crop the first cards.
     // The first frame can come before the cards are attached (cold start while the catalog installs):
@@ -295,7 +299,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                                 LiveResumeCard(ch, Modifier.width(wideWidth).firstFocus(0), onFocus = { spot.current = channelSpot(ch) }) { play(ch) }
                             }
                         }
-                        itemsIndexed(resume, key = { _, r -> r.key }) { i, r ->
+                        itemsIndexed(resumeOnce, key = { _, r -> r.key }) { i, r ->
                             val index = i + if (lastChannel != null) 1 else 0
                             ResumeCard(
                                 r, Modifier.width(wideWidth).firstFocus(index),

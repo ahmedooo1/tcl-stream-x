@@ -543,7 +543,7 @@ private fun ArchiveGrid(shelf: VodShelf, genre: Genre, navigator: Navigator, pla
                 )
             }
         }
-        items(results, key = { it.key }) { v -> PosterTile(v) { detail = v } }
+        items(results.distinctBy { it.key }, key = { it.key }) { v -> PosterTile(v) { detail = v } }
         item(span = { GridItemSpan(maxLineSpan) }) {
             when {
                 failed -> Text(stringResource(R.string.vod_error), style = type.body.copy(color = Palette.Caution))
@@ -593,7 +593,7 @@ private fun OpenFilmsGrid(shelf: VodShelf, navigator: Navigator, playback: Playb
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) { GridTitle(stringResource(R.string.section_open_films), stringResource(R.string.vod_open_films)) }
-        items(films, key = { it.key }) { v ->
+        items(films.distinctBy { it.key }, key = { it.key }) { v ->
             PosterTile(v) {
                 playback.play(PlayItem(key = v.key, title = v.title, urls = listOf(v.directUrl!!), isLive = false, poster = v.poster))
                 navigator.openPlayer()
@@ -1003,7 +1003,7 @@ private fun ArchiveRow(
     }
     if (list.isEmpty()) return
     ShelfRow(genreLabel(genre), onAll) {
-        items(list.take(ROW_ITEMS), key = { "a:" + it.key }) { v -> PosterTile(v, Modifier.width(tileWidth)) { open(Pick.Archive(v)) } }
+        items(list.distinctBy { it.key }.take(ROW_ITEMS), key = { "a:" + it.key }) { v -> PosterTile(v, Modifier.width(tileWidth)) { open(Pick.Archive(v)) } }
     }
 }
 
