@@ -82,7 +82,7 @@
     <string name="player_aspect_zoom">تعبئة</string>
     <string name="player_aspect_stretch">تمديد</string>
     <string name="player_trying">تجربة المصدر %1$s</string>
-    <string name="player_hint">▲▼ تغيير القناة · OK المعلومات · ◀ القائمة · ▶ الخيارات</string>
+    <string name="player_hint">▲▼ تغيير القناة · OK المعلومات · ◀ القائمة · ▶ الخيارات · 0 القناة السابقة</string>
     <string name="player_hint_vod">OK تشغيل/إيقاف مؤقت · ◀▶ تقديم/ترجيع (الضغط المطوّل أسرع) · ▲ الخيارات</string>
     <string name="player_no_tracks">لا توجد مسارات متاحة</string>
 
@@ -336,4 +336,11 @@
     <string name="home_new_movies">أفلام جديدة</string>
     <string name="home_new_series">مسلسلات جديدة</string>
     <string name="home_top_rated">الأعلى تقييمًا</string>
+    <string name="player_pause">إيقاف مؤقت</string>
+    <string name="player_resume">متابعة</string>
+    <string name="player_go_live">العودة إلى المباشر</string>
+    <string name="player_paused_live">متوقف مؤقتاً</string>
+    <string name="player_behind_live">متأخر عن المباشر %1$s</string>
+    <string name="player_previous_channel">القناة السابقة</string>
+    <string name="player_paused_hint">OK للمتابعة · ▶ الخيارات (العودة إلى المباشر)</string>
 </resources>

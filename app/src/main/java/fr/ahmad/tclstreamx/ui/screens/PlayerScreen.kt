@@ -142,8 +142,9 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
         onDispose { if (!keepPlayingOnExit) playback.stop() }
     }
     // Auto-hide the info bar.
-    LaunchedEffect(lastInput, panel, ui.issue) {
-        if (panel == Panel.NONE && ui.issue == null) {
+    LaunchedEffect(lastInput, panel, ui.issue, ui.livePausedAt) {
+        // A paused live channel keeps its bar on screen, with how far behind live it is.
+        if (panel == Panel.NONE && ui.issue == null && ui.livePausedAt == 0L) {
             delay(OVERLAY_MS)
             overlay = false
         }
@@ -226,11 +227,18 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
                     e.key == Key.ChannelUp || (isLive && e.key == Key.DirectionUp) -> { playback.zap(+1); touch(); true }
                     e.key == Key.ChannelDown || (isLive && e.key == Key.DirectionDown) -> { playback.zap(-1); touch(); true }
                     e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter -> {
-                        if (!isLive) player?.let { if (it.isPlaying) it.pause() else it.play() }
-                        if (isLive && overlay) overlay = false else touch()
+                        when {
+                            !isLive -> { playback.togglePause(); touch() }
+                            ui.livePausedAt > 0 -> { playback.resume(); touch() }
+                            overlay -> overlay = false
+                            else -> touch()
+                        }
                         true
                     }
-                    e.key == Key.MediaPlayPause -> { player?.let { if (it.isPlaying) it.pause() else it.play() }; touch(); true }
+                    e.key == Key.MediaPlayPause -> { playback.togglePause(); touch(); true }
+                    e.key == Key.MediaPlay -> { playback.resume(); touch(); true }
+                    e.key == Key.MediaPause -> { playback.pause(); touch(); true }
+                    isLive && e.key == Key.MediaPrevious -> { playback.recall(); touch(); true }
                     !isLive && e.key == Key.DirectionLeft -> { nudge(-stepFor(e.nativeKeyEvent.repeatCount)); true }
                     !isLive && e.key == Key.DirectionRight -> { nudge(stepFor(e.nativeKeyEvent.repeatCount)); true }
                     e.key == Key.MediaRewind -> { nudge(-30_000); true }
@@ -252,7 +260,7 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
                             when {
                                 o.x < size.width / 3f -> nudge(-10_000)
                                 o.x > size.width * 2f / 3f -> nudge(10_000)
-                                else -> { player?.let { if (it.isPlaying) it.pause() else it.play() }; touch() }
+                                else -> { playback.togglePause(); touch() }
                             }
                         }
                     },
@@ -308,7 +316,7 @@ fun PlayerScreen(navigator: Navigator, playback: PlaybackController, live: LiveV
                 onOptions = { panel = Panel.OPTIONS },
                 onPrev = { playback.zap(-1); touch() },
                 onNext = { playback.zap(+1); touch() },
-                onPlayPause = { player?.let { if (it.isPlaying) it.pause() else it.play() }; touch() },
+                onPlayPause = { playback.togglePause(); touch() },
                 onRewind = { nudge(-10_000) },
                 onForward = { nudge(10_000) },
                 hasNext = item.upNext.isNotEmpty(),
@@ -411,6 +419,7 @@ private fun TouchBar(
         Spacer(Modifier.weight(1f))
         if (isLive) {
             TouchButton("☰", onChannels)
+            TouchButton(if (playing) "❚❚" else "▶", onPlayPause)
             TouchButton("▼", onPrev)
             TouchButton("▲", onNext)
         } else {
@@ -517,7 +526,8 @@ private fun InfoBar(
                     Text("${clockTime(p.start)}  ${p.title}", style = type.body.copy(color = Palette.TextDim), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
-            if (tv) Text(stringResource(R.string.player_hint), style = type.mono)
+            if (ui.livePausedAt > 0 || ui.liveBehindMs > 0) LiveDelay(ui)
+            if (tv) Text(stringResource(if (ui.livePausedAt > 0) R.string.player_paused_hint else R.string.player_hint), style = type.mono)
         } else {
             if (duration > 0) {
                 SeekBar(position, duration, onScrub)
@@ -607,6 +617,36 @@ private fun OptionsPanel(playback: PlaybackController, modifier: Modifier, onRep
                 }
             }
         }
+        if (ui.item?.isLive == true) {
+            item {
+                val paused = ui.livePausedAt > 0
+                TallyRow(onClick = playback::togglePause, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                    Text(
+                        (if (paused) "▶  " else "❚❚  ") + stringResource(if (paused) R.string.player_resume else R.string.player_pause),
+                        style = type.title,
+                        modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 18.dp),
+                    )
+                }
+            }
+            if (ui.livePausedAt > 0 || ui.liveBehindMs > 0) {
+                item {
+                    TallyRow(onClick = playback::goLive, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                        Text("⏭  " + stringResource(R.string.player_go_live), style = type.title, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 18.dp))
+                    }
+                }
+            }
+            ui.previousTitle?.let { prev ->
+                item {
+                    TallyRow(onClick = { playback.recall() }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                        Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("↺  " + stringResource(R.string.player_previous_channel), style = type.title)
+                            Spacer(Modifier.width(12.dp))
+                            Text(prev, style = type.mono, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
         if (ui.item?.isLive == false) {
             item {
                 TallyRow(onClick = playback::cycleSpeed, modifier = Modifier.fillMaxWidth().height(50.dp)) {
@@ -682,6 +722,24 @@ private fun digitOf(key: Key): Char? = when (key) {
     Key.Eight, Key.NumPad8 -> '8'
     Key.Nine, Key.NumPad9 -> '9'
     else -> null
+}
+
+/** "Paused" or "N min behind live", refreshed every second while the bar is shown. */
+@Composable
+private fun LiveDelay(ui: fr.ahmad.tclstreamx.player.PlayerUi) {
+    val type = LocalTallyType.current
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(ui.livePausedAt) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(1_000)
+        }
+    }
+    val behind = ui.liveBehindMs + if (ui.livePausedAt > 0) (now - ui.livePausedAt).coerceAtLeast(0) else 0L
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (ui.livePausedAt > 0) Text("❚❚  " + stringResource(R.string.player_paused_live), style = type.title.copy(color = Palette.Caution))
+        Text(stringResource(R.string.player_behind_live, formatTime(behind)), style = type.mono.copy(color = Palette.Text))
+    }
 }
 
 private fun formatTime(ms: Long): String {

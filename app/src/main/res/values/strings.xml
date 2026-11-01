@@ -82,7 +82,7 @@
     <string name="player_aspect_zoom">Remplir</string>
     <string name="player_aspect_stretch">Étirer</string>
     <string name="player_trying">Essai de la source %1$s</string>
-    <string name="player_hint">▲▼ changer de chaîne · OK infos · ◀ liste · ▶ options</string>
+    <string name="player_hint">▲▼ changer de chaîne · OK infos · ◀ liste · ▶ options · 0 chaîne précédente</string>
     <string name="player_hint_vod">OK lecture/pause · ◀▶ reculer/avancer (maintenir = plus vite) · ▲ options</string>
     <string name="player_no_tracks">Aucune piste disponible</string>
 
@@ -336,4 +336,11 @@
     <string name="home_new_movies">Nouveaux films</string>
     <string name="home_new_series">Nouvelles séries</string>
     <string name="home_top_rated">Les mieux notés</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_resume">Reprendre</string>
+    <string name="player_go_live">Revenir au direct</string>
+    <string name="player_paused_live">En pause</string>
+    <string name="player_behind_live">différé de %1$s</string>
+    <string name="player_previous_channel">Chaîne précédente</string>
+    <string name="player_paused_hint">OK reprendre · ▶ options (revenir au direct)</string>
 </resources>

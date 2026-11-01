@@ -60,6 +60,12 @@ data class PlayerUi(
     val speed: Float = 1f,
     /** Minutes left before the sleep timer stops playback, null when off. */
     val sleepMinutes: Int? = null,
+    /** Live channel paused by the user: when it was paused (0 = not paused). */
+    val livePausedAt: Long = 0L,
+    /** How far behind the live edge the picture is after earlier pauses. */
+    val liveBehindMs: Long = 0L,
+    /** Name of the channel watched before this one, for the "previous channel" key. */
+    val previousTitle: String? = null,
 )
 
 /**
@@ -83,6 +89,7 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
     private var resolveJob: Job? = null
     private var progressJob: Job? = null
     private var stallJob: Job? = null
+    private var previousLive: PlayItem? = null
     private var session: MediaSession? = null
 
     private val listener = object : Player.Listener {
@@ -172,7 +179,11 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
         urlIndex = 0
         forceHls = false
         autoRetries = 0
-        _ui.update { PlayerUi(item = item, resizeMode = it.resizeMode, sleepMinutes = it.sleepMinutes) }
+        val old = _ui.value.item
+        if (old != null && old.isLive && item.isLive && old.key != item.key) previousLive = old
+        _ui.update {
+            PlayerUi(item = item, resizeMode = it.resizeMode, sleepMinutes = it.sleepMinutes, previousTitle = previousLive?.title)
+        }
         // Speed is per title: live channels always run at normal speed.
         _player.value?.setPlaybackSpeed(1f)
         if (item.drm) {
@@ -191,6 +202,46 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
             _ui.update { it.copy(isFavorite = fav) }
         }
         startProgressTicker()
+    }
+
+    // ---- pause, live pause and previous channel -------------------------------------------
+
+    /** Play/pause for films and live channels. A paused live channel continues where it stopped while the stream allows it. */
+    fun togglePause() {
+        val p = _player.value ?: return
+        if (p.playWhenReady) pause() else resume()
+    }
+
+    fun pause() {
+        val p = _player.value ?: return
+        p.pause()
+        if (_ui.value.item?.isLive == true && _ui.value.livePausedAt == 0L) {
+            _ui.update { it.copy(livePausedAt = System.currentTimeMillis()) }
+        }
+    }
+
+    fun resume() {
+        val p = _player.value ?: return
+        val pausedAt = _ui.value.livePausedAt
+        if (pausedAt > 0) {
+            _ui.update { it.copy(livePausedAt = 0L, liveBehindMs = it.liveBehindMs + (System.currentTimeMillis() - pausedAt)) }
+        }
+        p.play()
+    }
+
+    /** Back to the live edge after a pause. */
+    fun goLive() {
+        val p = _player.value ?: return
+        _ui.update { it.copy(livePausedAt = 0L, liveBehindMs = 0L) }
+        p.seekToDefaultPosition()
+        p.play()
+    }
+
+    /** Swaps to the channel watched before (remote 0 or "previous" key). */
+    fun recall(): Boolean {
+        val prev = previousLive ?: return false
+        play(prev)
+        return true
     }
 
     /** Re-creates the pipeline after the app came back to the foreground. */
@@ -261,13 +312,22 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
                 }
             }
         }
-        _ui.update { it.copy(attempt = if (item.urls.size > 1) "${urlIndex + 1}/${item.urls.size}" else null) }
+        _ui.update {
+            it.copy(
+                attempt = if (item.urls.size > 1) "${urlIndex + 1}/${item.urls.size}" else null,
+                // A reload always starts at the live edge.
+                livePausedAt = 0L,
+                liveBehindMs = if (item.isLive) 0L else it.liveBehindMs,
+            )
+        }
     }
 
     private fun handleError(error: PlaybackException) {
         val item = _ui.value.item ?: return
         val p = _player.value ?: return
         if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
+            // The pause lasted longer than the stream keeps: continue from the live edge.
+            _ui.update { it.copy(liveBehindMs = 0L, livePausedAt = 0L) }
             p.seekToDefaultPosition()
             p.prepare()
             return
@@ -337,6 +397,7 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
 
     /** Remote digits: channel number inside the current playlist. */
     fun playNumber(number: Int) {
+        if (number == 0) { recall(); return }
         val ch = _ui.value.item?.channel ?: return
         viewModelScope.launch {
             container.db.channels().byNumber(ch.playlistId, number)?.let {
