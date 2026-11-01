@@ -343,4 +343,6 @@
     <string name="player_behind_live">différé de %1$s</string>
     <string name="player_previous_channel">Chaîne précédente</string>
     <string name="player_paused_hint">OK reprendre · ▶ options (revenir au direct)</string>
+    <string name="crash_title">StreamX s\'est arrêté la dernière fois</string>
+    <string name="crash_close">Fermer</string>
 </resources>

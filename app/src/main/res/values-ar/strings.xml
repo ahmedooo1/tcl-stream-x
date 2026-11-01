@@ -343,4 +343,6 @@
     <string name="player_behind_live">متأخر عن المباشر %1$s</string>
     <string name="player_previous_channel">القناة السابقة</string>
     <string name="player_paused_hint">OK للمتابعة · ▶ الخيارات (العودة إلى المباشر)</string>
+    <string name="crash_title">توقف StreamX في المرة السابقة</string>
+    <string name="crash_close">إغلاق</string>
 </resources>

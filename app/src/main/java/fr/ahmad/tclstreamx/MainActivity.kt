@@ -30,6 +30,23 @@ class MainActivity : AppCompatActivity() {
                 AppRoot(playback)
             }
         }
+        showLastCrash()
+    }
+
+    /** The previous run crashed: show why (see TclApp.installCrashLog), once. */
+    private fun showLastCrash() {
+        val file = filesDir.resolve(TclApp.CRASH_FILE)
+        if (!file.exists()) return
+        val text = runCatching { file.readText() }.getOrNull()
+        file.delete()
+        if (text.isNullOrBlank()) return
+        runCatching {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(R.string.crash_title)
+                .setMessage(text)
+                .setPositiveButton(R.string.crash_close, null)
+                .show()
+        }
     }
 
     override fun onStart() {

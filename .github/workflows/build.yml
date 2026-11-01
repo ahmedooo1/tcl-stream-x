@@ -4,6 +4,16 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      api_level:
+        description: "Android API level of the test emulator (30 = Android 11, 34 = Android 14)"
+        default: "30"
+      target:
+        description: "Emulator image: android-tv or google_apis"
+        default: "android-tv"
+      arch:
+        description: "x86 for android-tv 30, x86_64 for google_apis"
+        default: "x86"
   # Full check (channels, sources, emulator) once a day; a push only builds and runs unit tests.
   schedule:
     - cron: "17 3 * * *"
@@ -116,9 +126,9 @@ jobs:
         continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 30
-          target: android-tv
-          arch: x86
+          api-level: ${{ inputs.api_level || '30' }}
+          target: ${{ inputs.target || 'android-tv' }}
+          arch: ${{ inputs.arch || 'x86' }}
           disable-animations: true
           emulator-boot-timeout: 900
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
@@ -130,7 +140,7 @@ jobs:
         if: env.FULL == 'true' && steps.emu1.outcome == 'failure' && hashFiles('ci-out/instrumented-status.txt') == ''
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 30
+          api-level: ${{ inputs.api_level || '30' }}
           target: google_apis
           arch: x86_64
           disable-animations: true

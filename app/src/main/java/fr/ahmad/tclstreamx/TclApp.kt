@@ -16,9 +16,34 @@ class TclApp : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+        installCrashLog()
         installRedactingPlayerLog()
         container = AppContainer(this)
         container.startup()
+    }
+
+    /**
+     * A crash writes what happened to a small file (addresses with logins removed); the next launch
+     * shows it, so a problem that only happens on one TV can be read from the screen.
+     */
+    private fun installCrashLog() {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, error ->
+            runCatching {
+                val trace = java.io.StringWriter().also { error.printStackTrace(java.io.PrintWriter(it)) }.toString()
+                val text = buildString {
+                    appendLine("StreamX ${BuildConfig.VERSION_NAME} · Android ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT}) · ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+                    appendLine("thread: ${thread.name}")
+                    append(Redactor.redact(trace).take(6_000))
+                }
+                filesDir.resolve(CRASH_FILE).writeText(text)
+            }
+            previous?.uncaughtException(thread, error)
+        }
+    }
+
+    companion object {
+        const val CRASH_FILE = "last_crash.txt"
     }
 
     /**

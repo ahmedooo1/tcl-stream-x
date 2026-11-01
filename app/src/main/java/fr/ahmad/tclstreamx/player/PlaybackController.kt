@@ -145,7 +145,10 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
             .build()
         p.addListener(listener)
         // An active media session tells Google TV that something is playing: no screen saver, remote media keys work.
-        session = MediaSession.Builder(ctx, p).build()
+        // Optional: if the TV refuses the session, playback goes on without it (the window still stays awake).
+        session = runCatching { MediaSession.Builder(ctx, p).build() }
+            .onFailure { android.util.Log.w("TclStreamX", "media session unavailable: ${it.javaClass.simpleName} ${it.message}") }
+            .getOrNull()
         _player.value = p
         return p
     }
