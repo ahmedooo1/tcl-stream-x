@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the built-in channel catalog of TCL Stream X.
+"""Build the built-in channel catalog of StreamX.
 
 Pipeline:
   1. read catalog/official_sources.json (allowlist: tvg-id + broadcaster-owned URL regex)
@@ -27,7 +27,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field, asdict
 
 RAW = "https://raw.githubusercontent.com/iptv-org"
-USER_AGENT = "TCLStreamX/1.0 (Android TV; stream-availability-check)"
+USER_AGENT = "StreamX/1.0 (Android TV; stream-availability-check)"
 TIMEOUT_S = 12
 MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 SEGMENT_PROBE_BYTES = 65535

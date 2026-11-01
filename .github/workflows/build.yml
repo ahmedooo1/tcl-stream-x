@@ -89,7 +89,7 @@ jobs:
           head -n 6 catalog/REPORT.md > EARLY.md
           # A re-run of the same build reuses its release instead of failing on the existing tag.
           gh release create "build-${BUILD_NUMBER}" StreamX.apk TCLStreamX-debug.apk catalog/REPORT.md \
-            --title "TCL Stream X build ${BUILD_NUMBER}" --notes-file EARLY.md --prerelease \
+            --title "StreamX build ${BUILD_NUMBER}" --notes-file EARLY.md --prerelease \
             || gh release upload "build-${BUILD_NUMBER}" StreamX.apk TCLStreamX-debug.apk catalog/REPORT.md --clobber
 
       - name: Enable KVM

@@ -19,7 +19,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 
-UA = "TCLStreamX/1.0 (source-probe)"
+UA = "StreamX/1.0 (source-probe)"
 TIMEOUT = 25
 
 EPG_CANDIDATES = [

@@ -116,7 +116,7 @@ class SportsRepository(private val context: Context, private val http: OkHttpCli
 
     private fun fetchLeague(league: LeagueRef, day: String): List<Match> {
         val url = "$BASE/${league.sport}/${league.id}/scoreboard?dates=$day"
-        val req = Request.Builder().url(url).header("User-Agent", "TCLStreamX/1.0").build()
+        val req = Request.Builder().url(url).header("User-Agent", "StreamX/1.0").build()
         val body = http.newCall(req).execute().use { resp ->
             if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
             resp.body?.string() ?: throw IOException("empty")

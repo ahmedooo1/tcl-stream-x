@@ -1,7 +1,7 @@
-# TCL Stream X
+# StreamX
 
-Lecteur IPTV pour Google TV (TCL 2024), en Kotlin, Jetpack Compose for TV, Media3 ExoPlayer, Room et DataStore.
-Application personnelle non officielle : « TCL » est une marque de TCL, sans lien avec ce projet.
+Lecteur IPTV pour Android TV et Google TV (développé sur une TCL 2024), aussi utilisable sur téléphone, en Kotlin, Jetpack Compose for TV, Media3 ExoPlayer, Room et DataStore.
+Application personnelle, sans lien avec un fabricant de téléviseurs. L'identifiant de paquet `fr.ahmad.tclstreamx` est conservé pour que les mises à jour s'installent par-dessus les anciennes versions.
 
 ## Ce que fait l'application
 
@@ -16,9 +16,11 @@ Application personnelle non officielle : « TCL » est une marque de TCL, sans l
 | Grandes bibliothèques | Lecteur JSON en flux (`JsonStream`) : une seule entrée en mémoire à la fois ; écriture Room par lots de 500 ; listes, grilles de films et de séries paginées (Paging 3) ; index `(kind, groupTitle)`, `(kind, country)`, `(kind, language)`. Limite de sécurité : 250 000 entrées par source. |
 | Pays et langues | `RegionTagger` déduit pays et langue des attributs `tvg-country`/`tvg-language`, des préfixes de catégorie (« FR| », « [AR] », « UK: ») et des noms (« France », « عربي », « Maroc »). Filtre « Tous pays et langues » dans Chaînes, Films et Séries. |
 | Recherche unifiée | Une recherche couvre chaînes, films et séries de toutes les sources, résultats groupés par section. |
-| Diffuser vers la TV | Bouton de diffusion dans le lecteur (icône en haut, ou Options › « Diffuser sur un écran ») : 1) **TCL Stream X sur la TV** via le Wi‑Fi : la TV s'annonce en DNS-SD (`_tclstreamx._tcp`) quand l'application est ouverte, association une seule fois avec un code à 4 chiffres affiché sur la TV (jeton de 128 bits ensuite, 5 essais par code, code valable 2 min) ; 2) **Chromecast / Google TV** (Chromecast intégré) avec le récepteur par défaut de Google ; 3) **autres applications** via le sélecteur Android (VLC, applications DLNA/UPnP…) et partage du lien pour les flux publics. Pour un compte d'abonnement, l'adresse avec identifiants n'est construite qu'au moment de l'envoi et n'est jamais partagée en texte. |
+| Diffuser vers la TV | Bouton de diffusion dans le lecteur (icône en haut, ou Options › « Diffuser sur un écran ») : 1) **StreamX sur la TV** via le Wi‑Fi : la TV s'annonce en DNS-SD (`_tclstreamx._tcp`) quand l'application est ouverte, association une seule fois avec un code à 4 chiffres affiché sur la TV (jeton de 128 bits ensuite, 5 essais par code, code valable 2 min) ; 2) **Chromecast / Google TV** (Chromecast intégré) avec le récepteur par défaut de Google ; 3) **autres applications** via le sélecteur Android (VLC, applications DLNA/UPnP…) et partage du lien pour les flux publics. Pour un compte d'abonnement, l'adresse avec identifiants n'est construite qu'au moment de l'envoi et n'est jamais partagée en texte. |
 | Lecteur externe | Si un format n'est pas décodable par Media3 sur la TV, bouton « Ouvrir avec un autre lecteur » (VLC ou autre lecteur installé). LibVLC n'est pas embarqué : il ajouterait environ 60 Mo par architecture à l'APK ; le passage par un lecteur installé couvre le besoin sans alourdir l'application. |
 | Import | URL, fichier USB (sélecteur système s'il existe), ou envoi depuis le téléphone : page web locale sur le Wi‑Fi, code PIN à 6 chiffres, limite 150 Mo, active seulement pendant l'écran d'envoi. |
+| Direct en pause | Pause d'une chaîne en direct (OK, ⏯ ou Options), reprise au même endroit tant que le flux le garde, puis retour automatique au direct ; indication « différé de mm:ss » et « Revenir au direct ». Touche **0** ou ⏮ : chaîne précédente. |
+| Veille | Écran maintenu allumé pendant la lecture, session média active (Google TV ne lance pas l'économiseur d'écran), focus audio, Wi‑Fi gardé actif ; un flux qui reste en chargement 25 s est relancé puis signalé. |
 | Lecteur | Un seul ExoPlayer partagé entre l'aperçu et le plein écran (pas de second décodeur). HLS, DASH, MP4/TS. Sources de secours, réessai automatique sur erreurs réseau, reprise derrière la fenêtre live, détection HLS pour les URL sans extension. Qualité, audio, sous-titres, format d'image, favoris, zapping ▲▼ / CH±, saisie du numéro de chaîne. |
 | EPG | XMLTV (.xml, .gz, .zip) lu en flux, seulement les chaînes présentes et une fenêtre de 39 h. Source : en-tête de la playlist ou URL réglée par l'utilisateur. |
 | Sport | Calendrier : point d'accès public ESPN (sans clé, non documenté officiellement : chaque ligue qui échoue est signalée). Diffuseurs légaux par région dans `assets/sports_destinations.json`, avec source et date de vérification ; ouverture du service officiel via le Play Store. |
@@ -28,18 +30,22 @@ Application personnelle non officielle : « TCL » est une marque de TCL, sans l
 
 ## Construire l'APK
 
-L'environnement de développement de Claude n'a pas accès à Maven/Google : le build se fait sur GitHub Actions (gratuit). Chaque push sur `main` :
+L'environnement de développement de Claude n'a pas accès à Maven/Google : le build se fait sur GitHub Actions (gratuit), en deux modes.
+
+**Build rapide (chaque push sur `main`, ~5 min)** : tests unitaires, compilation de l'APK, release `build-N`. Elle devient la version proposée par la mise à jour intégrée si les tests unitaires passent.
+
+**Vérification complète (chaque nuit, lancement manuel « Run workflow », ou message de commit contenant `[full]`)** :
 
 1. vérifie toutes les chaînes du catalogue depuis le serveur CI ;
 2. sonde les autres sources (films, API sport, Internet Archive, guides XMLTV) ;
 3. lance les tests unitaires ;
-4. compile l'APK debug ;
+4. compile l'APK ;
 5. démarre un émulateur Android TV (API 30) et y exécute : lecture réelle de flux via le `PlaybackController` de l'application, import de 50 000 chaînes M3U, import d'un panneau Xtream simulé de 115 000 entrées (60 000 chaînes, 40 000 films, 15 000 séries) avec lecture réelle par le chemin compte (référence, identifiants déchiffrés en mémoire, redirection, lecteur), et une visite de l'interface à la télécommande avec captures d'écran en français et en arabe ;
 6. publie une release `build-N` avec l'APK, `RESULTS.md`, les rapports JSON et les captures. `RESULTS.md` sépare clairement **A. tests de performance sur données synthétiques** et **B. lecture réelle de sources autorisées**.
 
 En local (Android Studio ou SDK installé) : `./gradlew assembleDebug` puis `app/build/outputs/apk/debug/app-debug.apk`.
 
-## Installer sur la TV TCL avec ADB
+## Installer sur la TV avec ADB
 
 1. Sur la TV : Paramètres › Système › À propos › cliquez 7 fois sur « Build du système d'exploitation Android TV » pour activer les options pour les développeurs.
 2. Paramètres › Système › Options pour les développeurs › activez **Débogage USB** (sur Google TV il couvre aussi le débogage réseau).
@@ -59,7 +65,7 @@ Journal en cas de problème : `adb logcat -s TclStreamX ExoPlayerImpl MediaCodec
 
 - Décodage matériel HEVC/4K et HDR du téléviseur (l'émulateur décode en logiciel).
 - Chaînes à restriction géographique (Arte, TV5MONDE…) : non vérifiables depuis un serveur CI hors de France.
-- Comportement des touches spécifiques de la télécommande TCL (CH±, INFO, chiffres) : codes Android standard prévus, à confirmer.
+- Comportement des touches spécifiques de la télécommande (TCL et autres) (CH±, INFO, chiffres) : codes Android standard prévus, à confirmer.
 - Sélecteur de fichiers USB : absent sur certaines Google TV ; l'envoi depuis le téléphone le remplace.
 - Mémoire sur une TV 2 Go avec une très grande playlist et les logos.
 - Compte Xtream réel : seul un panneau simulé est testé en CI ; la compatibilité avec un panneau donné (formats de sortie, durée de réponse de listes très longues) se vérifie avec votre propre abonnement.

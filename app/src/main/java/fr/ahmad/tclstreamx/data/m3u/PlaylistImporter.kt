@@ -336,7 +336,7 @@ class PlaylistImporter(
     }
 
     companion object {
-        const val USER_AGENT = "TCLStreamX/1.0 (Linux; Android TV)"
+        const val USER_AGENT = "StreamX/1.0 (Linux; Android TV)"
         private const val BATCH = 500
         const val MAX_CHANNELS = 250_000
 

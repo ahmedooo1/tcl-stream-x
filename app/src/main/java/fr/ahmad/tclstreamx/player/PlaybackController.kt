@@ -592,7 +592,7 @@ class PlaybackController(app: Application) : AndroidViewModel(app) {
     }
 
     companion object {
-        const val USER_AGENT = "TCLStreamX/1.0 (Linux; Android TV)"
+        const val USER_AGENT = "StreamX/1.0 (Linux; Android TV)"
         const val AUTO = "auto"
         const val OFF = "off"
         private const val MAX_AUTO_RETRIES = 2

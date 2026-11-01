@@ -34,12 +34,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        (application as TclApp).container.onForeground()
         // On a TV, phones running the app can send the channel they are watching while the app is open.
         if (isTelevision()) (application as TclApp).container.remote.startReceiver(deviceLabel())
     }
 
     override fun onStop() {
         (application as TclApp).container.remote.stopReceiver()
+        (application as TclApp).container.onBackground()
         super.onStop()
         // Release the decoder when the TV goes to standby or another app/input takes over.
         playback.onBackground()

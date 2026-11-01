@@ -200,7 +200,7 @@ class XtreamClient(private val http: OkHttpClient, private val userAgent: String
     }
 
     companion object {
-        const val DEFAULT_UA = "TCLStreamX/1.0 (Linux; Android TV)"
+        const val DEFAULT_UA = "StreamX/1.0 (Linux; Android TV)"
 
         fun decode64(s: String?): String? = s?.let {
             runCatching { String(java.util.Base64.getDecoder().decode(it.trim()), Charsets.UTF_8) }.getOrElse { _ -> it }

@@ -87,13 +87,46 @@ class AppContainer(private val context: Context) {
             catalog.installOrUpdate()
             runCatching { updater.check() }
             val s = settings.current()
+            // Parental lock: locked categories start hidden at every launch.
+            if (s.pinSet) db.locks().setHidden(1)
+            refreshStale()
+        }
+    }
+
+    @Volatile private var backgroundAt = 0L
+    private val refreshing = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /** The app left the screen (home button, other app, TV standby). */
+    fun onBackground() {
+        backgroundAt = System.currentTimeMillis()
+    }
+
+    /**
+     * The app is back on screen. A TV keeps the process alive for days, so the work done at launch is
+     * repeated here: locked categories close again after a long absence, and stale lists, guide and
+     * built-in checks are refreshed.
+     */
+    fun onForeground() {
+        val left = backgroundAt
+        if (left == 0L) return
+        backgroundAt = 0L
+        appScope.launch {
+            if (settings.current().pinSet && System.currentTimeMillis() - left > RELOCK_AFTER_MS) db.locks().setHidden(1)
+            if (System.currentTimeMillis() - left > UPDATE_CHECK_AFTER_MS) runCatching { updater.check() }
+            refreshStale()
+        }
+    }
+
+    /** Built-in channel check, playlists, accounts and guide: each only when older than its period. One run at a time. */
+    private suspend fun refreshStale() {
+        if (!refreshing.compareAndSet(false, true)) return
+        try {
+            val s = settings.current()
             val now = System.currentTimeMillis()
             if (s.autoCheckBuiltin && now - s.lastBuiltinCheck > BUILTIN_CHECK_EVERY_MS) {
                 db.playlists().builtin()?.let { checker.checkLineup(it.id, null, false) }
                 settings.markBuiltinChecked(now)
             }
-            // Parental lock: locked categories start hidden at every launch.
-            if (s.pinSet) db.locks().setHidden(1)
             // Playlists and accounts older than a day are refreshed (new films, episodes, channels).
             if (s.autoRefresh) {
                 db.playlists().all()
@@ -104,6 +137,8 @@ class AppContainer(private val context: Context) {
                 epg.refresh(s.epgUrl)
                 settings.markEpgRefreshed(now)
             }
+        } finally {
+            refreshing.set(false)
         }
     }
 
@@ -111,5 +146,7 @@ class AppContainer(private val context: Context) {
         private const val BUILTIN_CHECK_EVERY_MS = 6 * 3600_000L
         private const val EPG_EVERY_MS = 12 * 3600_000L
         private const val REFRESH_EVERY_MS = 24 * 3600_000L
+        private const val RELOCK_AFTER_MS = 10 * 60_000L
+        private const val UPDATE_CHECK_AFTER_MS = 6 * 3600_000L
     }
 }

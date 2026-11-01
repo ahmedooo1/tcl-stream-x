@@ -163,7 +163,7 @@ class StreamProbe(private val http: OkHttpClient) {
         base.toHttpUrlOrNull()?.resolve(ref)?.toString()
 
     companion object {
-        const val DEFAULT_UA = "TCLStreamX/1.0 (Linux; Android TV)"
+        const val DEFAULT_UA = "StreamX/1.0 (Linux; Android TV)"
         private const val MAX_MANIFEST = 2 * 1024 * 1024
         private const val SEGMENT_BYTES = 64 * 1024
     }

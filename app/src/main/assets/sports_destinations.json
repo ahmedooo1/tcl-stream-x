@@ -1,6 +1,6 @@
 {
   "reviewedAt": "2026-10-21",
-  "note": "Official rights holders only. Entries with verified=false come from press reports and must be checked locally. TCL Stream X never plays these competitions itself: it opens the official service.",
+  "note": "Official rights holders only. Entries with verified=false come from press reports and must be checked locally. StreamX never plays these competitions itself: it opens the official service.",
   "regions": {
     "FR": [
       {"league": "fra.1", "name": "Ligue 1", "destinations": ["Ligue 1+"], "verified": true, "source": "https://selectra.info/telecom/guides/comprendre/droits-tv-foot"},

@@ -216,7 +216,7 @@ class VodRepository(private val context: Context, private val http: OkHttpClient
     }
 
     private fun getJson(url: String): JsonObject {
-        val req = Request.Builder().url(url).header("User-Agent", "TCLStreamX/1.0").build()
+        val req = Request.Builder().url(url).header("User-Agent", "StreamX/1.0").build()
         val body = http.newCall(req).execute().use { resp ->
             if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
             resp.body?.string() ?: throw IOException("empty")
