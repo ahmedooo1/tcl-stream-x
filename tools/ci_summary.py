@@ -5,7 +5,7 @@ import json
 import os
 import xml.etree.ElementTree as ET
 
-out = ["# TCL Stream X: CI results\n"]
+out = ["# StreamX: CI results\n"]
 
 tests = fails = skipped = 0
 failed_names = []

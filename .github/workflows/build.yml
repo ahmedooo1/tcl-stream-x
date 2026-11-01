@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Full check (channels, sources, emulator) once a day; a push only builds and runs unit tests.
+  schedule:
+    - cron: "17 3 * * *"
 
 permissions:
   contents: write
@@ -19,6 +22,8 @@ jobs:
     timeout-minutes: 120
     env:
       BUILD_NUMBER: ${{ github.run_number }}
+      # Fast build on push (about 5 min). Full run: manual, nightly, or a commit message containing [full].
+      FULL: ${{ github.event_name != 'push' || contains(github.event.head_commit.message, '[full]') }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +35,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Check built-in channels (manifest + segment of every candidate)
+        if: env.FULL == 'true'
         run: |
           COUNTRY=$(curl -s --max-time 5 https://ipinfo.io/country || echo "?")
           if ! python3 tools/build_catalog.py --check --checked-from "GitHub Actions runner, country ${COUNTRY}" > catalog.log 2>&1; then
@@ -40,6 +46,7 @@ jobs:
           cat catalog/REPORT.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Probe other sources (open films, sports API, Internet Archive, XMLTV)
+        if: env.FULL == 'true'
         run: |
           python3 tools/probe_sources.py > probe.log 2>&1 || tail -15 probe.log | while read -r l; do echo "::warning::$l"; done
 
@@ -86,6 +93,7 @@ jobs:
             || gh release upload "build-${BUILD_NUMBER}" StreamX.apk TCLStreamX-debug.apk catalog/REPORT.md --clobber
 
       - name: Enable KVM
+        if: env.FULL == 'true'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
@@ -94,6 +102,7 @@ jobs:
       # The runner image no longer ships the audio library the emulator binary links against
       # (diagnosed: "libpulse.so.0: cannot open shared object file"), and its disk is ~96 % full.
       - name: Emulator host libraries and disk space
+        if: env.FULL == 'true'
         run: |
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /usr/local/lib/node_modules /opt/hostedtoolcache/CodeQL || true
           sudo apt-get update -qq
@@ -103,6 +112,7 @@ jobs:
 
       - name: Instrumented tests on an Android TV emulator (real streams, D-pad tour, 50k import)
         id: emu1
+        if: env.FULL == 'true'
         continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -117,7 +127,7 @@ jobs:
       # When the Android TV image does not boot on the runner, the same tests run on the standard
       # Google APIs image (x86_64), which GitHub runners boot reliably; device.txt records which one ran.
       - name: Retry emulator tests once (Google APIs x86_64 image)
-        if: steps.emu1.outcome == 'failure' && hashFiles('ci-out/instrumented-status.txt') == ''
+        if: env.FULL == 'true' && steps.emu1.outcome == 'failure' && hashFiles('ci-out/instrumented-status.txt') == ''
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
@@ -131,7 +141,7 @@ jobs:
 
       # Runner logs are not readable from the development environment, so boot problems are reported as annotations.
       - name: Emulator diagnostics (only when no emulator booted)
-        if: always() && steps.build.outcome == 'success' && hashFiles('ci-out/instrumented-status.txt') == ''
+        if: always() && env.FULL == 'true' && steps.build.outcome == 'success' && hashFiles('ci-out/instrumented-status.txt') == ''
         continue-on-error: true
         run: |
           EMU="$ANDROID_HOME/emulator/emulator"
@@ -161,7 +171,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           shopt -s nullglob
-          files=(RESULTS.md catalog/REPORT.md catalog/SOURCES_REPORT.md app/src/main/assets/catalog.json ci-out/*.json ci-out/*.png ci-out/*.jpg ci-out/*.txt)
+          files=()
+          for f in RESULTS.md catalog/REPORT.md catalog/SOURCES_REPORT.md app/src/main/assets/catalog.json ci-out/*.json ci-out/*.png ci-out/*.jpg ci-out/*.txt; do
+            [ -f "$f" ] && files+=("$f")
+          done
           gh release upload "build-${BUILD_NUMBER}" "${files[@]}" --clobber
           gh release edit "build-${BUILD_NUMBER}" --notes-file RESULTS.md
 
@@ -169,7 +182,9 @@ jobs:
         if: always()
         run: |
           [ "${{ steps.unit.outcome }}" = "success" ] || { echo "unit tests failed"; exit 1; }
-          [ "$(cat ci-out/instrumented-status.txt 2>/dev/null || echo 1)" = "0" ] || { echo "instrumented tests failed"; exit 1; }
+          if [ "$FULL" = "true" ]; then
+            [ "$(cat ci-out/instrumented-status.txt 2>/dev/null || echo 1)" = "0" ] || { echo "instrumented tests failed"; exit 1; }
+          fi
 
       # Only a build whose tests all passed becomes the "latest" release, which the in-app updater offers.
       - name: Mark as latest release (tests passed)
