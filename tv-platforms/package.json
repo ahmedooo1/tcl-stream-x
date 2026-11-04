@@ -1,0 +1,27 @@
+{
+  "name": "streamx-tv-platforms",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "StreamX for Samsung Tizen and LG webOS: shared TypeScript core and platform shells",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "build:samsung": "vite build --config samsung-tizen/vite.config.ts",
+    "build:lg": "vite build --config lg-webos/vite.config.ts",
+    "build": "npm run build:samsung && npm run build:lg",
+    "strings": "python3 tools/strings_to_ts.py"
+  },
+  "dependencies": {
+    "hls.js": "^1.5.17",
+    "pako": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/pako": "^2.0.3",
+    "fake-indexeddb": "^6.0.0",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}
