@@ -59,7 +59,7 @@ export class Vault {
     if (!row || !row.data) return null;
     try {
       const key = await this.masterKey();
-      const plain = await this.subtle.decrypt({ name: 'AES-GCM', iv: row.iv }, key, row.data);
+      const plain = await this.subtle.decrypt({ name: 'AES-GCM', iv: row.iv as Uint8Array<ArrayBuffer> }, key, row.data);
       const [username, password] = JSON.parse(new TextDecoder().decode(plain)) as [string, string];
       return {
         username,

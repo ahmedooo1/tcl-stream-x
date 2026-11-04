@@ -225,7 +225,7 @@ export class Importer {
     const p = await this.beginPlaylist(existing, { name: label, kind: 'builtin', source: null, epgUrls: [], accountSummary: null, vaultId: null });
     const generation = p.generation + 1;
     const order = ['news', 'entertainment', 'movies', 'series', 'sports', 'kids', 'documentary', 'music', 'religious'];
-    const rank = (l: string | null) => ['ar', 'ku', 'fr', 'en'].indexOf(l ?? '') < 0 ? 9 : ['ar', 'ku', 'fr', 'en'].indexOf(l ?? '');
+    const rank = (l: string | null | undefined) => ['ar', 'ku', 'fr', 'en'].indexOf(l ?? '') < 0 ? 9 : ['ar', 'ku', 'fr', 'en'].indexOf(l ?? '');
     const sorted = [...file.channels].sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category) || rank(a.language) - rank(b.language));
     const groups = new GroupCounter();
     const rows: Channel[] = sorted.filter((c) => c.streams.length > 0).map((ch, i) => {

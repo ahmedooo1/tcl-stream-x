@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Code only from the package and the TV's own webapis.js (a file: path); streams, logos and
+       guides from any origin, since they come from the user's playlists. No eval, no inline script. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; script-src 'self' file:; style-src 'self' file: 'unsafe-inline'; img-src * data: blob:; media-src * blob: data:; connect-src *; font-src 'self' file: data:; worker-src 'self' blob:; object-src 'self' file:; base-uri 'none'; form-action 'none'">
+  <title>StreamX</title>
+  <script src="$WEBAPIS/webapis/webapis.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>

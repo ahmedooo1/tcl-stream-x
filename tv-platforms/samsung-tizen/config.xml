@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets"
+        id="http://ahmadahmad.aaweb.fr/streamx" version="@VERSION@" viewmodes="maximized">
+  <tizen:application id="StrmXTclX1.StreamX" package="StrmXTclX1" required_version="7.0"/>
+  <name>StreamX</name>
+  <description>StreamX for Samsung Smart TV: live TV, films and series from the user's own playlists and accounts.</description>
+  <author href="https://ahmadahmad.aaweb.fr">Ahmad Ahmad</author>
+  <icon src="icon.png"/>
+  <content src="index.html"/>
+  <feature name="http://tizen.org/feature/screen.size.all"/>
+  <access origin="*" subdomains="true"/>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+  <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+  <tizen:privilege name="http://developer.samsung.com/privilege/avplay"/>
+  <tizen:privilege name="http://developer.samsung.com/privilege/productinfo"/>
+  <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"/>
+  <tizen:profile name="tv-samsung"/>
+</widget>

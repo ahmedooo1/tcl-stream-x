@@ -29,6 +29,8 @@ body {
 /* Video plane (AVPlay draws under the page): the page is transparent where the video shows. */
 body.video-on, body.video-on #app { background: transparent; }
 #app { position: fixed; inset: 0; background: var(--ink); }
+#video { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+#video video, #video object { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: transparent; }
 
 /* ---- type (TallyType) ---- */
 .t-display { font-family: 'Condensed', 'Plex', sans-serif; font-weight: 700; font-size: 58rem; line-height: 58rem; }
@@ -94,8 +96,8 @@ img.fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: 
 .hidden { display: none !important; }
 
 /* ---- shell: rail (collapsed icons, opens over the content with a dimmed screen) ---- */
-#host { position: absolute; inset: 0; padding-inline-start: var(--rail); }
-body.no-rail #host { padding-inline-start: 0; }
+#host { position: absolute; inset-block: 0; inset-inline-end: 0; inset-inline-start: var(--rail); }
+body.no-rail #host { inset-inline-start: 0; }
 #dim { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 140ms; z-index: 5; }
 #dim.on { opacity: 0.72; }
 #rail {
@@ -135,3 +137,4 @@ body.no-rail #rail, body.no-rail #dim { display: none; }
 .field.focused, .field:focus { background: var(--lift); box-shadow: inset 4rem 0 0 var(--tally); }
 [dir='rtl'] .field.focused, [dir='rtl'] .field:focus { box-shadow: inset -4rem 0 0 var(--tally); }
 .field::placeholder { color: var(--text-faint); }
+.logo { width: 100%; height: 100%; }

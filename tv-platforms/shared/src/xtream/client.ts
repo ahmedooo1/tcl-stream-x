@@ -76,9 +76,10 @@ export function firstImage(raw: unknown): string | null {
     return null;
   }
   if (typeof raw === 'string') {
-    const t = raw.trim();
+    const t: string = raw.trim();
+    const listed = t.startsWith('[');
     if (isHttpUrl(t)) return t;
-    if (t.startsWith('[')) {
+    if (listed) {
       try { return firstImage(JSON.parse(t)); } catch { return null; }
     }
   }

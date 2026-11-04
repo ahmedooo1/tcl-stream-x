@@ -21,6 +21,13 @@ const tvFr = {
   tv_updates_store: 'Les mises à jour de cette édition s\'installent depuis un ordinateur (mode développeur) : voir la page d\'installation.',
   tv_update_available: 'Version %1$s disponible',
   tv_no_results: 'Aucun résultat',
+  tv_xtream_note: 'Utilisez uniquement un abonnement auquel vous avez droit. Le mot de passe est chiffré sur le téléviseur (clé WebCrypto non exportable), jamais affiché ni écrit dans les journaux.',
+  tv_not_yet: 'Cette section n\'est pas encore disponible dans cette édition.',
+  tv_blocked_local: 'Les fichiers de la TV et des clés USB ne sont pas accessibles aux applications web de ce téléviseur.',
+  tv_import_running: 'Import en cours…',
+  tv_pin_set: 'Code enregistré',
+  tv_unlock: 'Déverrouiller',
+  tv_set_pin: 'Créer un code',
 } as const;
 
 const tvAr: Record<keyof typeof tvFr, string> = {
@@ -35,6 +42,13 @@ const tvAr: Record<keyof typeof tvFr, string> = {
   tv_updates_store: 'تُثبَّت تحديثات هذا الإصدار من كمبيوتر (وضع المطوّر): راجع صفحة التثبيت.',
   tv_update_available: 'الإصدار %1$s متوفر',
   tv_no_results: 'لا توجد نتائج',
+  tv_xtream_note: 'استخدم فقط اشتراكًا يحق لك استخدامه. كلمة المرور مشفّرة على التلفاز (مفتاح WebCrypto لا يمكن تصديره)، ولا تُعرض ولا تُكتب في السجلات.',
+  tv_not_yet: 'هذا القسم غير متوفر بعد في هذا الإصدار.',
+  tv_blocked_local: 'ملفات التلفاز ومفاتيح USB غير متاحة لتطبيقات الويب على هذا التلفاز.',
+  tv_import_running: 'جارٍ الاستيراد…',
+  tv_pin_set: 'تم حفظ الرمز',
+  tv_unlock: 'فتح القفل',
+  tv_set_pin: 'إنشاء رمز',
 };
 
 let lang: Lang = 'fr';
