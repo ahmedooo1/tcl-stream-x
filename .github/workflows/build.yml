@@ -107,19 +107,29 @@ jobs:
             exit 0
           fi
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          printf '%s' "$NEW_KS" | base64 -d > "$RUNNER_TEMP/new.jks"
+          # Pasted secrets may carry spaces or line breaks.
+          NEW_PASS=$(printf '%s' "$NEW_PASS" | tr -d '\r\n')
+          export NEW_PASS
+          printf '%s' "$NEW_KS" | tr -d ' \r\n' | base64 -d > "$RUNNER_TEMP/new.jks" || { echo "::error::STREAMX_KEYSTORE_B64 is not valid base64"; exit 1; }
+          run() {
+            if ! "$@" > "$RUNNER_TEMP/sign.log" 2>&1; then
+              echo "::error::$(basename "$1") failed: $(tail -c 1500 "$RUNNER_TEMP/sign.log" | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')"
+              exit 1
+            fi
+            cat "$RUNNER_TEMP/sign.log"
+          }
+          run keytool -list -keystore "$RUNNER_TEMP/new.jks" -storepass "$NEW_PASS"
           OLD="--ks app/debug.keystore --ks-pass pass:android --ks-key-alias androiddebugkey --key-pass pass:android"
           NEW="--ks $RUNNER_TEMP/new.jks --ks-pass env:NEW_PASS --ks-key-alias streamx --key-pass env:NEW_PASS"
-          "$BT/apksigner" rotate --out "$RUNNER_TEMP/lineage.bin" --old-signer $OLD --new-signer $NEW
-          "$BT/apksigner" sign $OLD --next-signer $NEW --lineage "$RUNNER_TEMP/lineage.bin" --rotation-min-sdk-version 28 \
+          run "$BT/apksigner" rotate --out "$RUNNER_TEMP/lineage.bin" --old-signer $OLD --new-signer $NEW
+          run "$BT/apksigner" sign $OLD --next-signer $NEW --lineage "$RUNNER_TEMP/lineage.bin" --rotation-min-sdk-version 28 \
             --out StreamX.apk app/build/outputs/apk/release/app-release.apk
-          V=$("$BT/apksigner" verify -v --print-certs StreamX.apk)
-          echo "$V" | grep -E "Verified using|Signer|SHA-256" | head -12
-          echo "::notice::signing: $(echo "$V" | grep -E 'Verified using v3|certificate SHA-256' | tr '\n' ' ' | cut -c1-900)"
+          run "$BT/apksigner" verify -v --print-certs StreamX.apk
+          echo "::notice::signing ($(basename "$BT")): $(grep -E 'Verified using v3|certificate SHA-256' "$RUNNER_TEMP/sign.log" | tr '\n' ' ' | cut -c1-900)"
           # The emulator tests install these two files: the test APK must carry the app's current key.
           cp StreamX.apk app/build/outputs/apk/release/app-release.apk
           cp StreamX.apk TCLStreamX-debug.apk
-          "$BT/apksigner" sign $NEW app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
+          run "$BT/apksigner" sign $NEW app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
           rm -f "$RUNNER_TEMP/new.jks"
 
       - name: Publish APK early (tests results are attached later to the same release)
