@@ -59,6 +59,17 @@ jobs:
         with:
           name: tv-dist
           path: tv-platforms/dist
+      # Says which certificate secrets this run can read (yes / no only, never a value).
+      - name: Certificate secrets visible to this run
+        env:
+          A: ${{ secrets.TIZEN_AUTHOR_P12 }}
+          AP: ${{ secrets.TIZEN_AUTHOR_PASSWORD }}
+          D: ${{ secrets.TIZEN_DISTRIBUTOR_P12 }}
+          DP: ${{ secrets.TIZEN_DISTRIBUTOR_PASSWORD }}
+        run: |
+          for v in A:TIZEN_AUTHOR_P12 AP:TIZEN_AUTHOR_PASSWORD D:TIZEN_DISTRIBUTOR_P12 DP:TIZEN_DISTRIBUTOR_PASSWORD; do
+            n=${v%%:*}; [ -n "${!n}" ] && echo "::notice::${v#*:}: present" || echo "::warning::${v#*:}: missing for this run"
+          done
       - name: Unsigned package (always)
         run: |
           mkdir -p out
