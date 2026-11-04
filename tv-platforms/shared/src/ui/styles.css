@@ -1,0 +1,137 @@
+/*
+ * StreamX TV theme, transcribed from the Android app (ui/theme/Theme.kt, ui/components/Components.kt).
+ * 1rem = 1dp: Android TV renders 960x540 dp on a 1920x1080 screen, so every size of the Compose
+ * screens (dp and sp) is written here with the same number.
+ */
+@font-face { font-family: 'Plex'; src: url('../../assets/fonts/ibmplexsansarabic_regular.ttf'); font-weight: 400; font-display: block; }
+@font-face { font-family: 'Plex'; src: url('../../assets/fonts/ibmplexsansarabic_semibold.ttf'); font-weight: 600; font-display: block; }
+@font-face { font-family: 'Plex'; src: url('../../assets/fonts/ibmplexsansarabic_bold.ttf'); font-weight: 700; font-display: block; }
+@font-face { font-family: 'Condensed'; src: url('../../assets/fonts/barlowcondensed_semibold.ttf'); font-weight: 600; font-display: block; }
+@font-face { font-family: 'Condensed'; src: url('../../assets/fonts/barlowcondensed_bold.ttf'); font-weight: 700; font-display: block; }
+@font-face { font-family: 'Mono'; src: url('../../assets/fonts/ibmplexmono_medium.ttf'); font-weight: 500; font-display: block; }
+
+:root {
+  --ink: #0b0c0e; --graphite: #131518; --raised: #1b1e22; --lift: #252a30; --hairline: #2c3137;
+  --text: #f1f2f3; --text-dim: #9ba1a8; --text-faint: #636970;
+  --tally: #ff4d2e; --tally-deep: #8a2414; --signal: #5bd98f; --caution: #f2b33d; --dead: #6b7078;
+  --ember: #ff963c; --violet: #9c8cff; --cyan: #3fc8e4; --rose: #ff6f91;
+  --row-radius: 10rem; --card-radius: 12rem;
+  --rail: 72rem;
+}
+
+html { font-size: calc(100vw / 960); background: var(--ink); }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  color: var(--text); font-family: 'Plex', sans-serif; font-size: 15rem; line-height: 22rem;
+  -webkit-font-smoothing: antialiased; user-select: none; cursor: none;
+}
+/* Video plane (AVPlay draws under the page): the page is transparent where the video shows. */
+body.video-on, body.video-on #app { background: transparent; }
+#app { position: fixed; inset: 0; background: var(--ink); }
+
+/* ---- type (TallyType) ---- */
+.t-display { font-family: 'Condensed', 'Plex', sans-serif; font-weight: 700; font-size: 58rem; line-height: 58rem; }
+.t-headline { font-family: 'Condensed', 'Plex', sans-serif; font-weight: 600; font-size: 32rem; line-height: 34rem; }
+[dir='rtl'] .t-display { font-family: 'Plex', sans-serif; font-size: 44rem; line-height: 60rem; }
+[dir='rtl'] .t-headline { font-family: 'Plex', sans-serif; font-size: 26rem; line-height: 38rem; }
+.t-title { font-weight: 600; font-size: 18rem; line-height: 26rem; }
+.t-body { font-size: 15rem; line-height: 22rem; }
+.t-small { font-size: 13rem; line-height: 19rem; color: var(--text-dim); }
+.t-label { font-weight: 600; font-size: 13rem; line-height: 18rem; color: var(--text-dim); }
+.t-numeral { font-family: 'Condensed', sans-serif; font-weight: 700; font-size: 30rem; line-height: 30rem; }
+.t-numeral-s { font-family: 'Condensed', sans-serif; font-weight: 600; font-size: 18rem; line-height: 20rem; color: var(--text-dim); }
+.t-mono { font-family: 'Mono', monospace; font-weight: 500; font-size: 12rem; line-height: 16rem; color: var(--text-dim); }
+.dim { color: var(--text-dim); } .faint { color: var(--text-faint); } .tally { color: var(--tally); } .ok { color: var(--signal); } .warn { color: var(--caution); }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+/* Each text takes its direction from its content (Latin names stay in order in Arabic). */
+.auto { unicode-bidi: plaintext; }
+
+/* ---- TallyRow: lighter graphite + tally bar on the leading edge ---- */
+.row {
+  position: relative; display: flex; align-items: center; gap: 10rem; min-height: 48rem; padding: 0 14rem;
+  border-radius: var(--row-radius); color: var(--text); outline: none; overflow: hidden;
+}
+.row.selected { background: var(--raised); }
+.row.selected::before { content: ''; position: absolute; inset-block: 0; inset-inline-start: 0; width: 4rem; background: var(--tally-deep); }
+.row.focused { background: var(--lift); }
+.row.focused::before { content: ''; position: absolute; inset-block: 0; inset-inline-start: 0; width: 4rem; background: var(--tally); }
+.row.pressed { background: var(--hairline); }
+.row .grow { flex: 1; min-width: 0; }
+
+/* ---- TallyCard: hairline frame that turns tally on focus, slight lift ---- */
+.card {
+  position: relative; border-radius: var(--card-radius); background: var(--graphite); border: 1rem solid var(--hairline);
+  overflow: hidden; transition: transform 110ms ease-out; will-change: transform; outline: none;
+}
+.card.focused { transform: scale(1.04); background: var(--raised); border: 2rem solid var(--tally); }
+
+/* ---- chips (region strip, filters) ---- */
+.chips { display: flex; gap: 8rem; overflow: hidden; padding: 4rem 0; }
+.chip { flex: none; height: 36rem; display: inline-flex; align-items: center; padding: 0 14rem; border-radius: var(--row-radius); font-weight: 600; font-size: 13rem; color: var(--text-dim); position: relative; }
+.chip .n { font-family: 'Mono', monospace; margin-inline-start: 6rem; color: var(--text-faint); }
+.chip.selected { background: var(--raised); color: var(--text); }
+.chip.focused { background: var(--lift); color: var(--text); }
+.chip.focused::before, .chip.selected::before { content: ''; position: absolute; inset-block: 0; inset-inline-start: 0; width: 4rem; background: var(--tally); }
+.chip.selected:not(.focused)::before { background: var(--tally-deep); }
+
+/* ---- small pieces ---- */
+.dot { width: 8rem; height: 8rem; border-radius: 50%; flex: none; background: var(--text-faint); }
+.dot.s1 { background: var(--signal); } .dot.s3, .dot.s6 { background: var(--caution); } .dot.s2, .dot.s5, .dot.s7, .dot.s8 { background: var(--dead); }
+.tag { display: inline-block; background: var(--raised); padding: 2rem 6rem; font-family: 'Mono', monospace; font-size: 12rem; line-height: 16rem; color: var(--text-dim); white-space: nowrap; }
+.live-badge { display: inline-flex; align-items: center; gap: 5rem; background: var(--tally); color: var(--ink); padding: 2rem 6rem; font-family: 'Mono', monospace; font-size: 12rem; line-height: 16rem; }
+.live-badge::before { content: ''; width: 6rem; height: 6rem; border-radius: 50%; background: var(--ink); }
+.progress { height: 3rem; background: var(--hairline); position: relative; }
+.progress > i { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--tally); }
+.ic { fill: currentColor; flex: none; display: block; }
+.logo { display: flex; align-items: center; justify-content: center; border-radius: 8rem; overflow: hidden; }
+.logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.logo .ini { font-family: 'Condensed', sans-serif; font-weight: 600; font-size: 18rem; color: var(--text); background: var(--lift); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.poster-ini { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Condensed', sans-serif; font-weight: 700; font-size: 30rem; color: var(--text-faint); }
+img.fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hidden { display: none !important; }
+
+/* ---- shell: rail (collapsed icons, opens over the content with a dimmed screen) ---- */
+#host { position: absolute; inset: 0; padding-inline-start: var(--rail); }
+body.no-rail #host { padding-inline-start: 0; }
+#dim { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 140ms; z-index: 5; }
+#dim.on { opacity: 0.72; }
+#rail {
+  position: absolute; inset-block: 0; inset-inline-start: 0; width: var(--rail); background: var(--graphite); z-index: 10;
+  display: flex; flex-direction: column; gap: 2rem; padding: 24rem 0; transition: width 140ms; overflow: hidden;
+}
+#rail.open { width: 240rem; }
+#rail .brand { display: flex; align-items: center; gap: 12rem; padding: 0 0 18rem 18rem; }
+[dir='rtl'] #rail .brand { padding: 0 18rem 18rem 0; }
+#rail .brand img { width: 30rem; height: 30rem; }
+#rail .row { height: 48rem; padding-inline-start: 24rem; gap: 16rem; white-space: nowrap; color: var(--text-faint); }
+#rail .row.focused, #rail .row.selected { color: var(--text); }
+#rail .label { display: none; }
+#rail.open .label, #rail.open .brand .label { display: block; }
+#rail .credit { margin-top: auto; padding: 0 12rem 0 24rem; display: none; }
+#rail.open .credit { display: block; }
+body.no-rail #rail, body.no-rail #dim { display: none; }
+
+/* ---- screens ---- */
+.screen { position: absolute; inset: 0; overflow: hidden; }
+.pad { padding: 24rem 40rem 0 36rem; }
+.scroll-y { overflow: hidden; }
+.shelf-title { padding: 0 36rem; margin-bottom: 8rem; }
+.shelf { display: flex; gap: 12rem; padding: 4rem 36rem; overflow: visible; transition: transform 160ms ease-out; }
+.empty { padding: 32rem; }
+.toast { position: absolute; bottom: 32rem; inset-inline-start: 50%; transform: translateX(-50%); background: var(--graphite); border: 1rem solid var(--hairline); padding: 12rem 20rem; border-radius: 10rem; z-index: 50; }
+[dir='rtl'] .toast { transform: translateX(50%); }
+
+/* dialogs */
+.modal { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 40; }
+.dialog { width: 420rem; background: var(--graphite); border: 1rem solid var(--hairline); border-radius: 16rem; padding: 24rem; display: flex; flex-direction: column; gap: 14rem; }
+.dialog .buttons { display: flex; gap: 10rem; }
+.dialog .buttons .row { flex: 1; justify-content: center; height: 52rem; }
+
+/* text input: the TV keyboard opens on OK */
+.field { width: 100%; height: 52rem; border-radius: var(--row-radius); border: 0; outline: none; background: var(--raised); color: var(--text); font: inherit; font-size: 15rem; padding: 0 14rem; }
+.field.focused, .field:focus { background: var(--lift); box-shadow: inset 4rem 0 0 var(--tally); }
+[dir='rtl'] .field.focused, [dir='rtl'] .field:focus { box-shadow: inset -4rem 0 0 var(--tally); }
+.field::placeholder { color: var(--text-faint); }
