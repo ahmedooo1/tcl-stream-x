@@ -1,0 +1,130 @@
+# StreamX for Samsung (Tizen) and LG (webOS). Independent from build.yml: it never touches the
+# Android app, its signing or its update releases (TV packages are workflow artifacts only).
+name: StreamX TV (Samsung, LG)
+
+on:
+  push:
+    branches: [multiplatform-tv]
+    paths: ['tv-platforms/**', '.github/workflows/tv-platforms.yml']
+  pull_request:
+    paths: ['tv-platforms/**', '.github/workflows/tv-platforms.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tv-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: tv-platforms
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tv-platforms/package-lock.json
+      - run: npm ci
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit tests (parsers, Xtream, storage, guide, texts, player)
+        run: npm test
+      - name: Build both editions
+        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tv-dist
+          path: tv-platforms/dist
+          retention-days: 7
+
+  samsung:
+    needs: test
+    runs-on: ubuntu-24.04
+    env:
+      # Certificates made with Samsung Certificate Manager (docs/INSTALL-SAMSUNG.md), stored as
+      # base64 in the repository secrets. Never written to the repository or the logs.
+      HAS_CERTS: ${{ secrets.TIZEN_AUTHOR_P12 != '' && secrets.TIZEN_DISTRIBUTOR_P12 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: tv-dist
+          path: tv-platforms/dist
+      - name: Unsigned package (always)
+        run: |
+          mkdir -p out
+          (cd dist/samsung && zip -qr ../../out/StreamX-Samsung-unsigned.zip .)
+      - name: Tizen CLI
+        if: env.HAS_CERTS == 'true'
+        run: |
+          set -e
+          V=5.6
+          curl -fsSL -o "$RUNNER_TEMP/cli.bin" "https://download.tizen.org/sdk/Installer/tizen-studio_${V}/web-cli_Tizen_Studio_${V}_ubuntu-64.bin"
+          chmod +x "$RUNNER_TEMP/cli.bin"
+          "$RUNNER_TEMP/cli.bin" --accept-license "$HOME/tizen-studio"
+          echo "$HOME/tizen-studio/tools/ide/bin" >> "$GITHUB_PATH"
+      - name: Sign StreamX-Samsung.wgt
+        if: env.HAS_CERTS == 'true'
+        env:
+          AUTHOR_P12: ${{ secrets.TIZEN_AUTHOR_P12 }}
+          AUTHOR_PASSWORD: ${{ secrets.TIZEN_AUTHOR_PASSWORD }}
+          AUTHOR_CA: ${{ secrets.TIZEN_AUTHOR_CA }}
+          DISTRIBUTOR_P12: ${{ secrets.TIZEN_DISTRIBUTOR_P12 }}
+          DISTRIBUTOR_PASSWORD: ${{ secrets.TIZEN_DISTRIBUTOR_PASSWORD }}
+          DISTRIBUTOR_CA: ${{ secrets.TIZEN_DISTRIBUTOR_CA }}
+        run: |
+          set -e
+          K="$RUNNER_TEMP/keys"; mkdir -p "$K"; chmod 700 "$K"
+          printf '%s' "$AUTHOR_P12" | base64 -d > "$K/author.p12"
+          printf '%s' "$DISTRIBUTOR_P12" | base64 -d > "$K/distributor.p12"
+          EXTRA=()
+          if [ -n "$AUTHOR_CA" ]; then printf '%s' "$AUTHOR_CA" | base64 -d > "$K/author-ca.cer"; EXTRA+=(-c "$K/author-ca.cer"); fi
+          if [ -n "$DISTRIBUTOR_CA" ]; then printf '%s' "$DISTRIBUTOR_CA" | base64 -d > "$K/distributor-ca.cer"; EXTRA+=(-dc "$K/distributor-ca.cer"); fi
+          tizen security-profiles add -n StreamXCI -a "$K/author.p12" -p "$AUTHOR_PASSWORD" \
+            -d "$K/distributor.p12" -dp "$DISTRIBUTOR_PASSWORD" "${EXTRA[@]}" > /dev/null
+          rm -rf "$RUNNER_TEMP/pkg"; cp -r dist/samsung "$RUNNER_TEMP/pkg"
+          tizen package -t wgt -s StreamXCI -o "$RUNNER_TEMP/wgt" -- "$RUNNER_TEMP/pkg"
+          mv "$RUNNER_TEMP"/wgt/*.wgt out/StreamX-Samsung.wgt
+          unzip -l out/StreamX-Samsung.wgt | grep -E 'author-signature.xml|signature1.xml'
+          rm -rf "$K" "$HOME/tizen-studio-data/profile"
+      - name: No certificates yet
+        if: env.HAS_CERTS != 'true'
+        run: |
+          echo "::warning::TIZEN_AUTHOR_P12 / TIZEN_DISTRIBUTOR_P12 are not set: only StreamX-Samsung-unsigned.zip is built. A Samsung TV installs signed packages only (docs/INSTALL-SAMSUNG.md)."
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StreamX-Samsung
+          path: tv-platforms/out/*
+          retention-days: 30
+
+  lg:
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/download-artifact@v4
+        with:
+          name: tv-dist
+          path: tv-platforms/dist
+      - name: StreamX-LG.ipk
+        run: |
+          set -e
+          mkdir -p out
+          npx --yes -p @webos-tools/cli@3.2.6 ares-package dist/lg -o "$RUNNER_TEMP/ipk"
+          mv "$RUNNER_TEMP"/ipk/*.ipk out/StreamX-LG.ipk
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StreamX-LG
+          path: tv-platforms/out/StreamX-LG.ipk
+          retention-days: 30
