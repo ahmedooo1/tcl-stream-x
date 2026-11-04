@@ -168,6 +168,8 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     val voice = rememberVoice { text -> searchFor(text) }
     // Up from the first row goes to the search bar, not to the side rail (which is closer on screen).
     val searchFocus = remember { FocusRequester() }
+    // Down from the search bar goes back to the rows (to the card last focused), not to the side rail.
+    val rowsFocus = remember { FocusRequester() }
     if (askExit) ExitDialog(onStay = { askExit = false })
 
     var series by remember { mutableStateOf<ChannelEntity?>(null) }
@@ -370,11 +372,11 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                 // scrolls with the page; without one, only the header.
                 item(key = "stage") {
                     if (featured == null) {
-                        HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::searchFor, voice = voice, searchFocus = searchFocus)
+                        HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::searchFor, voice = voice, searchFocus = searchFocus, rowsFocus = rowsFocus)
                     } else {
                         Box(Modifier.fillMaxWidth().height(stageHeight)) {
                             StageBackdrop(noFocus, featured, Modifier.fillMaxSize())
-                            HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::searchFor, voice = voice, searchFocus = searchFocus)
+                            HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::searchFor, voice = voice, searchFocus = searchFocus, rowsFocus = rowsFocus)
                             StageInfo(noFocus, featured, compact = true, refresh, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 16.dp))
                         }
                     }
@@ -384,7 +386,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
             }
         } else {
             Column(Modifier.fillMaxSize()) {
-                HomeHeader(compact = false, Modifier.padding(start = 36.dp, end = 40.dp, top = 20.dp), onSearch = ::searchFor, voice = voice, searchFocus = searchFocus)
+                HomeHeader(compact = false, Modifier.padding(start = 36.dp, end = 40.dp, top = 20.dp), onSearch = ::searchFor, voice = voice, searchFocus = searchFocus, rowsFocus = rowsFocus)
                 UpdateRow(compactBanner = true)
                 StageInfo(spot, featured, compact = false, refresh, Modifier.fillMaxWidth().height(stageHeight - 70.dp).padding(start = 36.dp, end = 40.dp))
                 // The focused row always comes to the top of the list, under the stage, instead
@@ -397,6 +399,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                         Modifier
                             .fillMaxWidth()
                             .weight(1f)
+                            .focusRequester(rowsFocus)
                             .focusProperties { exit = { dir -> if (dir == androidx.compose.ui.focus.FocusDirection.Up) searchFocus else FocusRequester.Default } }
                             .focusRestorer(),
                         contentPadding = PaddingValues(top = 6.dp, bottom = 400.dp),
@@ -424,7 +427,7 @@ private sealed interface HomeRow {
 }
 
 @Composable
-private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: (String) -> Unit, voice: Voice, searchFocus: FocusRequester) {
+private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: (String) -> Unit, voice: Voice, searchFocus: FocusRequester, rowsFocus: FocusRequester) {
     val type = LocalTallyType.current
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Image(painterResource(R.drawable.logo_mark), contentDescription = null, modifier = Modifier.size(if (compact) 34.dp else 38.dp))
@@ -432,7 +435,7 @@ private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: (String) 
         Text(stringResource(R.string.app_name), style = type.title, maxLines = 1)
         Spacer(Modifier.width(if (compact) 12.dp else 28.dp))
         // Search within reach: one press up from the first row on a TV.
-        SearchBar(compact, onSearch, voice, searchFocus)
+        SearchBar(compact, onSearch, voice, searchFocus, rowsFocus)
         Spacer(Modifier.weight(1f))
         Clock()
     }
@@ -443,7 +446,8 @@ private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: (String) 
  * the microphone next to it searches by voice. The words go to the search screen.
  */
 @Composable
-private fun SearchBar(compact: Boolean, onSubmit: (String) -> Unit, voice: Voice, searchFocus: FocusRequester) {
+private fun SearchBar(compact: Boolean, onSubmit: (String) -> Unit, voice: Voice, searchFocus: FocusRequester, rowsFocus: FocusRequester) {
+    val toRows = Modifier.focusProperties { down = rowsFocus }
     val type = LocalTallyType.current
     var open by remember { mutableStateOf(false) }
     val h = if (compact) 40.dp else 46.dp
@@ -463,7 +467,7 @@ private fun SearchBar(compact: Boolean, onSubmit: (String) -> Unit, voice: Voice
                     v.message != null -> v.message!!
                     else -> stringResource(R.string.home_search)
                 }
-                TallyRow(onClick = { open = true }, modifier = Modifier.fillMaxSize().focusRequester(searchFocus)) {
+                TallyRow(onClick = { open = true }, modifier = Modifier.fillMaxSize().focusRequester(searchFocus).then(toRows)) {
                     Row(Modifier.align(Alignment.CenterStart).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                         AppIcon(AppIcons.Search, Palette.TextDim, size = 20.dp)
                         if (!compact) {
@@ -506,6 +510,7 @@ private fun SearchBar(compact: Boolean, onSubmit: (String) -> Unit, voice: Voice
                         .border(2.dp, Palette.Tally, shape)
                         .padding(horizontal = 18.dp, vertical = 12.dp)
                         .focusRequester(focus)
+                        .then(toRows)
                         .onFocusChanged {
                             if (it.isFocused) hadFocus = true
                             else if (hadFocus && open) done()
@@ -514,7 +519,7 @@ private fun SearchBar(compact: Boolean, onSubmit: (String) -> Unit, voice: Voice
             }
         }
         Spacer(Modifier.width(8.dp))
-        VoiceButton(voice, h)
+        VoiceButton(voice, h, toRows)
     }
 }
 
