@@ -142,7 +142,20 @@ class Updater(private val context: Context, http: OkHttpClient) {
         val archiveCode = if (Build.VERSION.SDK_INT >= 28) archive.longVersionCode else archive.versionCode.toLong()
         if (archiveCode != build.toLong() || archiveCode <= currentBuild) return false
         val installed = pm.getPackageInfo(context.packageName, flags)
-        return certificates(installed) == certificates(archive).takeIf { it.isNotEmpty() }
+        val mine = certificates(installed)
+        val theirs = certificates(archive)
+        if (mine.isEmpty() || theirs.isEmpty()) return false
+        if (mine == theirs) return true
+        // Signing key rotation (APK v3): the new build proves it comes from the installed key.
+        return Build.VERSION.SDK_INT >= 28 && mine.all { it in history(archive) }
+    }
+
+    /** Every key in the APK's proof of rotation, the current one included (API 28+). */
+    private fun history(info: android.content.pm.PackageInfo): Set<String> {
+        if (Build.VERSION.SDK_INT < 28) return emptySet()
+        val si = info.signingInfo ?: return emptySet()
+        if (si.hasMultipleSigners()) return emptySet()
+        return si.signingCertificateHistory.orEmpty().map { s -> MessageDigest.getInstance("SHA-256").digest(s.toByteArray()).joinToString("") { "%02x".format(it) } }.toSet()
     }
 
     @Suppress("DEPRECATION")

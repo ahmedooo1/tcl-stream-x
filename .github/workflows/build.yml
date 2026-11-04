@@ -91,6 +91,35 @@ jobs:
           # Same file under the old name: build 45 and earlier look for this name when updating.
           cp StreamX.apk TCLStreamX-debug.apk
 
+      # The old debug key (app/debug.keystore) became public with the repository. Builds are signed
+      # with a private key kept in the repository secrets, with an APK v3 proof of rotation from the
+      # old key: they install over older builds without losing data, and the old key can no longer
+      # sign an update for a device that installed a rotated build. Without the secrets the build
+      # keeps the old key, so nothing breaks before they are added.
+      - name: Sign with the private release key (rotation from the old key)
+        env:
+          NEW_KS: ${{ secrets.STREAMX_KEYSTORE_B64 }}
+          NEW_PASS: ${{ secrets.STREAMX_KEYSTORE_PASSWORD }}
+        run: |
+          set -e
+          if [ -z "$NEW_KS" ] || [ -z "$NEW_PASS" ]; then
+            echo "::warning::STREAMX_KEYSTORE_B64 / STREAMX_KEYSTORE_PASSWORD secrets missing: APK signed with the old public key"
+            exit 0
+          fi
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          printf '%s' "$NEW_KS" | base64 -d > "$RUNNER_TEMP/new.jks"
+          OLD="--ks app/debug.keystore --ks-pass pass:android --ks-key-alias androiddebugkey --key-pass pass:android"
+          NEW="--ks $RUNNER_TEMP/new.jks --ks-pass env:NEW_PASS --ks-key-alias streamx --key-pass env:NEW_PASS"
+          "$BT/apksigner" rotate --out "$RUNNER_TEMP/lineage.bin" --old-signer $OLD --new-signer $NEW
+          "$BT/apksigner" sign $OLD --next-signer $NEW --lineage "$RUNNER_TEMP/lineage.bin" --rotation-min-sdk-version 28 \
+            --out StreamX.apk app/build/outputs/apk/release/app-release.apk
+          "$BT/apksigner" verify -v --print-certs StreamX.apk | grep -E "Verified using|Signer|SHA-256" | head -12
+          # The emulator tests install these two files: the test APK must carry the app's current key.
+          cp StreamX.apk app/build/outputs/apk/release/app-release.apk
+          cp StreamX.apk TCLStreamX-debug.apk
+          "$BT/apksigner" sign $NEW app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
+          rm -f "$RUNNER_TEMP/new.jks"
+
       - name: Publish APK early (tests results are attached later to the same release)
         env:
           GH_TOKEN: ${{ github.token }}
