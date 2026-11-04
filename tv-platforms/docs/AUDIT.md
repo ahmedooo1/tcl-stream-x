@@ -109,5 +109,8 @@ Samsung 55" 2025 (`INSTALL-SAMSUNG.md`) et, si tu en as une, sur une TV LG.
 - `tools/e2e.mjs` dans Chrome depuis `file://`, à la télécommande seulement : Samsung et LG,
   14 écrans chacun, aucune erreur JavaScript. À 200 000 entrées (édition Samsung) : import 51 s,
   recherche 4 s, mémoire JavaScript 20 Mo. Chiffres et captures : `docs/screenshots/`.
-- CI `StreamX TV (Samsung, LG)` : tests, construction, e2e à 50 000 entrées, packages et pré-release
-  `tv-build-N`, tous verts sur la branche.
+- CI `StreamX TV (Samsung, LG)`, run 12 : tests, construction, e2e à 50 000 entrées (import 7,0 s
+  Samsung / 6,4 s LG, recherche < 1 s, aucune erreur), packages, pré-release `tv-build-12`. La
+  release « latest » reste `build-74` (Android) : l'updater Android n'est pas touché.
+- CI `Android screenshots` : l'appli Android inchangée sur émulateur Android TV, `UiTourTest` réussi,
+  captures publiées dans `tv-comparison-screens`.
