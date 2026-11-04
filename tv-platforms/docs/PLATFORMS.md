@@ -27,6 +27,20 @@ Les élargir demanderait des polyfills et un essai sur une de ces TV.
 | DRM | non utilisé (StreamX ne lit pas de flux protégés) | idem |
 | Écran de veille | `webapis.appcommon.setScreenSaver` | géré par webOS pendant la lecture |
 
+## Vérification des chaînes, réseau local, mises à jour
+
+- **Pastilles de disponibilité** : même méthode qu'Android (manifeste, variante la plus légère, un
+  segment). Une appli web ne peut pas envoyer l'User-Agent ou le Referer d'une chaîne, et un serveur
+  qui refuse les lectures cross-origin ressemble à une panne réseau : ce cas est noté « inconnu »,
+  jamais « hors ligne ». Les comptes Xtream ne sont jamais vérifiés en masse (comme sur Android).
+- **Réseau local** : une playlist servie par un ordinateur ou un téléphone du réseau s'importe par
+  son adresse (`http://192.168.x.y:port/liste.m3u`, par exemple `python3 -m http.server 8000` dans le
+  dossier de la playlist sur un PC). L'inverse (le téléphone qui envoie vers la TV) demande un serveur
+  sur la TV, impossible pour une appli web.
+- **Mises à jour** : la CI publie des pré-releases `tv-build-N` (jamais « latest », donc invisibles
+  pour l'updater Android). L'appli TV lit les tags `tv-build-*` toutes les 30 minutes et affiche une
+  bannière avec un QR code ; l'installation se fait depuis un ordinateur.
+
 ## Ce qui n'existe pas pour une appli web TV
 
 Serveur HTTP local (envoi depuis le téléphone, télécommande téléphone), découverte réseau (NSD),

@@ -70,7 +70,7 @@ Samsung 55" 2025 (`INSTALL-SAMSUNG.md`) et, si tu en as une, sur une TV LG.
 | Télécommande depuis le téléphone | `RemoteHub.kt` | — | — | — | — | Bloquée par la plateforme |
 | Chromecast | `ChromecastController.kt` | — | — | — | — | Bloquée par la plateforme |
 | Ouvrir dans un autre lecteur | `PlayerScreen.kt` | — | — | — | — | Bloquée par la plateforme |
-| Mes fichiers (vidéos de la TV, USB) | `LocalScreen.kt` | écran explicatif | idem | — | — | Bloquée par la plateforme |
+| Mes fichiers (vidéos USB) | `LocalScreen.kt` | `samsung-tizen/src/files.ts` (`tizen.filesystem`, privilèges lecture + stockage externe), `screens/local.ts` | écran explicatif | — | `files.test.ts` (faux système de fichiers) | Samsung : implémentée mais non testée sur TV réelle ; LG : bloquée par la plateforme |
 | Actualisation automatique (playlists 24 h, guide 12 h, catalogue 6 h) | `AppContainer.refreshStale` | `ui/app.ts` | idem | étude | build | Implémentée mais non testée sur TV réelle |
 | Réglages persistants | `SettingsStore.kt` | IndexedDB (`settings`) | idem | étude | `storage.test.ts`, e2e | Implémentée et testée |
 | Langue système / FR / AR et sens RTL | `strings.xml`, `SettingsScreen.kt` | `i18n` (343 textes générés depuis Android) | idem | étude | `i18n.test.ts`, e2e en arabe | Implémentée et testée |
@@ -105,7 +105,7 @@ Samsung 55" 2025 (`INSTALL-SAMSUNG.md`) et, si tu en as une, sur une TV LG.
 ## Résultats des tests (dernier passage)
 
 - `npm run typecheck` : TypeScript strict, 0 erreur.
-- `npm test` : 12 fichiers, 69 tests, tous réussis (dont 300 000 entrées lues en 0,7 s).
+- `npm test` : 13 fichiers, 71 tests, tous réussis (dont 300 000 entrées lues en 0,7 s).
 - `tools/e2e.mjs` dans Chrome depuis `file://`, à la télécommande seulement : Samsung et LG,
   14 écrans chacun, aucune erreur JavaScript. À 200 000 entrées (édition Samsung) : import 51 s,
   recherche 4 s, mémoire JavaScript 20 Mo. Chiffres et captures : `docs/screenshots/`.

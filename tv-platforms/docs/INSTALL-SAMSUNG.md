@@ -51,9 +51,9 @@ certificat auteur est refusée par la TV (il faudrait désinstaller l'appli et p
 
 ## 5. Option A : signer et installer depuis ton ordinateur
 
-Télécharge l'artefact **StreamX-Samsung** de la CI (onglet Actions du dépôt → dernier run
-« StreamX TV » → Artifacts), décompresse `StreamX-Samsung-unsigned.zip` dans un dossier `streamx`,
-puis :
+Télécharge `StreamX-Samsung-unsigned.zip` depuis la dernière pré-release **tv-build-N**
+(<https://github.com/ahmedooo1/tcl-stream-x/releases>, sans compte), décompresse-le dans un dossier
+`streamx`, puis :
 
 ```bash
 tizen package -t wgt -s StreamX -o . -- streamx
@@ -73,7 +73,7 @@ New repository secret). Je ne les écris pas moi-même et ils ne passent jamais 
 | `TIZEN_DISTRIBUTOR_PASSWORD` | mot de passe du certificat distributeur |
 | `TIZEN_AUTHOR_CA`, `TIZEN_DISTRIBUTOR_CA` | facultatifs : seulement si la signature échoue avec « Invalid certificate chain » (fichiers `.cer` de `tizen-studio/tools/certificate-generator/certificates/`, en base64) |
 
-Au run suivant, l'artefact contient **StreamX-Samsung.wgt** signé. Installation :
+Au run suivant, la pré-release **tv-build-N** contient **StreamX-Samsung.wgt** signé. Installation :
 
 ```bash
 sdb connect <IP_DE_LA_TV>
@@ -82,9 +82,10 @@ tizen install -n StreamX-Samsung.wgt -t <NOM_DE_LA_CIBLE>
 
 ## Mises à jour
 
-L'appli ne peut pas se mettre à jour seule sur la TV. Pour une nouvelle version : récupère le
-nouveau `.wgt` et relance `tizen install` ; les playlists, favoris et réglages sont conservés tant
-que le certificat auteur est le même.
+L'appli vérifie toutes les 30 minutes s'il existe un build TV plus récent (tags `tv-build-N`) et
+l'annonce sur l'accueil avec un QR code vers la page de téléchargement. Elle ne peut pas
+s'installer seule : récupère le nouveau `.wgt` et relance `tizen install` ; playlists, favoris et
+réglages sont conservés tant que le certificat auteur est le même.
 
 ## Si quelque chose ne va pas
 

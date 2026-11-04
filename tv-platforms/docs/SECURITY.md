@@ -32,6 +32,13 @@ efface les données de l'appli.
   Samsung), pas d'`eval`, pas de script en ligne ; images, flux et guides depuis toute origine
   puisqu'ils viennent des playlists de l'utilisateur.
 
+## Requêtes faites par l'appli elle-même
+
+Vérification des mises à jour (API publique GitHub, sans compte ni jeton), calendrier sportif
+(ESPN), rayons domaine public (Internet Archive) et guide par défaut. Aucune ne contient
+d'identifiant, de playlist ou d'information sur l'utilisateur ; elles révèlent seulement l'adresse
+IP de la box, comme toute requête web.
+
 ## Signature
 
 - **Samsung** : le `.wgt` est signé avec un certificat auteur et un certificat distributeur Samsung

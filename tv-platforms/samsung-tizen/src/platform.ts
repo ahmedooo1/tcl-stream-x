@@ -6,6 +6,8 @@ import { Action, commonAction, Platform } from '@shared/platform/platform';
 import type { PlayerAdapter } from '@shared/player/types';
 import { Html5Player } from '@shared/player/html5';
 import { AVPlayPlayer, hasAVPlay } from './avplay';
+import { hasFiles, usbVideos } from './files';
+import type { LocalVideo } from '@shared/platform/platform';
 
 interface TizenKey { name: string; code: number }
 declare global {
@@ -86,6 +88,8 @@ export class TizenPlatform implements Platform {
     if (!pi) return navigator.userAgent;
     try { return `${pi.getModel()} · ${pi.getFirmware()}`; } catch { return 'Samsung Tizen'; }
   }
+
+  readonly localVideos = hasFiles() ? (onProgress?: (n: number) => void): Promise<LocalVideo[]> => usbVideos(onProgress) : undefined;
 
   onVisibility(cb: (visible: boolean) => void): void {
     document.addEventListener('visibilitychange', () => cb(!document.hidden));

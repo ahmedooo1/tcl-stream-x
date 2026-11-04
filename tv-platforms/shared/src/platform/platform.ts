@@ -25,7 +25,14 @@ export interface Platform {
   deviceInfo(): string;
   /** Called when the app goes to the background / comes back (visibilitychange on both systems). */
   onVisibility(cb: (visible: boolean) => void): void;
+  /**
+   * Videos of the TV's USB storage ("Mes fichiers"), when the system lets a web app read them;
+   * undefined when it does not (the screen then says so).
+   */
+  localVideos?(onProgress?: (found: number) => void): Promise<LocalVideo[]>;
 }
+
+export interface LocalVideo { title: string; uri: string; folder: string; storage: string }
 
 /** Keys shared by browsers and both TV systems (W3C key names / DOM keyCodes). */
 export function commonAction(e: KeyboardEvent): Action | null {

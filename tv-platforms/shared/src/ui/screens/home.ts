@@ -153,7 +153,7 @@ export function homeScreen(ctx: Ctx): Screen {
       live: t('home_tile_channels', liveCount),
       movies: movieCount > 0 ? t('home_tile_titles', movieCount) : t('home_tile_public'),
       series: seriesCount > 0 ? t('home_tile_titles', seriesCount) : t('home_tile_public'),
-      sports: t('home_tile_matches'), animation: t('home_tile_public'), local: t('tv_blocked_local'),
+      sports: t('home_tile_matches'), animation: t('home_tile_public'), local: t(ctx.platform.localVideos ? 'home_tile_local' : 'tv_blocked_local'),
       search: t('home_tile_search'), playlists: t('home_tile_playlists', playlists.length), settings: t('home_tile_settings'),
     };
     const tiles = SECTIONS.filter((s) => s.route !== 'home').map((s) => {
