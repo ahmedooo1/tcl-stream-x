@@ -1,6 +1,7 @@
 # Screenshots of the Android app (unchanged) on an Android TV emulator, to compare with StreamX
-# Samsung and StreamX LG. Separate from build.yml: no signing step, no release, no "latest" change,
-# nothing written to the repository. Artifact only.
+# Samsung and StreamX LG. Separate from build.yml: no signing step, no APK published, no "latest"
+# change. The pictures go to the artifact and to one rolling pre-release "tv-comparison-screens"
+# (pictures only), so they can be fetched without signing in.
 name: Android screenshots (comparison with the TV editions)
 
 on:
@@ -10,7 +11,7 @@ on:
     paths: ['.github/workflows/android-screenshots.yml', 'tv-platforms/tools/android_screens.sh']
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   shots:
@@ -65,3 +66,12 @@ jobs:
           name: Android-TV-screenshots
           path: android-shots
           retention-days: 30
+      - name: Pictures to the comparison pre-release
+        if: always() && hashFiles('android-shots/*.png') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view tv-comparison-screens --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 || \
+            gh release create tv-comparison-screens --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "Android screenshots for the TV comparison" --notes "Android TV emulator screenshots of the unchanged Android app (UiTourTest), compared with StreamX Samsung and LG in tv-platforms/docs/SCREENSHOTS.md. Pictures only, no app."
+          gh release upload tv-comparison-screens android-shots/*.png --repo "$GITHUB_REPOSITORY" --clobber

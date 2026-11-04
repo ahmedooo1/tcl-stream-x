@@ -1,0 +1,39 @@
+{
+  "edition": "lg",
+  "entries": 2000,
+  "engine": "Chrome (file://), not a TV",
+  "sampleVideo": "ffmpeg testsrc2 (VP9)",
+  "playlistBytes": 254777,
+  "importStatus": "Grande liste : 2000 chaînes importées (0 entrées ignorées)",
+  "importMs": 723,
+  "scroll60RowsMs": 1074,
+  "liveFocused": "95\n        C9\n        Chaîne 95 HD",
+  "regions": [
+    "Tous pays et langues",
+    "France  300",
+    "Français  300",
+    "Arabe  300",
+    "Royaume-Uni  150",
+    "Anglais  150",
+    "Allemagne  150",
+    "Allemand  150",
+    "Turquie  150",
+    "Turc  150",
+    "Espagne  150",
+    "Espagnol  150"
+  ],
+  "regionTitle": "Toutes les chaînes300 Guide TV 0 en ligne sur 62 vérifiées",
+  "seriesFocusBefore": "content: Tout voir  ›",
+  "seriesSection": "Séries | Drame200",
+  "searchMs": 339,
+  "searchResults": 1,
+  "filmFocused": "F7\n        Film 7 (1957)",
+  "playerState": {
+    "time": 4,
+    "paused": false,
+    "w": 960
+  },
+  "dir": "rtl",
+  "pageErrors": [],
+  "heapMB": 10
+}

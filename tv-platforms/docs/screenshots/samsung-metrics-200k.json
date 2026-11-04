@@ -1,0 +1,31 @@
+{
+  "edition": "samsung",
+  "entries": 200000,
+  "engine": "Chrome (file://), not a TV",
+  "playlistBytes": 26830635,
+  "importStatus": "Grande liste : 200000 chaînes importées (0 entrées ignorées)",
+  "importMs": 51305,
+  "scroll60RowsMs": 1062,
+  "liveFocused": "95\n        C9\n        Chaîne 95 HD",
+  "regions": [
+    "Tous pays et langues",
+    "France  30000",
+    "Français  30000",
+    "Arabe  30000",
+    "Royaume-Uni  15000",
+    "Anglais  15000",
+    "Allemagne  15000",
+    "Allemand  15000",
+    "Turquie  15000",
+    "Turc  15000",
+    "Espagne  15000",
+    "Espagnol  15000"
+  ],
+  "regionTitle": "Toutes les chaînes30000 Guide TV Vérifier ces chaînes",
+  "seriesFocusBefore": "content: Tout voir  ›",
+  "seriesSection": "Séries | Drame20000",
+  "searchMs": 3950,
+  "searchResults": 1,
+  "pageErrors": [],
+  "heapMB": 20
+}
