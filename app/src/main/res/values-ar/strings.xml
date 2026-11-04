@@ -345,4 +345,7 @@
     <string name="player_paused_hint">OK للمتابعة · ▶ الخيارات (العودة إلى المباشر)</string>
     <string name="crash_title">توقف StreamX في المرة السابقة</string>
     <string name="crash_close">إغلاق</string>
+    <string name="home_search">بحث</string>
+    <string name="home_voice">بحث صوتي</string>
+    <string name="voice_prompt">قل اسم فيلم أو مسلسل أو قناة</string>
 </resources>

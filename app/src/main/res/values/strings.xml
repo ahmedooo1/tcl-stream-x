@@ -345,4 +345,7 @@
     <string name="player_paused_hint">OK reprendre · ▶ options (revenir au direct)</string>
     <string name="crash_title">StreamX s\'est arrêté la dernière fois</string>
     <string name="crash_close">Fermer</string>
+    <string name="home_search">Rechercher</string>
+    <string name="home_voice">Recherche vocale</string>
+    <string name="voice_prompt">Dites un film, une série ou une chaîne</string>
 </resources>

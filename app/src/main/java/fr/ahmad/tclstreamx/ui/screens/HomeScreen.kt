@@ -135,29 +135,35 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     val compact = isCompactWidth()
     val tv = isTv()
     val dao = c.db.channels()
-    val recent by remember { dao.observeRecent(12) }.collectAsState(initial = emptyList())
-    val favorites by remember { dao.observeFavorites(30) }.collectAsState(initial = emptyList())
-    val news by remember { dao.observeCategory("news") }.collectAsState(initial = emptyList())
-    val sports by remember { dao.observeCategory("sports") }.collectAsState(initial = emptyList())
-    val resume by remember { c.db.vodProgress().observeContinue(12) }.collectAsState(initial = emptyList())
-    val newMovies by remember { dao.observeNewest(ContentKind.MOVIE, 30) }.collectAsState(initial = emptyList())
-    val newSeries by remember { dao.observeNewest(ContentKind.SERIES, 30) }.collectAsState(initial = emptyList())
-    val topMovies by remember { dao.observeTopRated(ContentKind.MOVIE, 30) }.collectAsState(initial = emptyList())
-    val liveCount by remember { dao.observeCount(0, ContentKind.LIVE, null) }.collectAsState(initial = 0)
-    val movieCount by remember { dao.observeCount(0, ContentKind.MOVIE, null) }.collectAsState(initial = 0)
-    val seriesCount by remember { dao.observeCount(0, ContentKind.SERIES, null) }.collectAsState(initial = 0)
+    // Kept between visits: coming back to Home shows its rows at once instead of loading them again.
+    val home = remember { HomeData.of(c) }
+    val recent by home.recent.collectAsState()
+    val favorites by home.favorites.collectAsState()
+    val news by home.news.collectAsState()
+    val sports by home.sports.collectAsState()
+    val resume by home.resume.collectAsState()
+    val newMovies by home.newMovies.collectAsState()
+    val newSeries by home.newSeries.collectAsState()
+    val topMovies by home.topMovies.collectAsState()
+    val liveCount by home.liveCount.collectAsState()
+    val movieCount by home.movieCount.collectAsState()
+    val seriesCount by home.seriesCount.collectAsState()
     val playlists by live.playlists.collectAsState()
     val settings by c.settings.settings.collectAsState(initial = null)
-    var lastChannel by remember { mutableStateOf<ChannelEntity?>(null) }
-    LaunchedEffect(settings?.lastChannelKey) {
-        lastChannel = settings?.lastChannelKey?.let { dao.byKey(it) }
-    }
+    val lastChannel by home.lastChannel.collectAsState()
     val spot = remember { SpotState() }
     val firstItem = remember { FocusRequester() }
     var askExit by remember { mutableStateOf(false) }
     // Back on Home asks before leaving the app (a panel open on Home closes first: its own
     // back handler is registered later and wins).
     BackHandler { askExit = true }
+    val voicePrompt = stringResource(R.string.voice_prompt)
+    val voice = rememberVoiceSearch { text ->
+        SearchRequest.pending.value = text
+        navigator.go(Routes.SEARCH)
+    }
+    fun openSearch() = navigator.go(Routes.SEARCH)
+    fun voiceSearch() = voice.listen(voicePrompt) { openSearch() }
     if (askExit) ExitDialog(onStay = { askExit = false })
 
     var series by remember { mutableStateOf<ChannelEntity?>(null) }
@@ -180,7 +186,9 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     val resumeTag = stringResource(R.string.home_resume)
     val movieTag = stringResource(R.string.nav_movies)
     val seriesTag = stringResource(R.string.nav_series)
-    val groupNames = (newMovies + newSeries + topMovies + recent + favorites + news + sports).associate { it.groupTitle to groupLabel(it.groupTitle) }
+    val groupNames = remember(newMovies, newSeries, topMovies, recent, favorites, news, sports) {
+        (newMovies + newSeries + topMovies + recent + favorites + news + sports).associate { it.groupTitle to groupLabel(it.groupTitle) }
+    }
     fun channelSpot(ch: ChannelEntity): Spot {
         val group = groupNames[ch.groupTitle]?.takeIf { it.isNotBlank() }
         return when (ch.kind) {
@@ -360,11 +368,11 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                 // scrolls with the page; without one, only the header.
                 item(key = "stage") {
                     if (featured == null) {
-                        HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
+                        HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::openSearch, onVoice = ::voiceSearch)
                     } else {
                         Box(Modifier.fillMaxWidth().height(stageHeight)) {
                             StageBackdrop(noFocus, featured, Modifier.fillMaxSize())
-                            HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
+                            HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::openSearch, onVoice = ::voiceSearch)
                             StageInfo(noFocus, featured, compact = true, refresh, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 16.dp))
                         }
                     }
@@ -374,7 +382,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
             }
         } else {
             Column(Modifier.fillMaxSize()) {
-                HomeHeader(compact = false, Modifier.padding(start = 36.dp, end = 40.dp, top = 20.dp))
+                HomeHeader(compact = false, Modifier.padding(start = 36.dp, end = 40.dp, top = 20.dp), onSearch = ::openSearch, onVoice = ::voiceSearch)
                 UpdateRow(compactBanner = true)
                 StageInfo(spot, featured, compact = false, refresh, Modifier.fillMaxWidth().height(stageHeight - 70.dp).padding(start = 36.dp, end = 40.dp))
                 // The focused row always comes to the top of the list, under the stage, instead
@@ -410,12 +418,31 @@ private sealed interface HomeRow {
 }
 
 @Composable
-private fun HomeHeader(compact: Boolean, modifier: Modifier) {
+private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: () -> Unit, onVoice: () -> Unit) {
     val type = LocalTallyType.current
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Image(painterResource(R.drawable.logo_mark), contentDescription = null, modifier = Modifier.size(if (compact) 34.dp else 38.dp))
         Spacer(Modifier.width(10.dp))
         Text(stringResource(R.string.app_name), style = type.title, maxLines = 1)
+        Spacer(Modifier.width(if (compact) 12.dp else 28.dp))
+        // Search within reach: one press up from the first row on a TV.
+        TallyRow(onClick = onSearch, modifier = Modifier.height(if (compact) 40.dp else 44.dp).widthIn(min = if (compact) 44.dp else 200.dp)) {
+            Text(
+                if (compact) "⌕" else "⌕   " + stringResource(R.string.home_search),
+                style = type.title,
+                maxLines = 1,
+                modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp),
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        TallyRow(onClick = onVoice, modifier = Modifier.height(if (compact) 40.dp else 44.dp).widthIn(min = 44.dp)) {
+            Text(
+                if (compact) "🎤" else "🎤  " + stringResource(R.string.home_voice),
+                style = type.title,
+                maxLines = 1,
+                modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp),
+            )
+        }
         Spacer(Modifier.weight(1f))
         Clock()
     }
@@ -503,12 +530,13 @@ private fun StageInfo(state: SpotState, featured: Spot?, compact: Boolean, refre
     Column(modifier, verticalArrangement = Arrangement.Bottom) {
         if (s == null) return@Column
         Column(Modifier.widthIn(max = 560.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(s.title, style = if (compact) type.headline else type.display, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            // With a summary the title keeps one line, so title, details and summary always fit the stage.
+            Text(s.title, style = if (compact) type.headline else type.display, maxLines = if (plot.isNullOrBlank()) 2 else 1, overflow = TextOverflow.Ellipsis)
             s.meta?.takeIf { it.isNotBlank() }?.let {
                 Text(it, style = type.label.copy(color = s.accent), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             plot?.takeIf { it.isNotBlank() }?.let {
-                Text(it, style = type.bodySmall.copy(color = Palette.Text), maxLines = if (compact) 3 else 3, overflow = TextOverflow.Ellipsis)
+                Text(it, style = type.bodySmall.copy(color = Palette.Text), maxLines = if (compact) 3 else 2, overflow = TextOverflow.Ellipsis)
             }
             if (compact) {
                 // Touch: the stage itself is a button.

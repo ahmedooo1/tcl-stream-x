@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -66,7 +67,10 @@ private data class SearchResults(val live: List<ChannelEntity>, val movies: List
 fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
     val c = (LocalContext.current.applicationContext as TclApp).container
     val type = LocalTallyType.current
-    var query by remember { mutableStateOf("") }
+    // Words spoken on Home (voice search) arrive here.
+    var query by remember { mutableStateOf(SearchRequest.take() ?: "") }
+    val voicePrompt = stringResource(R.string.voice_prompt)
+    val voice = rememberVoiceSearch { query = it }
     // Filters: section (-1 = all), source playlist (0 = all), country or language, available channels only.
     var kind by remember { mutableIntStateOf(-1) }
     var source by remember { mutableLongStateOf(0L) }
@@ -129,6 +133,10 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
                     onChange = { query = it },
                     rowModifier = Modifier.focusRequester(first),
                 )
+                Spacer(Modifier.height(8.dp))
+                TallyRow(onClick = { voice.listen(voicePrompt) {} }, modifier = Modifier.height(44.dp).widthIn(min = 200.dp)) {
+                    Text("🎤  " + stringResource(R.string.home_voice), style = type.title, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp))
+                }
                 Spacer(Modifier.height(10.dp))
             }
             // ---- filters ----
