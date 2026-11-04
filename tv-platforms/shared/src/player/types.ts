@@ -37,6 +37,8 @@ export interface PlayerListener {
   videoInfo(v: VideoInfo | null): void;
   /** The stream fell behind its live window (resumed after a long pause). */
   behindLiveWindow(): void;
+  /** Text of an embedded subtitle the engine does not draw itself (AVPlay); null clears it. */
+  cue?(text: string | null): void;
 }
 
 /** 0 fit (letterbox), 1 zoom (crop), 2 stretch: the three modes of the Android player. */

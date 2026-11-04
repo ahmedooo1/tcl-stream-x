@@ -66,6 +66,7 @@ export class AVPlayPlayer implements PlayerAdapter {
   private textOn = false;
   private textIndex = -1;
   private generation = 0;
+  private cueTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private readonly av: AVPlay, private readonly object: HTMLElement) {}
 
@@ -118,7 +119,14 @@ export class AVPlayPlayer implements PlayerAdapter {
       },
       onevent: () => {},
       oncurrentplaytime: () => {},
-      onsubtitlechange: () => {},
+      // AVPlay hands over the text and its duration; the app draws it (subtitles.ts overlay).
+      onsubtitlechange: (duration: unknown, text: unknown) => {
+        if (gen !== this.generation || !this.textOn) return;
+        const d = Number(duration);
+        this.l?.cue?.(typeof text === 'string' && text.trim() ? text.replace(/<[^>]+>/g, '') : null);
+        if (this.cueTimer) clearTimeout(this.cueTimer);
+        if (d > 0) this.cueTimer = setTimeout(() => this.l?.cue?.(null), d);
+      },
     });
     this.applyRect();
     this.applyMode();

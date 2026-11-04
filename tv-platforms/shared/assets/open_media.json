@@ -1,0 +1,123 @@
+{
+ "films": [
+  {
+   "key": "open:bbb",
+   "title": "Big Buck Bunny",
+   "year": 2008,
+   "license": "CC BY 3.0, Blender Foundation",
+   "kind": "animation",
+   "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+   "poster": null
+  },
+  {
+   "key": "open:sintel",
+   "title": "Sintel",
+   "year": 2010,
+   "license": "CC BY 3.0, Blender Foundation",
+   "kind": "animation",
+   "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+   "poster": null
+  },
+  {
+   "key": "open:elephants",
+   "title": "Elephants Dream",
+   "year": 2006,
+   "license": "CC BY 2.5, Blender Foundation",
+   "kind": "animation",
+   "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+   "poster": null
+  },
+  {
+   "key": "open:tears",
+   "title": "Tears of Steel",
+   "year": 2012,
+   "license": "CC BY 3.0, Blender Foundation",
+   "kind": "film",
+   "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+   "poster": null
+  },
+  {
+   "key": "open:tears-dash",
+   "title": "Tears of Steel (DASH, 4 qualités)",
+   "year": 2012,
+   "license": "CC BY 3.0, Blender Foundation",
+   "kind": "demo",
+   "url": "https://storage.googleapis.com/wvmedia/clear/h264/tears/tears.mpd",
+   "poster": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/TearsOfSteel.jpg"
+  },
+  {
+   "key": "open:bipbop",
+   "title": "Apple HLS (pistes audio et sous-titres)",
+   "year": 2017,
+   "license": "Apple developer sample stream",
+   "kind": "demo",
+   "url": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8",
+   "poster": null
+  }
+ ],
+ "services": [
+  {
+   "name": "france.tv",
+   "query": "france.tv",
+   "lang": "fr",
+   "pkg": "fr.francetv.pluzz"
+  },
+  {
+   "name": "arte.tv",
+   "query": "arte",
+   "lang": "fr",
+   "pkg": "tv.arte.plus7"
+  },
+  {
+   "name": "TF1+",
+   "query": "TF1+",
+   "lang": "fr",
+   "pkg": "fr.tf1.mytf1"
+  },
+  {
+   "name": "M6+",
+   "query": "M6+",
+   "lang": "fr",
+   "pkg": "fr.m6.m6replay"
+  },
+  {
+   "name": "Pluto TV",
+   "query": "Pluto TV",
+   "lang": "fr",
+   "pkg": "tv.pluto.android"
+  },
+  {
+   "name": "Rakuten TV",
+   "query": "Rakuten TV",
+   "lang": "fr",
+   "pkg": "tv.wuaki"
+  },
+  {
+   "name": "ADN (Animation Digital Network)",
+   "query": "ADN Animation Digital Network",
+   "lang": "fr"
+  },
+  {
+   "name": "Shahid",
+   "query": "Shahid",
+   "lang": "ar",
+   "pkg": "net.mbc.shahid"
+  },
+  {
+   "name": "AWAAN",
+   "query": "AWAAN",
+   "lang": "ar"
+  },
+  {
+   "name": "ADtv",
+   "query": "ADtv",
+   "lang": "ar"
+  },
+  {
+   "name": "YouTube",
+   "query": "YouTube",
+   "lang": "all",
+   "pkg": "com.google.android.youtube.tv"
+  }
+ ]
+}

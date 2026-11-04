@@ -31,6 +31,7 @@ export function playerScreen(ctx: Ctx, params: Record<string, unknown>): Screen 
     <div class="center" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none"></div>
     <div class="digits t-display hidden" style="position:absolute;top:36rem;inset-inline-end:36rem;background:rgba(11,12,14,.7);padding:6rem 18rem"></div>
     <div class="bar" style="position:absolute;inset:auto 0 0 0;padding:64rem 48rem 32rem;background:linear-gradient(transparent, rgba(11,12,14,.92) 40%, var(--ink));display:flex;flex-direction:column;gap:10rem"></div>
+    <div class="cue t-title" style="position:absolute;inset-inline:10%;bottom:56rem;text-align:center;white-space:pre-line;pointer-events:none;text-shadow:0 0 4rem #000,0 0 8rem #000;font-size:calc(22rem * var(--sub-scale, 1))"></div>
     <div class="err hidden" data-scope style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"></div>
     <div class="panel hidden" data-scope style="position:absolute;inset-block:0;width:400rem;background:rgba(19,21,24,.96);padding:24rem 0;overflow:hidden"></div>
   </div>`);
@@ -39,6 +40,8 @@ export function playerScreen(ctx: Ctx, params: Record<string, unknown>): Screen 
   const bar = el.querySelector<HTMLElement>('.bar')!;
   const err = el.querySelector<HTMLElement>('.err')!;
   const panelEl = el.querySelector<HTMLElement>('.panel')!;
+  const cueEl = el.querySelector<HTMLElement>('.cue')!;
+  el.style.setProperty('--sub-scale', String(ctx.settings.value.subtitleScale || 1));
 
   let overlay = true;
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -219,7 +222,7 @@ export function playerScreen(ctx: Ctx, params: Record<string, unknown>): Screen 
       case k === 'aspect': pb.cycleResize(); break;
       case k.startsWith('q:'): pb.adapter.selectQuality(k.length > 2 ? k.substring(2) : null); break;
       case k.startsWith('a:'): pb.adapter.selectAudio(k.substring(2)); break;
-      case k.startsWith('s:'): pb.adapter.selectText(k.length > 2 ? k.substring(2) : null); break;
+      case k.startsWith('s:'): pb.selectText(k.length > 2 ? k.substring(2) : null); break;
     }
     setTimeout(() => { renderOptions(); ctx.focus.focus(panelEl.querySelector<HTMLElement>(`[data-k="${CSS.escape(keep)}"]`)); }, 60);
   });
@@ -319,6 +322,7 @@ export function playerScreen(ctx: Ctx, params: Record<string, unknown>): Screen 
         renderBar();
         renderCenter();
         renderError(u);
+        if (cueEl.textContent !== (u.cue ?? '')) cueEl.textContent = u.cue ?? '';
         if (!u.issue && err.contains(ctx.focus.current)) ctx.focus.current = null;
       });
       tick = setInterval(() => { if (overlay) renderBar(); }, 1000);

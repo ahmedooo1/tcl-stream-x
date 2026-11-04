@@ -6,6 +6,7 @@
  * sleep timer, speed and picture format. The preview of the channel list and the full screen share
  * it, so going full screen never rebuffers.
  */
+import { cueAt, ExternalSub, loadCues } from './subtitles';
 import { Store, sleep } from '../core/store';
 import { ContentKind } from '../core/m3u';
 import type { Channel } from '../storage/model';
@@ -30,6 +31,8 @@ export interface PlayItem {
   group: string | null;
   /** Next episodes of a series, played in order. */
   upNext: PlayItem[];
+  /** Subtitle files next to the video (public-domain films). */
+  subtitles?: ExternalSub[];
 }
 
 export function itemFromChannel(ch: Channel, group: string | null): PlayItem {
@@ -66,11 +69,13 @@ export interface PlayerUi {
   liveBehindMs: number;
   previousTitle: string | null;
   tracksVersion: number;
+  /** Subtitle text drawn by the app (external files, AVPlay embedded tracks). */
+  cue: string | null;
 }
 
 const INITIAL: PlayerUi = {
   item: null, state: 'idle', buffering: false, playing: false, issue: null, attempt: null, video: null, isFavorite: false,
-  resizeMode: 0, speed: 1, sleepMinutes: null, livePausedAt: 0, liveBehindMs: 0, previousTitle: null, tracksVersion: 0,
+  resizeMode: 0, speed: 1, sleepMinutes: null, livePausedAt: 0, liveBehindMs: 0, previousTitle: null, tracksVersion: 0, cue: null,
 };
 
 const MAX_AUTO_RETRIES = 2;
@@ -102,6 +107,7 @@ export class PlaybackController {
       tracksChanged: () => this.ui.update((u) => ({ ...u, tracksVersion: u.tracksVersion + 1 })),
       videoInfo: (v) => this.ui.update((u) => ({ ...u, video: v })),
       behindLiveWindow: () => { this.ui.update((u) => ({ ...u, liveBehindMs: 0, livePausedAt: 0 })); void this.load(false); },
+      cue: (text) => { if (this.ext == null) this.setCue(text); },
     });
   }
 
@@ -179,6 +185,7 @@ export class PlaybackController {
     this.urlIndex = 0;
     this.forceHls = false;
     this.autoRetries = 0;
+    this.stopExternal();
     const old = this.ui.value.item;
     if (old && old.isLive && item.isLive && old.key !== item.key) this.previousLive = old;
     const keep = this.ui.value;
@@ -359,7 +366,46 @@ export class PlaybackController {
   }
 
   audio(): Track[] { return this.player.audioTracks(); }
-  text(): Track[] { return this.player.textTracks(); }
+
+  /** Embedded tracks of the stream, then the subtitle files of the item ("x:<index>"). */
+  text(): Track[] {
+    const own = this.player.textTracks().map((t) => ({ ...t, selected: this.ext == null && t.selected }));
+    const files = (this.ui.value.item?.subtitles ?? []).map((s, i) => ({
+      id: `x:${i}`, label: s.language ? s.language.toUpperCase() : `${i + 1}`, language: s.language, selected: this.ext === i,
+    }));
+    return [...own, ...files];
+  }
+
+  selectText(id: string | null): void {
+    this.stopExternal();
+    if (id != null && id.startsWith('x:')) {
+      const i = Number(id.substring(2));
+      const sub = this.ui.value.item?.subtitles?.[i];
+      if (!sub) return;
+      this.player.selectText(null);
+      this.ext = i;
+      const token = this.loadToken;
+      loadCues(sub.url).then((cues) => {
+        if (token !== this.loadToken || this.ext !== i) return;
+        this.extTimer = setInterval(() => this.setCue(cueAt(cues, this.player.positionMs())), 200);
+      }).catch((e) => console.warn('StreamX subtitles:', e instanceof Error ? e.message : e));
+    } else {
+      this.player.selectText(id);
+    }
+    this.ui.update((u) => ({ ...u, tracksVersion: u.tracksVersion + 1 }));
+  }
+
+  private ext: number | null = null;
+  private extTimer: ReturnType<typeof setInterval> | null = null;
+  private stopExternal() {
+    this.ext = null;
+    if (this.extTimer) clearInterval(this.extTimer);
+    this.extTimer = null;
+    this.setCue(null);
+  }
+  private setCue(text: string | null) {
+    if (this.ui.value.cue !== text) this.ui.update((u) => ({ ...u, cue: text }));
+  }
   qualities(): Track[] { return this.player.qualities(); }
 
   // ---- progress and lifecycle ---------------------------------------------------------------
@@ -384,6 +430,7 @@ export class PlaybackController {
     if (this.progressTimer) { clearInterval(this.progressTimer); this.progressTimer = null; }
     if (this.stallTimer) { clearTimeout(this.stallTimer); this.stallTimer = null; }
     if (this.sleepTimer) { clearInterval(this.sleepTimer); this.sleepTimer = null; }
+    this.stopExternal();
     this.player.stop();
     this.keepAwake(false);
     this.ui.set({ ...INITIAL, resizeMode: this.ui.value.resizeMode });
