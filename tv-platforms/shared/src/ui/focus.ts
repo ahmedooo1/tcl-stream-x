@@ -84,8 +84,8 @@ export class FocusManager {
       const v = e.getAttribute(attr);
       if (v == null) continue;
       if (v === 'none') return 'none';
-      // An override on a container applies only when the move leaves that container.
-      if (e !== el && this.nearest(el, dir, e)) return null;
+      // An override on a container applies only when the move would leave that container.
+      if (e !== el) { const t = this.nearest(el, dir); if (t && e.contains(t)) return null; }
       const target = this.root.querySelector<HTMLElement>(v);
       return target;
     }

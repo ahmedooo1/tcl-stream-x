@@ -318,11 +318,19 @@ export class Db {
    * Search over every playlist: accent-insensitive substring match on the normalized name.
    * A cursor walks the rows once and stops as soon as each section has enough results.
    */
-  async search(qNorm: string, perKind: number, kind: ContentKindCode | -1 = -1, hidden: Set<string> = new Set()): Promise<Record<number, Channel[]>> {
+  /**
+   * Search (searchFiltered of Daos.kt): every word in the name, accent-insensitive; optional source,
+   * country / language and "online at last check" filters. Names starting with the query come first,
+   * then shorter names, then channel order.
+   */
+  async search(qNorm: string, perKind: number, kind: ContentKindCode | -1 = -1, hidden: Set<string> = new Set(),
+    opts: { playlistId?: number; region?: string | null; online?: boolean } = {}): Promise<Record<number, Channel[]>> {
     const gens = await this.liveGenerations();
     const out: Record<number, Channel[]> = { 0: [], 1: [], 2: [] };
     const words = qNorm.split(' ').filter((w) => w !== '');
     if (words.length === 0) return out;
+    // Enough candidates to rank: a few times what is shown, then stop reading.
+    const cap = perKind * 4;
     await new Promise<void>((resolve, reject) => {
       const r = this.store(S.channels).openCursor();
       r.onerror = () => reject(r.error);
@@ -330,15 +338,21 @@ export class Db {
         const c = r.result;
         if (!c) { resolve(); return; }
         const ch = c.value as Channel;
-        if (gens.get(ch.playlistId) === ch.generation && (kind === -1 || ch.kind === kind) && !hidden.has(ch.groupTitle)) {
+        if (gens.get(ch.playlistId) === ch.generation && (kind === -1 || ch.kind === kind) && !hidden.has(ch.groupTitle)
+          && (!opts.playlistId || ch.playlistId === opts.playlistId)
+          && (!opts.region || ch.country === opts.region || ch.language === opts.region)
+          && (!opts.online || ch.status === 1)) {
           const list = out[ch.kind];
-          if (list.length < perKind && words.every((w) => ch.nameNorm.includes(w))) list.push(ch);
+          if (list.length < cap && words.every((w) => ch.nameNorm.includes(w))) list.push(ch);
         }
-        const full = kind === -1 ? out[0].length >= perKind && out[1].length >= perKind && out[2].length >= perKind : out[kind].length >= perKind;
+        const full = kind === -1 ? out[0].length >= cap && out[1].length >= cap && out[2].length >= cap : out[kind].length >= cap;
         if (full) { resolve(); return; }
         c.continue();
       };
     });
+    const rank = (a: Channel, b: Channel) =>
+      Number(b.nameNorm.startsWith(qNorm)) - Number(a.nameNorm.startsWith(qNorm)) || a.nameNorm.length - b.nameNorm.length || a.position - b.position;
+    for (const k of [0, 1, 2]) out[k] = out[k].sort(rank).slice(0, perKind);
     return out;
   }
 

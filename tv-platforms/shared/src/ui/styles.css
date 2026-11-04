@@ -46,6 +46,9 @@ body.video-on, body.video-on #app { background: transparent; }
 .t-mono { font-family: 'Mono', monospace; font-weight: 500; font-size: 12rem; line-height: 16rem; color: var(--text-dim); }
 .dim { color: var(--text-dim); } .faint { color: var(--text-faint); } .tally { color: var(--tally); } .ok { color: var(--signal); } .warn { color: var(--caution); }
 .ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cue { white-space: pre-line; font-size: calc(22rem * var(--sub-scale, 1)); line-height: 1.3; color: var(--sub-color, #fff); background: var(--sub-bg, transparent); text-shadow: var(--sub-shadow, none); padding: 2rem 8rem; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.cue:empty { display: none; }
+video::cue { font-size: calc(22rem * var(--sub-scale, 1)); color: var(--sub-color, #fff); background: var(--sub-bg, transparent); text-shadow: var(--sub-shadow, none); }
 .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .clamp6 { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }

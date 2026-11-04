@@ -32,7 +32,7 @@ export function playerScreen(ctx: Ctx, params: Record<string, unknown>): Screen 
     <div class="center" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none"></div>
     <div class="digits t-display hidden" style="position:absolute;top:36rem;inset-inline-end:36rem;background:rgba(11,12,14,.7);padding:6rem 18rem"></div>
     <div class="bar" style="position:absolute;inset:auto 0 0 0;padding:64rem 48rem 32rem;background:linear-gradient(transparent, rgba(11,12,14,.92) 40%, var(--ink));display:flex;flex-direction:column;gap:10rem"></div>
-    <div class="cue t-title" style="position:absolute;inset-inline:10%;bottom:56rem;text-align:center;white-space:pre-line;pointer-events:none;text-shadow:0 0 4rem #000,0 0 8rem #000;font-size:calc(22rem * var(--sub-scale, 1))"></div>
+    <div class="cue-wrap" style="position:absolute;inset-inline:10%;bottom:56rem;text-align:center;pointer-events:none"><span class="cue t-title"></span></div>
     <div class="err hidden" data-scope style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"></div>
     <div class="panel hidden" data-scope style="position:absolute;inset-block:0;width:400rem;background:rgba(19,21,24,.96);padding:24rem 0;overflow:hidden"></div>
   </div>`);
@@ -42,7 +42,6 @@ export function playerScreen(ctx: Ctx, params: Record<string, unknown>): Screen 
   const err = el.querySelector<HTMLElement>('.err')!;
   const panelEl = el.querySelector<HTMLElement>('.panel')!;
   const cueEl = el.querySelector<HTMLElement>('.cue')!;
-  el.style.setProperty('--sub-scale', String(ctx.settings.value.subtitleScale || 1));
 
   let overlay = true;
   let hideTimer: ReturnType<typeof setTimeout> | null = null;

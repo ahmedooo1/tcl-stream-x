@@ -28,6 +28,13 @@ const tvFr = {
   tv_pin_set: 'Code enregistré',
   tv_unlock: 'Déverrouiller',
   tv_set_pin: 'Créer un code',
+  tv_update_where: 'Page de téléchargement (scannez le code avec le téléphone) : %1$s',
+  tv_update_file: 'Fichier à installer : %1$s',
+  tv_update_unsigned: 'Cette version n\'est pas encore signée pour votre téléviseur : signez-la avec votre profil Samsung (voir l\'aide d\'installation).',
+  tv_update_how_samsung: 'Installation depuis l\'ordinateur : sdb connect <IP de la TV>, puis tizen install -n StreamX-Samsung.wgt. Vos playlists et réglages sont conservés.',
+  tv_update_how_lg: 'Installation depuis l\'ordinateur : ares-install --device tv StreamX-LG.ipk. Vos playlists et réglages sont conservés.',
+  tv_lan_import: 'Importer depuis le réseau local : tapez l\'adresse d\'un fichier M3U servi par un ordinateur ou un téléphone du réseau (par exemple http://192.168.1.20:8000/liste.m3u).',
+  tv_external: 'Ouvrir dans un autre lecteur : non disponible pour les applications web de ce téléviseur.',
 } as const;
 
 const tvAr: Record<keyof typeof tvFr, string> = {
@@ -49,6 +56,13 @@ const tvAr: Record<keyof typeof tvFr, string> = {
   tv_pin_set: 'تم حفظ الرمز',
   tv_unlock: 'فتح القفل',
   tv_set_pin: 'إنشاء رمز',
+  tv_update_where: 'صفحة التنزيل (امسح الرمز بالهاتف): %1$s',
+  tv_update_file: 'الملف المطلوب تثبيته: %1$s',
+  tv_update_unsigned: 'هذا الإصدار غير موقّع بعد لتلفازك: وقّعه بملف Samsung الخاص بك (راجع دليل التثبيت).',
+  tv_update_how_samsung: 'التثبيت من الكمبيوتر: sdb connect <عنوان التلفاز> ثم tizen install -n StreamX-Samsung.wgt. تبقى قوائمك وإعداداتك محفوظة.',
+  tv_update_how_lg: 'التثبيت من الكمبيوتر: ares-install --device tv StreamX-LG.ipk. تبقى قوائمك وإعداداتك محفوظة.',
+  tv_lan_import: 'الاستيراد من الشبكة المحلية: اكتب عنوان ملف M3U يقدّمه كمبيوتر أو هاتف على الشبكة (مثلًا http://192.168.1.20:8000/liste.m3u).',
+  tv_external: 'الفتح في مشغّل آخر غير متاح لتطبيقات الويب على هذا التلفاز.',
 };
 
 let lang: Lang = 'fr';

@@ -34,7 +34,7 @@ export const VERSION = __APP_VERSION__;
 export class TizenPlatform implements Platform {
   readonly id = 'samsung' as const;
   readonly label = 'StreamX Samsung';
-  readonly version = VERSION;
+  readonly version = `${VERSION} (build ${__APP_BUILD__})`;
   private codes = new Map<number, Action>();
 
   async init(): Promise<void> {

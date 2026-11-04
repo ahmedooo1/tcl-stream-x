@@ -3,3 +3,4 @@ dist/
 *.wgt
 *.ipk
 .tizen-certs/
+e2e-out/

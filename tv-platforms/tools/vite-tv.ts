@@ -45,7 +45,7 @@ export function tvConfig(edition: 'samsung-tizen' | 'lg-webos', files: { from: s
     root: resolve(ROOT, edition),
     base: './',
     publicDir: false,
-    define: { __APP_VERSION__: JSON.stringify(VERSION) },
+    define: { __APP_VERSION__: JSON.stringify(VERSION), __APP_BUILD__: JSON.stringify(Number(process.env.TV_BUILD ?? 0) || 0) },
     resolve: { alias: { '@shared': resolve(ROOT, 'shared/src') } },
     plugins: [classicScript(), manifest(files.map((f) => ({ ...f, from: resolve(ROOT, edition, f.from) })), outDir)],
     build: {

@@ -2,6 +2,7 @@
  * Settings, port of SettingsScreen.kt: language, preview, daily refresh, guide, parental code,
  * history, about (with the developer card) and version.
  */
+import { systemLang } from '../app';
 import type { Ctx, Screen } from '../app';
 import { h, onActivate } from '../dom';
 import { groupLabel } from '../labels';
@@ -10,6 +11,7 @@ import { esc } from '../../core/text';
 import { S } from '../../storage/db';
 import { developerCard } from '../about';
 import { Pin } from '../../security/pin';
+import { showUpdate } from '../updateinfo';
 import type { LockedGroup } from '../../storage/model';
 
 export function settingsScreen(ctx: Ctx): Screen {
@@ -19,6 +21,8 @@ export function settingsScreen(ctx: Ctx): Screen {
   const body = el.querySelector<HTMLElement>('.body')!;
   const pin = new Pin(ctx.db);
   let confirmHistory = false;
+  let checking = false;
+  let updateFailed = false;
   let unsub: (() => void) | null = null;
 
   const section = (title: string) => `<div class="t-headline" style="margin:22rem 0 6rem">${esc(title)}</div>`;
@@ -33,14 +37,21 @@ export function settingsScreen(ctx: Ctx): Screen {
     const locks = await ctx.db.locks();
     const open = locks.length > 0 && locks.every((l) => l.hidden === 0);
     const e = ctx.epg.state.value;
+    const u = ctx.update.value;
+    const updateLine = checking ? t('update_checking') : u ? t('update_available', u.build) : updateFailed ? t('update_failed_network') : `${t('update_none', __APP_BUILD__)} · ${t('update_check')}`;
     const epgLine = e.kind === 'loading' ? t('settings_epg_loading') : e.kind === 'done' ? t('settings_epg_done', e.programmes, e.sources, e.failed) : t('settings_epg_count', programmes);
     body.innerHTML = `
       ${section(t('settings_language'))}
-      ${row('lang:fr', 'Français', s.lang === 'fr' ? '●' : '', 'tally')}
-      ${row('lang:ar', 'العربية', s.lang === 'ar' ? '●' : '', 'tally')}
+      ${row('lang:', t('settings_language_system'), s.langChoice === '' ? '●' : '', 'tally')}
+      ${row('lang:fr', 'Français', s.langChoice === 'fr' ? '●' : '', 'tally')}
+      ${row('lang:ar', 'العربية', s.langChoice === 'ar' ? '●' : '', 'tally')}
       ${section(t('nav_live'))}
       ${toggle('preview', t('settings_preview'), s.previewOnFocus)}
       ${toggle('autorefresh', t('settings_autorefresh'), s.autoRefresh)}
+      ${toggle('autocheck', t('settings_autocheck'), s.autoCheckBuiltin)}
+      ${section(t('settings_subtitles'))}
+      ${row('subsize', t('settings_subtitle_size'), `${Math.round((s.subtitleScale || 1) * 100)} %`)}
+      ${row('substyle', t('settings_subtitle_style'), t((['subtitle_style_white', 'subtitle_style_yellow', 'subtitle_style_box'] as const)[Math.min(2, Math.max(0, s.subtitleStyle))]))}
       ${section(t('settings_epg'))}
       ${row('epgurl', s.epgUrl || t('settings_epg_hint'))}
       ${row('epgrefresh', t('settings_epg_refresh'), epgLine)}
@@ -54,6 +65,8 @@ export function settingsScreen(ctx: Ctx): Screen {
         : row('setpin', t('tv_set_pin'))}
       ${section(t('settings_history'))}
       ${row('history', confirmHistory ? t('settings_history_confirm') : t('settings_history_clear'))}
+      ${section(t('update_title'))}
+      ${row('update', updateLine, '')}
       ${section(t('settings_about'))}
       <div style="margin:6rem 0 12rem">${developerCard()}</div>
       <div class="t-body dim" style="padding:0 14rem">${esc(t('settings_about_body'))}</div>
@@ -71,7 +84,24 @@ export function settingsScreen(ctx: Ctx): Screen {
 
   onActivate(body, async (k) => {
     const keep = k;
-    if (k.startsWith('lang:')) await ctx.saveSettings({ lang: k.substring(5) as 'fr' | 'ar' });
+    if (k.startsWith('lang:')) {
+      const choice = k.substring(5) as '' | 'fr' | 'ar';
+      await ctx.saveSettings({ langChoice: choice, lang: choice || systemLang() });
+    }
+    else if (k === 'update') {
+      const u = ctx.update.value;
+      if (u) { showUpdate(ctx, u); return; }
+      checking = true; await render();
+      const r = await ctx.checkUpdate();
+      checking = false; updateFailed = r === 'error';
+      if (r && r !== 'error') showUpdate(ctx, r);
+    }
+    else if (k === 'autocheck') await ctx.saveSettings({ autoCheckBuiltin: !ctx.settings.value.autoCheckBuiltin });
+    else if (k === 'subsize') {
+      const scales = [0.8, 1, 1.25, 1.5, 1.8];
+      const i = scales.indexOf(ctx.settings.value.subtitleScale || 1);
+      await ctx.saveSettings({ subtitleScale: scales[(i + 1) % scales.length] });
+    } else if (k === 'substyle') await ctx.saveSettings({ subtitleStyle: ((ctx.settings.value.subtitleStyle || 0) + 1) % 3 });
     else if (k === 'preview') await ctx.saveSettings({ previewOnFocus: !ctx.settings.value.previewOnFocus });
     else if (k === 'autorefresh') await ctx.saveSettings({ autoRefresh: !ctx.settings.value.autoRefresh });
     else if (k === 'epgurl') {
@@ -112,7 +142,7 @@ export function settingsScreen(ctx: Ctx): Screen {
         ctx.toast(t('settings_history_done'));
       }
     }
-    if (k.startsWith('lang:')) return; // the screen is rebuilt in the new language
+    if (k.startsWith('lang:') && !document.contains(el)) return; // rebuilt in the new language
     await render();
     ctx.focus.focus(body.querySelector<HTMLElement>(`[data-k="${CSS.escape(keep)}"]`));
   });

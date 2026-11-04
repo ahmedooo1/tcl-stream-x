@@ -3,6 +3,7 @@
  * behind) and rows below: continue watching, sections, newest films and series, best rated,
  * recently watched, favorites, news and free sport. Up from the first row goes to the search bar.
  */
+import { showUpdate, updateBanner } from '../updateinfo';
 import type { Ctx, Screen } from '../app';
 import { SECTIONS } from '../app';
 import { h, img, logoHtml, onActivate, onFocusIn } from '../dom';
@@ -35,6 +36,7 @@ export function homeScreen(ctx: Ctx): Screen {
           ${icon('Search', 20)}<span class="t-title dim">${esc(t('home_search'))}</span>
         </div>
         <span style="flex:1"></span>
+        <span class="upd"></span>
         <span class="t-numeral clock"></span>
       </div>
       <div class="stage" style="height:190rem;padding:0 40rem 0 36rem;display:flex;flex-direction:column;justify-content:flex-end"></div>
@@ -45,6 +47,10 @@ export function homeScreen(ctx: Ctx): Screen {
   const backdrop = el.querySelector<HTMLElement>('.backdrop')!;
   const rows = el.querySelector<HTMLElement>('.rows')!;
   const clockEl = el.querySelector<HTMLElement>('.clock')!;
+  const upd = el.querySelector<HTMLElement>('.upd')!;
+  // Update banner on the start page, like the Android app (UpdateRow).
+  const unsubUpdate = ctx.update.subscribe((r) => { upd.innerHTML = r ? updateBanner(r) : ''; });
+  onActivate(upd, (k) => { const r = ctx.update.value; if (k === 'update' && r) showUpdate(ctx, r); });
   const spots = new Map<string, Spot>();
   let spotTimer: ReturnType<typeof setTimeout> | null = null;
   let shownKey = '';
@@ -201,7 +207,7 @@ export function homeScreen(ctx: Ctx): Screen {
   return {
     el,
     mount() { tick(); clockTimer = setInterval(tick, 15_000); void load(); },
-    unmount() { if (clockTimer) clearInterval(clockTimer); if (spotTimer) clearTimeout(spotTimer); },
+    unmount() { if (clockTimer) clearInterval(clockTimer); if (spotTimer) clearTimeout(spotTimer); unsubUpdate(); },
     resume() { void load(); },
   };
 }

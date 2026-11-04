@@ -75,7 +75,8 @@ export async function maybeGunzip(res: Response): Promise<Response> {
 }
 
 export class Importer {
-  constructor(private readonly db: Db, private readonly vault: Vault, private readonly xtream = new XtreamClient()) {}
+  /** maxEntries: MAX_ENTRIES in the app; tests lower it to check the cap without 250 000 writes. */
+  constructor(private readonly db: Db, private readonly vault: Vault, private readonly xtream = new XtreamClient(), private readonly maxEntries = MAX_ENTRIES) {}
 
   private async beginPlaylist(existing: Playlist | undefined, base: Omit<Playlist, 'id' | 'generation' | 'updatedAt' | 'count' | 'groups'>): Promise<Playlist> {
     if (existing) return existing;
@@ -115,7 +116,7 @@ export class Importer {
     const writes: Promise<void>[] = [];
     const flush = () => { if (batch.length) { writes.push(this.db.putChannels(batch)); batch = []; } };
     const parser = new M3uParser((e: M3uEntry) => {
-      if (position >= MAX_ENTRIES) return;
+      if (position >= this.maxEntries) return;
       position++;
       const kind = classify(e);
       const region = tagRegion(e.group, e.country, e.language);
@@ -194,7 +195,7 @@ export class Importer {
         const writes: Promise<void>[] = [];
         try {
           await this.xtream.list(server, credentials, section, (e) => {
-            if (position >= MAX_ENTRIES) return;
+            if (position >= this.maxEntries) return;
             const row = mapEntry(section, e, cats, { playlistId: p.id, generation, serverHost: host, account, position: position + 1 });
             if (!row) return;
             position++;

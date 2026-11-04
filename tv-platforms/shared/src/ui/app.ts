@@ -18,6 +18,7 @@ import { Store } from '../core/store';
 import { DEVELOPER_NAME } from './about';
 import { EpgService } from '../epg/service';
 import { Checker } from '../check/probe';
+import { checkTvUpdate, CHECK_EVERY_MS, TvRelease } from '../update/update';
 
 export interface Screen {
   el: HTMLElement;
@@ -51,6 +52,13 @@ export const SECTIONS: Section[] = [
 
 export interface AppSettings {
   lang: Lang;
+  /** '' follows the TV's language ("Langue du système"), like Android. */
+  langChoice: '' | Lang;
+  /** Check the official channels at start, every 6 hours (AppContainer.refreshStale). */
+  autoCheckBuiltin: boolean;
+  lastBuiltinCheck: number;
+  /** 0 white with outline, 1 yellow with outline, 2 white on a dark box. */
+  subtitleStyle: number;
   previewOnFocus: boolean;
   epgUrl: string;
   autoRefresh: boolean;
@@ -71,6 +79,9 @@ export interface Ctx {
   focus: FocusManager;
   epg: EpgService;
   checker: Checker;
+  /** Newer TV build found on the releases (checked every 30 minutes), or null. */
+  update: Store<TvRelease | null>;
+  checkUpdate(): Promise<TvRelease | null | 'error'>;
   settings: Store<AppSettings>;
   saveSettings(patch: Partial<AppSettings>): Promise<void>;
   go(route: Route, params?: Record<string, unknown>): void;
@@ -91,9 +102,14 @@ export interface DialogOptions {
   focus?: string;
   /** Free text field shown above the buttons; its value is returned as `key:value`. */
   input?: { placeholder: string; value?: string; type?: 'text' | 'password' | 'number' };
+  /** Markup made by the app itself (a QR code), never text from a source. */
+  html?: string;
 }
 
-const DEFAULTS: AppSettings = { lang: 'fr', previewOnFocus: true, epgUrl: '', autoRefresh: true, lastEpgRefresh: 0, subtitleScale: 1, sportsRegion: 'FR' };
+const DEFAULTS: AppSettings = { lang: 'fr', langChoice: '', autoCheckBuiltin: true, lastBuiltinCheck: 0, subtitleStyle: 0, previewOnFocus: true, epgUrl: '', autoRefresh: true, lastEpgRefresh: 0, subtitleScale: 1, sportsRegion: 'FR' };
+
+/** The TV's language when it is Arabic, else French (the two languages of the app). */
+export const systemLang = (): Lang => ((navigator.languages?.[0] ?? navigator.language ?? 'fr').toLowerCase().startsWith('ar') ? 'ar' : 'fr');
 
 export async function startApp(platform: Platform, screens: Record<Route, ScreenFactory>, catalog: CatalogFile | null): Promise<void> {
   const root = document.getElementById('app')!;
@@ -105,7 +121,17 @@ export async function startApp(platform: Platform, screens: Record<Route, Screen
   const importer = new Importer(db, vault);
   const saved = await db.setting<AppSettings>('app', DEFAULTS);
   const settings = new Store<AppSettings>({ ...DEFAULTS, ...saved });
+  if (settings.value.langChoice === '') settings.set({ ...settings.value, lang: systemLang() });
   setLang(settings.value.lang);
+  // Subtitle size and style (SettingsScreen.kt) for the app's own overlay and the TV's native captions.
+  settings.subscribe((s) => {
+    const st = document.documentElement.style;
+    const style = Math.min(2, Math.max(0, s.subtitleStyle || 0));
+    st.setProperty('--sub-scale', String(s.subtitleScale || 1));
+    st.setProperty('--sub-color', style === 1 ? '#ffd84a' : '#ffffff');
+    st.setProperty('--sub-bg', style === 2 ? 'rgba(0,0,0,.72)' : 'transparent');
+    st.setProperty('--sub-shadow', style === 2 ? 'none' : '0 0 4rem #000, 0 0 8rem #000, 2rem 2rem 2rem #000');
+  });
 
   root.innerHTML = `
     <div id="video"></div>
@@ -169,6 +195,10 @@ export async function startApp(platform: Platform, screens: Record<Route, Screen
 
   const ctx: Ctx = {
     db, vault, importer, playback, platform, focus, epg, settings, checker: new Checker(db),
+    update: new Store<TvRelease | null>(null),
+    async checkUpdate() {
+      try { const r = await checkTvUpdate(__APP_BUILD__); ctx.update.set(r); return r; } catch { return 'error'; }
+    },
     async saveSettings(patch) {
       const next = { ...settings.value, ...patch };
       settings.set(next);
@@ -225,6 +255,7 @@ export async function startApp(platform: Platform, screens: Record<Route, Screen
           <div class="dialog">
             <div class="t-headline auto">${esc(opts.title)}</div>
             ${opts.body ? `<div class="t-body dim auto" style="white-space:pre-line">${esc(opts.body)}</div>` : ''}
+            ${opts.html ?? ''}
             ${input}
             <div class="buttons">${opts.buttons.map(([k, label]) => `<div class="row fx" data-k="${esc(k)}"><span class="t-title">${esc(label)}</span></div>`).join('')}</div>
           </div></div>`);
@@ -317,11 +348,21 @@ export async function startApp(platform: Platform, screens: Record<Route, Screen
         }
       }
     }
+    if (s.autoCheckBuiltin && Date.now() - s.lastBuiltinCheck > 6 * 3600_000) {
+      const builtin = (await db.playlists()).find((p) => p.kind === 'builtin');
+      if (builtin) {
+        await ctx.saveSettings({ lastBuiltinCheck: Date.now() });
+        void ctx.db.channelsOf(builtin, 0, null, 0, 1000).then((rows) => ctx.checker.check(rows));
+      }
+    }
     if (Date.now() - s.lastEpgRefresh > 12 * 3600_000) {
       await epg.refresh(s.epgUrl);
       await ctx.saveSettings({ lastEpgRefresh: Date.now() });
     }
   }
   void refreshStale();
+  // Same rhythm as the Android updater: at start, then every 30 minutes.
+  void ctx.checkUpdate();
+  setInterval(() => void ctx.checkUpdate(), CHECK_EVERY_MS);
   void db.count(S.channels, null, null);
 }

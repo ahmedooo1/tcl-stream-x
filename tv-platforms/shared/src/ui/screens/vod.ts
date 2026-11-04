@@ -60,7 +60,7 @@ export function vodScreen(shelf: Shelf) {
       </aside>
       <main style="flex:1;min-width:0;display:flex;flex-direction:column;padding:0 32rem 0 14rem">
         <div class="rstrip chips" data-scroll="x" data-restore style="flex:none"></div>
-        <div class="content" style="flex:1;min-height:0;position:relative;margin-top:8rem"></div>
+        <div class="content" data-left=".secs" style="flex:1;min-height:0;position:relative;margin-top:8rem"></div>
       </main>
       <div class="side hidden" data-scope style="position:absolute;inset-block:0;inset-inline-end:0;width:460rem;background:var(--graphite);display:flex;flex-direction:column;padding:24rem;gap:8rem;z-index:5"></div>
     </div>`);
@@ -558,9 +558,15 @@ export function vodScreen(shelf: Shelf) {
       el,
       async mount() {
         playlists = (await ctx.db.playlists()).filter((x) => countOf(x) > 0);
-        p = playlists[0] ?? null;
+        p = playlists.find((x) => x.id === params['playlistId']) ?? playlists[0] ?? null;
         renderSource();
         await buildSections();
+        // Opened on one category (from the search): that subsection directly.
+        const wanted = params['group'] as string | undefined;
+        if (wanted != null) {
+          const i = sections.findIndex((x) => x.t === 'group' && x.group === wanted);
+          if (i >= 0) { selected = i; secs.querySelectorAll<HTMLElement>('[data-k^="sec:"]').forEach((r) => r.classList.toggle('selected', r.dataset.k === `sec:${i}`)); }
+        }
         await renderContent();
         if (!ctx.focus.current || !el.contains(ctx.focus.current)) ctx.focus.enter(content);
         const openKey = params['open'] as string | undefined;

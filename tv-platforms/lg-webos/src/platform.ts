@@ -28,7 +28,7 @@ export const VERSION = __APP_VERSION__;
 export class WebOsPlatform implements Platform {
   readonly id = 'lg' as const;
   readonly label = 'StreamX LG';
-  readonly version = VERSION;
+  readonly version = `${VERSION} (build ${__APP_BUILD__})`;
   private info = 'LG webOS';
 
   async init(): Promise<void> {

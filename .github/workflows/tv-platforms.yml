@@ -37,6 +37,8 @@ jobs:
       - name: Unit tests (parsers, Xtream, storage, guide, texts, player)
         run: npm test
       - name: Build both editions
+        env:
+          TV_BUILD: ${{ github.run_number }}
         run: npm run build
       - uses: actions/upload-artifact@v4
         with:
@@ -128,3 +130,68 @@ jobs:
           name: StreamX-LG
           path: tv-platforms/out/StreamX-LG.ipk
           retention-days: 30
+
+  # Both editions in real Chrome from file://, remote keys only, with a generated playlist of
+  # 50 000 entries: screenshots and timings. Not a test on a TV (no TV engine, no TV decoder).
+  e2e:
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tv-platforms/package-lock.json
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: tv-dist
+          path: tv-platforms/dist
+      - name: Samsung build in Chrome
+        run: node tools/e2e.mjs samsung 50000 e2e-out
+      - name: LG build in Chrome
+        run: node tools/e2e.mjs lg 50000 e2e-out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: StreamX-TV-screenshots
+          path: tv-platforms/e2e-out
+          retention-days: 30
+
+  # Public download links: a pre-release "tv-build-N". GitHub never marks a pre-release as the
+  # "latest" release, which is the only one the Android updater reads.
+  release:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [samsung, lg, e2e]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+      - name: Publish tv-build-${{ github.run_number }}
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: tv-build-${{ github.run_number }}
+        run: |
+          set -e
+          files=(art/StreamX-LG/StreamX-LG.ipk art/StreamX-Samsung/*)
+          signed=no; [ -f art/StreamX-Samsung/StreamX-Samsung.wgt ] && signed=yes
+          {
+            echo "StreamX TV, build ${{ github.run_number }} (branch ${{ github.ref_name }}, ${GITHUB_SHA::7})."
+            echo
+            echo "- StreamX-LG.ipk: installable on an LG TV in developer mode (docs/INSTALL-LG.md)."
+            if [ "$signed" = yes ]; then
+              echo "- StreamX-Samsung.wgt: signed with the Samsung profile from the repository secrets (author + distributor with the TV's DUID)."
+            else
+              echo "- StreamX-Samsung-unsigned.zip: NOT installable as is. Sign it with your Samsung certificate profile (docs/INSTALL-SAMSUNG.md)."
+            fi
+            echo
+            echo "Tested automatically (unit tests, Chrome from file://). Not yet tested on a real TV."
+          } > NOTES.md
+          gh release create "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "StreamX TV build ${{ github.run_number }}" --notes-file NOTES.md --prerelease --latest=false \
+            || gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
