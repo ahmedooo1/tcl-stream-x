@@ -4,6 +4,9 @@
  * the trailing side. The preview starts after a short dwell on a channel and is the same player as
  * the full screen, so OK goes full screen without rebuffering.
  */
+import { groupsFor, lineup } from '../lineup';
+import { regionStrip } from '../region';
+import { regionCodes } from '../../storage/model';
 import type { Ctx, Screen } from '../app';
 import { h, clock, logoHtml, onActivate } from '../dom';
 import { groupLabel } from '../labels';
@@ -29,6 +32,7 @@ export function liveScreen(ctx: Ctx, params: Record<string, unknown>): Screen {
       <div class="glist" data-scroll="y" data-restore style="flex:1;overflow:hidden;margin-top:8rem"></div>
     </aside>
     <main style="flex:1;min-width:0;display:flex;flex-direction:column;padding:0 12rem">
+      <div class="rstrip chips" data-scroll="x" data-restore style="flex:none;margin-bottom:6rem"></div>
       <div class="lhead" style="display:flex;align-items:baseline;gap:12rem;height:40rem"></div>
       <div class="clist" style="flex:1;min-height:0"></div>
     </main>
@@ -43,6 +47,8 @@ export function liveScreen(ctx: Ctx, params: Record<string, unknown>): Screen {
   const src = el.querySelector<HTMLElement>('.src')!;
   const glist = el.querySelector<HTMLElement>('.glist')!;
   const head = el.querySelector<HTMLElement>('.lhead')!;
+  const rstrip = el.querySelector<HTMLElement>('.rstrip')!;
+  let region: string | null = null;
   const clist = el.querySelector<HTMLElement>('.clist')!;
   const pv = el.querySelector<HTMLElement>('.pv')!;
   const info = el.querySelector<HTMLElement>('.info')!;
@@ -89,8 +95,10 @@ export function liveScreen(ctx: Ctx, params: Record<string, unknown>): Screen {
   async function renderGroups() {
     if (!p) { glist.innerHTML = ''; return; }
     const hidden = await ctx.hidden();
-    const favCount = (await ctx.db.favorites(1000)).filter((c) => c.playlistId === p!.id && c.kind === ContentKind.LIVE).length;
-    const groups = (p.groups[ContentKind.LIVE] ?? []).filter((g) => !hidden.has(g.groupTitle));
+    const favCount = (await ctx.db.favorites(1000)).filter((c) => c.playlistId === p!.id && c.kind === ContentKind.LIVE && inRegion(c)).length;
+    const groups = groupsFor(p, ContentKind.LIVE, region, hidden);
+    if (group !== ALL && group !== FAV && !groups.some((g) => g.groupTitle === group)) group = ALL;
+    rstrip.innerHTML = regionStrip(p.regions?.[ContentKind.LIVE], region);
     const total = groups.reduce((s, g) => s + g.count, 0);
     const row = (k: string, label: string, n: number) =>
       `<div class="row fx${k === group ? ' selected' : ''}" data-k="${esc(k)}" style="height:44rem"><span class="grow t-body auto ellipsis">${esc(label)}</span><span class="t-mono">${n}</span></div>`;
@@ -109,46 +117,29 @@ export function liveScreen(ctx: Ctx, params: Record<string, unknown>): Screen {
     let total: number;
     let load: (o: number, l: number) => Promise<Channel[]>;
     if (g === FAV) {
-      const favs = (await ctx.db.favorites(1000)).filter((c) => c.playlistId === pl.id && c.kind === ContentKind.LIVE);
+      const favs = (await ctx.db.favorites(1000)).filter((c) => c.playlistId === pl.id && c.kind === ContentKind.LIVE && inRegion(c));
       total = favs.length;
       load = async (o, l) => favs.slice(o, o + l);
-    } else if (g === ALL) {
-      // Hidden (locked) categories are skipped by reading group by group when a lock is active.
-      if (hidden.size === 0) {
-        total = await ctx.db.countOf(pl, ContentKind.LIVE, null);
-        load = (o, l) => ctx.db.channelsOf(pl, ContentKind.LIVE, null, o, l);
-      } else {
-        const visibleGroups = (pl.groups[ContentKind.LIVE] ?? []).filter((x) => !hidden.has(x.groupTitle));
-        total = visibleGroups.reduce((s, x) => s + x.count, 0);
-        load = async (o, l) => {
-          const out: Channel[] = [];
-          let skip = o;
-          for (const vg of visibleGroups) {
-            if (skip >= vg.count) { skip -= vg.count; continue; }
-            out.push(...await ctx.db.channelsOf(pl, ContentKind.LIVE, vg.groupTitle, skip, l - out.length));
-            skip = 0;
-            if (out.length >= l) break;
-          }
-          return out;
-        };
-      }
     } else {
-      total = await ctx.db.countOf(pl, ContentKind.LIVE, g);
-      load = (o, l) => ctx.db.channelsOf(pl, ContentKind.LIVE, g, o, l);
+      const lu = await lineup(ctx.db, pl, ContentKind.LIVE, g === ALL ? null : g, region, hidden);
+      total = lu.total;
+      load = lu.load;
     }
     const title = g === FAV ? t('group_favorites') : g === ALL ? t('group_all') : groupLabel(g);
     head.innerHTML = `<span class="t-headline auto ellipsis" style="max-width:60%">${esc(title)}</span><span class="t-mono">${total}</span>
-      <span class="row fx" data-k="guide" style="min-height:32rem;margin-inline-start:auto"><span class="t-label" style="white-space:nowrap">${esc(t('live_guide'))}</span></span>`;
+      <span class="row fx" data-k="guide" style="min-height:32rem;margin-inline-start:auto"><span class="t-label" style="white-space:nowrap">${esc(t('live_guide'))}</span></span>
+      <span class="row fx" data-k="check" style="min-height:32rem;max-width:170rem"><span class="t-label ellipsis chk" style="white-space:nowrap">${esc(checkLabel())}</span></span>`;
+    currentLoad = { total, load };
     if (total === 0) { clist.innerHTML = `<div class="empty t-body dim">${esc(t('live_empty'))}</div>`; return; }
     list = new VirtualList<Channel>({
       rowHeight: 52,
       total,
       load,
-      render: (ch) => `<div class="row fx" style="height:52rem">
+      render: (ch) => `<div class="row fx" data-ck="${esc(ch.channelKey)}" style="height:52rem">
         <span class="t-numeral-s" style="width:40rem;flex:none">${ch.position}</span>
         <div style="width:52rem;height:32rem;flex:none">${logoHtml(ch.logo, ch.name, '')}</div>
         <span class="grow t-body auto ellipsis">${esc(ch.name)}</span>
-        ${ch.drm ? `<span class="tag">${esc(t('live_drm_flag'))}</span>` : ''}<span class="dot s${ch.status}"></span></div>`,
+        ${ch.drm ? `<span class="tag">${esc(t('live_drm_flag'))}</span>` : ''}<span class="dot s${checked.get(ch.channelKey) ?? ch.status}"></span></div>`,
       onFocus: (ch) => {
         focusedCh = ch;
         void renderInfo(ch);
@@ -190,7 +181,35 @@ export function liveScreen(ctx: Ctx, params: Record<string, unknown>): Screen {
     await renderList();
     ctx.focus.enter(clist);
   });
-  onActivate(head, (k) => { if (k === 'guide') ctx.push('guide', { playlistId: p?.id, group: group === ALL || group === FAV ? null : group }); });
+  const inRegion = (c: Channel) => region == null || regionCodes(c).includes(region);
+  onActivate(rstrip, async (k) => {
+    if (!k.startsWith('region:')) return;
+    region = k.length > 7 ? k.substring(7) : null;
+    await renderGroups();
+    await renderList();
+    ctx.focus.focus(rstrip.querySelector<HTMLElement>(`[data-k="${CSS.escape(k)}"]`));
+  });
+  // ---- availability check (AvailabilityChecker.kt): oldest results first, 300 at most ----
+  const checked = new Map<string, number>();
+  let currentLoad: { total: number; load: (o: number, l: number) => Promise<Channel[]> } | null = null;
+  function checkLabel() {
+    const pr = ctx.checker.progress.value;
+    return pr.running ? t('live_checking', pr.done, pr.total) : pr.total > 0 ? t('live_check_done', pr.online, pr.total) : t('live_check');
+  }
+  const unsubCheck = ctx.checker.progress.subscribe((pr) => {
+    const lbl = head.querySelector('.chk');
+    if (lbl) lbl.textContent = checkLabel();
+    if (!pr.last) return;
+    checked.set(pr.last.key, pr.last.status);
+    clist.querySelectorAll<HTMLElement>(`[data-ck="${CSS.escape(pr.last.key)}"] .dot`).forEach((d) => { d.className = `dot s${pr.last!.status}`; });
+  });
+  async function startCheck() {
+    if (!currentLoad || ctx.checker.progress.value.running) return;
+    const rows = await currentLoad.load(0, Math.min(currentLoad.total, 3000));
+    void ctx.checker.check(rows, 300);
+  }
+
+  onActivate(head, (k) => { if (k === 'check') { void startCheck(); return; } if (k === 'guide') ctx.push('guide', { playlistId: p?.id, group: group === ALL || group === FAV ? null : group }); });
 
   return {
     el,
@@ -212,6 +231,7 @@ export function liveScreen(ctx: Ctx, params: Record<string, unknown>): Screen {
     unmount() {
       if (dwell) clearTimeout(dwell);
       unsub?.();
+      unsubCheck();
       list?.destroy();
       // Back to the list from the player keeps the preview running; anywhere else stops it.
       if (!goingFull) { void ctx.playback.stop(); document.body.classList.remove('video-on'); }

@@ -2,6 +2,7 @@
  * TV guide grid (GuideScreen.kt): channels down, a three-hour window across that moves by an hour and
  * a half with ◀▶ at its edges. A programme on air opens the channel.
  */
+import { hasReplay, showReplay } from '../replay';
 import type { Ctx, Screen } from '../app';
 import { clock, h, logoHtml, onActivate } from '../dom';
 import { t } from '../../i18n/index';
@@ -24,7 +25,15 @@ export function guideScreen(ctx: Ctx, params: Record<string, unknown>): Screen {
     </div>
     <div class="times" style="display:flex;margin-inline-start:200rem;height:24rem"></div>
     <div class="grid" data-scroll="y" data-restore style="flex:1;overflow:hidden"></div>
+    <div class="side hidden" data-scope style="position:absolute;inset-block:0;inset-inline-end:0;width:460rem;background:var(--graphite);padding:22rem;z-index:5"></div>
   </div>`);
+  const side = el.querySelector<HTMLElement>('.side')!;
+  let sideReturn: HTMLElement | null = null;
+  const closeSide = () => {
+    side.classList.add('hidden'); side.innerHTML = '';
+    ctx.focus.current = null;
+    if (sideReturn && document.contains(sideReturn)) ctx.focus.focus(sideReturn); else ctx.focus.ensure();
+  };
   const grid = el.querySelector<HTMLElement>('.grid')!;
   const times = el.querySelector<HTMLElement>('.times')!;
   const win = el.querySelector<HTMLElement>('.win')!;
@@ -63,6 +72,16 @@ export function guideScreen(ctx: Ctx, params: Record<string, unknown>): Screen {
     if (!ch) return;
     const p = k.startsWith('p:') ? progs.get(k.substring(2).split('|')[1]) : null;
     if (p && p.start > Date.now()) return; // a future programme: nothing to play yet
+    // A past programme of a channel whose subscription keeps replays: the replay list (GuideScreen.kt).
+    if ((!p || p.stop <= Date.now()) && hasReplay(ch) && (p || k.startsWith('c:'))) {
+      if (p) {
+        sideReturn = ctx.focus.current;
+        side.classList.remove('hidden');
+        void showReplay(ctx, side, ch, (item) => { closeSide(); void ctx.playback.play(item); ctx.push('player'); });
+        return;
+      }
+    }
+    if (p && p.stop <= Date.now()) return; // over, and no replay
     void ctx.playback.play(itemFromChannel(ch, (params['group'] as string) ?? null));
     ctx.push('player');
   });
@@ -74,6 +93,10 @@ export function guideScreen(ctx: Ctx, params: Record<string, unknown>): Screen {
       if (p) channels = (await ctx.db.channelsOf(p, ContentKind.LIVE, (params['group'] as string) ?? null, 0, MAX_ROWS)).filter((c) => !!c.tvgId);
       await render();
       ctx.focus.enter(grid);
+    },
+    onKey(a) {
+      if (a === 'back' && !side.classList.contains('hidden')) { closeSide(); return true; }
+      return false;
     },
   };
 }

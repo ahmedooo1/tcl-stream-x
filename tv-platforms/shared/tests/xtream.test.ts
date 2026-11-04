@@ -107,3 +107,26 @@ describe('Text cleaning (parity with TextCleanTest.kt)', () => {
     expect(initialsOf('Batman')).toBe('BA');
   });
 });
+
+import { decode64, parseEpgTable } from '@shared/xtream/client';
+import { replayRef as replay, resolveRef as resolve2, parseRef as parse2 } from '@shared/xtream/urls';
+
+describe('replay', () => {
+  it('reads the catch-up table with base64 titles', () => {
+    const b64 = (s: string) => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+    const list = parseEpgTable({ epg_listings: [
+      { title: b64('Le journal'), description: b64('Édition du soir'), start: '2026-11-03 20:00:00', start_timestamp: '1793736000', stop_timestamp: '1793737800', has_archive: 1 },
+      { title: b64('النشرة'), start: '2026-11-03 19:00:00', start_timestamp: 1793732400, stop_timestamp: 1793736000, has_archive: '0' },
+      { title: 'x' },
+    ] });
+    expect(list.map((p) => [p.title, p.hasArchive])).toEqual([['النشرة', false], ['Le journal', true]]);
+    expect(list[1].description).toBe('Édition du soir');
+    expect(decode64('plain text!')).toBe('plain text!');
+  });
+  it('builds a replay reference and its address without storing the login', () => {
+    const ref = replay('xtream://3/live/77.ts', '2026-11-03 20:00:00', 0, 30 * 60_000)!;
+    expect(ref).toBe('xtream://3/timeshift/77_202611032000_30.ts');
+    expect(resolve2(parse2(ref)!, 'http://srv:8080', { username: 'u', password: 'p' })).toBe('http://srv:8080/timeshift/u/p/30/2026-11-03:20-00/77.ts');
+    expect(replay('xtream://3/movie/77.mp4', '2026-11-03 20:00:00', 0, 1)).toBeNull();
+  });
+});

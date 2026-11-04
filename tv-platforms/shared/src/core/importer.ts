@@ -10,7 +10,7 @@ import { tagRegion } from './region';
 import { readTextStream } from './jsonstream';
 import { Db, S } from '../storage/db';
 import type { Channel, Playlist } from '../storage/model';
-import { StreamStatus } from '../storage/model';
+import { regionCodes, StreamStatus } from '../storage/model';
 import { Vault } from '../security/vault';
 import { accountSummary, mapEntry, XtreamAccount, XtreamClient, XtreamSection } from '../xtream/client';
 import { fromPlaylistLink, normalizeServer, XtreamCredentials } from '../xtream/urls';
@@ -26,15 +26,39 @@ export class ImportException extends Error {
   constructor(readonly error: ImportError) { super(error); }
 }
 
+/** Groups per section in source order, and countries / languages with their groups (RegionStrip). */
 class GroupCounter {
   private readonly order: Record<number, Map<string, number>> = { 0: new Map(), 1: new Map(), 2: new Map() };
-  add(kind: number, g: string) { const m = this.order[kind]; m.set(g, (m.get(g) ?? 0) + 1); }
+  private readonly regionGroups: Record<number, Map<string, Map<string, number>>> = { 0: new Map(), 1: new Map(), 2: new Map() };
+  add(row: Pick<Channel, 'kind' | 'groupTitle' | 'country' | 'language'>) {
+    const m = this.order[row.kind];
+    m.set(row.groupTitle, (m.get(row.groupTitle) ?? 0) + 1);
+    for (const code of regionCodes(row)) {
+      const rg = this.regionGroups[row.kind];
+      const g = rg.get(code) ?? new Map<string, number>();
+      g.set(row.groupTitle, (g.get(row.groupTitle) ?? 0) + 1);
+      rg.set(code, g);
+    }
+  }
   result(): Playlist['groups'] {
     const out: Playlist['groups'] = {};
     for (const k of [0, 1, 2]) out[k] = Array.from(this.order[k], ([groupTitle, count]) => ({ groupTitle, count }));
     return out;
   }
+  extra(): Pick<Playlist, 'regions' | 'regionGroups'> {
+    const regions: NonNullable<Playlist['regions']> = {};
+    const regionGroups: NonNullable<Playlist['regionGroups']> = {};
+    for (const k of [0, 1, 2]) {
+      const all = Array.from(this.regionGroups[k], ([code, g]) => ({ code, count: Array.from(g.values()).reduce((a, b) => a + b, 0), g }))
+        .sort((a, b) => b.count - a.count).slice(0, MAX_REGIONS);
+      regions[k] = all.map(({ code, count }) => ({ code, count }));
+      regionGroups[k] = Object.fromEntries(all.map(({ code, g }) => [code, Array.from(g, ([groupTitle, count]) => ({ groupTitle, count }))]));
+    }
+    return { regions, regionGroups };
+  }
 }
+/** Same limit as observeRegions (LIMIT 80). */
+const MAX_REGIONS = 80;
 
 /** Decompresses gzip bodies (guides, some playlists) when the platform can, else returns them as they are. */
 export async function maybeGunzip(res: Response): Promise<Response> {
@@ -60,8 +84,8 @@ export class Importer {
     return p;
   }
 
-  private async switchTo(p: Playlist, generation: number, count: number, groups: Playlist['groups'], extra: Partial<Playlist> = {}): Promise<Playlist> {
-    const next: Playlist = { ...p, ...extra, generation, count, groups, updatedAt: Date.now() };
+  private async switchTo(p: Playlist, generation: number, count: number, counter: GroupCounter, extra: Partial<Playlist> = {}): Promise<Playlist> {
+    const next: Playlist = { ...p, ...extra, ...counter.extra(), generation, count, groups: counter.result(), updatedAt: Date.now() };
     await this.db.put(S.playlists, next);
     await this.db.deleteGenerations(p.id, generation);
     return next;
@@ -95,8 +119,7 @@ export class Importer {
       position++;
       const kind = classify(e);
       const region = tagRegion(e.group, e.country, e.language);
-      groups.add(kind, e.group);
-      batch.push({
+      const row: Channel = {
         id: `${p.id}:${generation}:${position}`,
         playlistId: p.id, generation, position,
         name: e.name, nameNorm: normalize(e.name), url: e.url, backupUrls: [], logo: e.logo,
@@ -104,7 +127,9 @@ export class Importer {
         userAgent: e.userAgent, referrer: e.referrer, drm: e.drm, kind,
         channelKey: channelKey(e.tvgId, e.name, e.group),
         status: e.drm ? StreamStatus.DRM : StreamStatus.UNKNOWN, statusCheckedAt: 0, archiveDays: 0, addedAt: 0, rating: 0,
-      });
+      };
+      groups.add(row);
+      batch.push(row);
       if (batch.length >= BATCH) { flush(); onProgress({ phase: 'parse', count: position }); }
     }, (u) => { epg = u; });
 
@@ -135,7 +160,7 @@ export class Importer {
       throw new ImportException('EMPTY');
     }
     onProgress({ phase: 'switch', count: position });
-    return this.switchTo(p, generation, position, groups.result(), { epgUrls: epg });
+    return this.switchTo(p, generation, position, groups, { epgUrls: epg });
   }
 
   /** Xtream Codes account: login checked first, then live, films and series streamed in. */
@@ -173,7 +198,7 @@ export class Importer {
             const row = mapEntry(section, e, cats, { playlistId: p.id, generation, serverHost: host, account, position: position + 1 });
             if (!row) return;
             position++;
-            groups.add(row.kind, row.groupTitle);
+            groups.add(row);
             batch.push(row);
             if (batch.length >= BATCH) { writes.push(this.db.putChannels(batch)); batch = []; onProgress({ phase, count: position }); }
           });
@@ -194,7 +219,7 @@ export class Importer {
       throw new ImportException('EMPTY');
     }
     onProgress({ phase: 'switch', count: position });
-    return this.switchTo(p, generation, position, groups.result(), {
+    return this.switchTo(p, generation, position, groups, {
       accountSummary: accountSummary(account), vaultId, source: server,
       epgUrls: [`xtream://${p.id}/epg/guide`],
     });
@@ -232,8 +257,7 @@ export class Importer {
       const streams = [...ch.streams].sort((a, b) => (a.status === 'ok' ? 0 : 1) - (b.status === 'ok' ? 0 : 1));
       const best = streams[0];
       const group = `${ch.category}:${ch.language ?? ''}`;
-      groups.add(ContentKind.LIVE, group);
-      return {
+      const row: Channel = {
         id: `${p.id}:${generation}:${i + 1}`, playlistId: p.id, generation, position: i + 1,
         name: ch.name, nameNorm: normalize(ch.name), url: best.url, backupUrls: streams.slice(1).map((s) => s.url),
         logo: ch.logo ?? null, groupTitle: group, category: ch.category, tvgId: ch.id.split('@')[0],
@@ -242,9 +266,11 @@ export class Importer {
         status: catalogStatus(best.status), statusCheckedAt: (best.checkedAt ?? 0) * 1000,
         archiveDays: 0, addedAt: 0, rating: 0, geo: ch.geo ?? null,
       };
+      groups.add(row);
+      return row;
     });
     for (let i = 0; i < rows.length; i += BATCH) await this.db.putChannels(rows.slice(i, i + BATCH));
-    return this.switchTo(p, generation, rows.length, groups.result(), { sourceVersion: file.generatedAt });
+    return this.switchTo(p, generation, rows.length, groups, { sourceVersion: file.generatedAt });
   }
 }
 

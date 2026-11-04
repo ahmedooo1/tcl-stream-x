@@ -163,6 +163,11 @@ export class XtreamClient {
     return parseSeriesInfo(root);
   }
 
+  /** Programmes of a live channel with their catch-up flag (get_simple_data_table). */
+  async epgTable(server: string, c: XtreamCredentials, streamId: string): Promise<XtreamProgramme[]> {
+    return parseEpgTable(await this.json(apiUrl(server, c, 'get_simple_data_table', { stream_id: streamId })));
+  }
+
   async movieInfo(server: string, c: XtreamCredentials, vodId: string): Promise<MovieInfo | null> {
     const root = asObj(await this.json(apiUrl(server, c, 'get_vod_info', { vod_id: vodId })));
     const info = asObj(root?.['info']);
@@ -302,4 +307,45 @@ export function mapEntry(
     addedAt: Math.max(0, num(e, 'added') ?? num(e, 'last_modified') ?? 0),
     rating: Math.min(10, Math.max(0, Number.isFinite(rating) ? rating : 0)),
   };
+}
+
+
+export interface XtreamProgramme {
+  title: string;
+  description: string | null;
+  /** Start in the panel's own time zone, "yyyy-MM-dd HH:mm:ss" (what the replay address needs). */
+  startLocal: string;
+  start: number;
+  stop: number;
+  hasArchive: boolean;
+}
+
+/** Panels send titles and descriptions in base64 (UTF-8); a few send plain text. */
+export function decode64(v: string | null): string | null {
+  if (!v) return null;
+  try {
+    const bin = atob(v.trim());
+    const bytes = Uint8Array.from(bin, (ch) => ch.charCodeAt(0));
+    const out = new TextDecoder('utf-8', { fatal: true }).decode(bytes).trim();
+    return out || null;
+  } catch {
+    return v.trim() || null;
+  }
+}
+
+export function parseEpgTable(root: unknown): XtreamProgramme[] {
+  const listings = asObj(root)?.['epg_listings'];
+  if (!Array.isArray(listings)) return [];
+  const out: XtreamProgramme[] = [];
+  for (const raw of listings) {
+    const e = asObj(raw);
+    if (!e) continue;
+    const start = Number(text(e, 'start_timestamp'));
+    const stop = Number(text(e, 'stop_timestamp'));
+    const startLocal = text(e, 'start');
+    const title = decode64(text(e, 'title'));
+    if (!Number.isFinite(start) || !Number.isFinite(stop) || !startLocal || !title) continue;
+    out.push({ title, description: decode64(text(e, 'description')), startLocal, start: start * 1000, stop: stop * 1000, hasArchive: text(e, 'has_archive') === '1' });
+  }
+  return out.sort((a, b) => a.start - b.start);
 }

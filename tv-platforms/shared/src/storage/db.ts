@@ -5,11 +5,21 @@
  * switches to it at the end (same atomic switch as PlaylistImporter.kt); lists are read through
  * cursors with a limit, never loaded whole; indexes cover the queries the screens make.
  */
-import type { Channel, Favorite, HistoryItem, LockedGroup, Playlist, Programme, VodProgress } from './model';
+import type { Channel, Favorite, HistoryItem, LockedGroup, Playlist, Programme, StreamStatus, VodProgress } from './model';
+import { regionCodes } from './model';
 import type { ContentKindCode } from '../core/m3u';
 
 const NAME = 'streamx';
-const VERSION = 1;
+const VERSION = 2;
+const SEP = '\u0001';
+const pos7 = (n: number) => String(n).padStart(7, '0');
+const rPrefix = (p: { id: number; generation: number }, kind: number, code: string) => ['r', p.id, p.generation, kind, code, ''].join(SEP);
+const gPrefix = (p: { id: number; generation: number }, kind: number, code: string, group: string) => ['g', p.id, p.generation, kind, code, group, ''].join(SEP);
+
+/** Keys of the country / language index: whole section, and section + group, in channel order. */
+export function regionKeys(c: Channel): string[] {
+  return regionCodes(c).flatMap((code) => [rPrefix({ id: c.playlistId, generation: c.generation }, c.kind, code) + pos7(c.position), gPrefix({ id: c.playlistId, generation: c.generation }, c.kind, code, c.groupTitle) + pos7(c.position)]);
+}
 
 export const S = {
   playlists: 'playlists',
@@ -41,8 +51,14 @@ function done(tx: IDBTransaction): Promise<void> {
 export function openDb(factory: IDBFactory = indexedDB, name = NAME): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const r = factory.open(name, VERSION);
-    r.onupgradeneeded = () => {
+    r.onupgradeneeded = (ev) => {
       const db = r.result;
+      if (ev.oldVersion >= 1) {
+        // Version 2: country / language index. Rows written before it get keys at their next refresh.
+        const ch = r.transaction!.objectStore(S.channels);
+        if (!ch.indexNames.contains('rk')) ch.createIndex('rk', 'rk', { multiEntry: true });
+        return;
+      }
       db.createObjectStore(S.playlists, { keyPath: 'id' });
       const ch = db.createObjectStore(S.channels, { keyPath: 'id' });
       // playlist, generation, kind, then the order the screens use
@@ -54,6 +70,7 @@ export function openDb(factory: IDBFactory = indexedDB, name = NAME): Promise<ID
       ch.createIndex('key', 'channelKey');
       ch.createIndex('tvg', 'tvgId');
       ch.createIndex('category', 'category');
+      ch.createIndex('rk', 'rk', { multiEntry: true });
       db.createObjectStore(S.favorites, { keyPath: 'channelKey' }).createIndex('added', 'addedAt');
       db.createObjectStore(S.history, { keyPath: 'channelKey' }).createIndex('watched', 'watchedAt');
       db.createObjectStore(S.progress, { keyPath: 'key' }).createIndex('updated', 'updatedAt');
@@ -154,7 +171,31 @@ export class Db {
     if (rows.length === 0) return;
     const tx = this.idb.transaction(S.channels, 'readwrite');
     const s = tx.objectStore(S.channels);
-    for (const r of rows) s.put(r);
+    for (const r of rows) { const rk = regionKeys(r); s.put(rk.length ? { ...r, rk } : r); }
+    await done(tx);
+  }
+
+  /** Channels of one country or language (and group), in channel order. */
+  regionChannels(p: Playlist, kind: ContentKindCode, group: string | null, code: string, offset: number, limit: number): Promise<Channel[]> {
+    const pre = group == null ? rPrefix(p, kind, code) : gPrefix(p, kind, code, group);
+    return this.scan<Channel>(S.channels, 'rk', IDBKeyRange.bound(pre, pre + '\uffff'), { offset, limit });
+  }
+
+  regionCount(p: Playlist, kind: ContentKindCode, group: string | null, code: string): Promise<number> {
+    const pre = group == null ? rPrefix(p, kind, code) : gPrefix(p, kind, code, group);
+    return this.count(S.channels, 'rk', IDBKeyRange.bound(pre, pre + '\uffff'));
+  }
+
+  /** Result of an availability check, on every row of that channel (all generations, all playlists). */
+  async updateStatus(channelKey: string, status: StreamStatus, checkedAt: number): Promise<void> {
+    const tx = this.idb.transaction(S.channels, 'readwrite');
+    const r = tx.objectStore(S.channels).index('key').openCursor(IDBKeyRange.only(channelKey));
+    r.onsuccess = () => {
+      const c = r.result;
+      if (!c) return;
+      c.update({ ...(c.value as Channel), status, statusCheckedAt: checkedAt });
+      c.continue();
+    };
     await done(tx);
   }
 

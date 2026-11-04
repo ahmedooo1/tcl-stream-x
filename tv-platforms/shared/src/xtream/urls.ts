@@ -127,3 +127,14 @@ export function redact(text: string | null | undefined): string {
   if (text == null) return '';
   return text.replace(QUERY, (_m, k) => `${k}=***`).replace(PATH, (_m, seg) => `/${seg}/***/***/`);
 }
+
+
+/** Reference that replays a programme of a live channel (XtreamRepository.replayRef). */
+export function replayRef(channelUrl: string, startLocal: string, start: number, stop: number): string | null {
+  const parsed = parseRef(channelUrl);
+  if (!parsed || parsed.ref !== 'live') return null;
+  const digits = startLocal.replace(/\D/g, '');
+  if (digits.length < 12) return null;
+  const minutes = Math.min(600, Math.max(1, Math.floor((stop - start) / 60_000)));
+  return makeRef(parsed.playlistId, 'timeshift', `${parsed.id}_${digits.substring(0, 12)}_${minutes}`, 'ts');
+}

@@ -5,10 +5,10 @@ import { makeRef, parseRef, XtreamCredentials } from '../xtream/urls';
 import { MovieInfo, SeriesInfo, XtreamClient } from '../xtream/client';
 import type { PlayItem } from '../player/controller';
 
-const client = new XtreamClient(15_000, 60_000);
+export const client = new XtreamClient(15_000, 60_000);
 const cache = new Map<string, Promise<MovieInfo | SeriesInfo | null>>();
 
-async function account(ctx: Ctx, playlistId: number): Promise<{ server: string; c: XtreamCredentials } | null> {
+export async function account(ctx: Ctx, playlistId: number): Promise<{ server: string; c: XtreamCredentials } | null> {
   const p = (await ctx.db.playlists()).find((x) => x.id === playlistId);
   if (!p?.source || !p.vaultId) return null;
   const c = await ctx.vault.load(p.vaultId);

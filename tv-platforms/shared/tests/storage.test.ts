@@ -161,3 +161,24 @@ describe('Xtream account import (simulated panel)', () => {
     expect(p.count).toBe(4);
   });
 });
+
+describe('country and language filter', () => {
+  it('counts regions at import and pages through them in channel order', async () => {
+    const lines = ['#EXTM3U'];
+    for (let i = 0; i < 30; i++) {
+      const g = i % 3 === 0 ? 'FR | Info' : i % 3 === 1 ? 'AR | News' : 'UK Sport';
+      lines.push(`#EXTINF:-1 group-title="${g}",Chan ${i}`, `http://x/${i}.m3u8`);
+    }
+    const p = await importer.importM3u('R', { chunks: async (push) => push(lines.join('\n')) });
+    const live = p.regions![ContentKind.LIVE];
+    expect(live.length).toBeGreaterThan(0);
+    const fr = live.find((r) => r.code === 'FR')!;
+    expect(fr.count).toBe(10);
+    expect(p.regionGroups![ContentKind.LIVE]['FR']).toEqual([{ groupTitle: 'FR | Info', count: 10 }]);
+    expect(await db.regionCount(p, ContentKind.LIVE, null, 'FR')).toBe(10);
+    const page = await db.regionChannels(p, ContentKind.LIVE, null, 'FR', 2, 3);
+    expect(page.map((c) => c.name)).toEqual(['Chan 6', 'Chan 9', 'Chan 12']);
+    expect((await db.regionChannels(p, ContentKind.LIVE, 'FR | Info', 'FR', 0, 100)).length).toBe(10);
+    expect(await db.regionCount(p, ContentKind.LIVE, 'AR | News', 'FR')).toBe(0);
+  });
+});

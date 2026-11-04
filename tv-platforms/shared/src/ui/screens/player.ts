@@ -4,6 +4,7 @@
  * paused channel, ◀ channel list, ▶ / MENU options. Films: OK play/pause, ◀▶ seek (holding speeds
  * up: 10 s, 30 s, 1 min, 2 min), ▲ options. The bar hides after 5 s, except while a live channel is paused.
  */
+import { hasReplay, showReplay } from '../replay';
 import type { Ctx, Screen } from '../app';
 import { clock, formatTime, h, logoHtml, onActivate } from '../dom';
 import { t, Key } from '../../i18n/index';
@@ -23,7 +24,7 @@ const ISSUE_TEXT: Record<PlaybackIssue, Key> = {
   DRM: 'player_issue_drm', FORMAT: 'player_issue_format', DECODER: 'player_issue_decoder', UNKNOWN: 'player_issue_unknown',
 };
 
-type Panel = 'none' | 'options' | 'channels';
+type Panel = 'none' | 'options' | 'channels' | 'replay';
 
 export function playerScreen(ctx: Ctx, params: Record<string, unknown>): Screen {
   const pb = ctx.playback;
@@ -162,6 +163,7 @@ export function playerScreen(ctx: Ctx, params: Record<string, unknown>): Screen 
     } else {
       html += opt('speed', t('player_speed'), '×' + String(u.speed));
     }
+    if (hasReplay(item?.channel)) html += opt('replay', '⟲  ' + t('replay_title'), t('player_replay_days', item!.channel!.archiveDays));
     html += opt('sleep', t('player_sleep'), u.sleepMinutes != null ? t('player_sleep_left', u.sleepMinutes) : t('player_off'));
     html += opt('aspect', t('player_aspect'), t(aspect));
     html += trackRows('player_quality', pb.qualities(), 'q') + trackRows('player_audio', pb.audio(), 'a') + trackRows('player_subtitles', pb.text(), 's');
@@ -194,14 +196,19 @@ export function playerScreen(ctx: Ctx, params: Record<string, unknown>): Screen 
     panel = which;
     panelEl.classList.remove('hidden');
     panelEl.style.insetInlineStart = which === 'channels' ? '0' : 'auto';
-    panelEl.style.insetInlineEnd = which === 'options' ? '0' : 'auto';
+    panelEl.style.insetInlineEnd = which === 'channels' ? 'auto' : '0';
     if (which === 'options') { renderOptions(); ctx.focus.enter(panelEl); }
-    else void renderChannels();
+    else if (which === 'replay') {
+      const ch = ui().item?.channel;
+      panelEl.style.padding = '22rem';
+      if (ch) void showReplay(ctx, panelEl, ch, (item) => { closePanel(); void pb.play(item); });
+    } else void renderChannels();
     touch();
   }
 
   function closePanel() {
     panel = 'none';
+    panelEl.style.padding = '';
     panelEl.classList.add('hidden');
     channelList?.destroy();
     channelList = null;
@@ -220,6 +227,7 @@ export function playerScreen(ctx: Ctx, params: Record<string, unknown>): Screen 
       case k === 'speed': pb.cycleSpeed(); break;
       case k === 'sleep': pb.cycleSleep(); break;
       case k === 'aspect': pb.cycleResize(); break;
+      case k === 'replay': openPanel('replay'); return;
       case k.startsWith('q:'): pb.adapter.selectQuality(k.length > 2 ? k.substring(2) : null); break;
       case k.startsWith('a:'): pb.adapter.selectAudio(k.substring(2)); break;
       case k.startsWith('s:'): pb.selectText(k.length > 2 ? k.substring(2) : null); break;

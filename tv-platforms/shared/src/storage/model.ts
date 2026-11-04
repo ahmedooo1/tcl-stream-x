@@ -39,6 +39,16 @@ export interface Channel {
   rating: number;
   /** Built-in catalog: where the channel can be watched ("FR", "restricted"). */
   geo?: string | null;
+  /** Index keys for the country / language filter, written by Db.putChannels. */
+  rk?: string[];
+}
+
+/** Upper case country code, lower case language code: what RegionStrip filters on. */
+export function regionCodes(c: Pick<Channel, 'country' | 'language'>): string[] {
+  const out: string[] = [];
+  if (c.country) out.push(c.country);
+  if (c.language && c.language !== c.country) out.push(c.language);
+  return out;
 }
 
 export type PlaylistKind = 'builtin' | 'url' | 'file' | 'xtream';
@@ -60,6 +70,10 @@ export interface Playlist {
   vaultId: string | null;
   /** Categories per section (kind) with their sizes, in the order of the source, computed at import. */
   groups: Record<number, { groupTitle: string; count: number }[]>;
+  /** Countries and languages per section, most represented first (RegionStrip). */
+  regions?: Record<number, { code: string; count: number }[]>;
+  /** Groups of each country / language per section, in source order. */
+  regionGroups?: Record<number, Record<string, { groupTitle: string; count: number }[]>>;
   /** Built-in catalog: version of the catalog file installed. */
   sourceVersion?: string | null;
 }

@@ -17,6 +17,7 @@ import type { Action, Platform } from '../platform/platform';
 import { Store } from '../core/store';
 import { DEVELOPER_NAME } from './about';
 import { EpgService } from '../epg/service';
+import { Checker } from '../check/probe';
 
 export interface Screen {
   el: HTMLElement;
@@ -69,6 +70,7 @@ export interface Ctx {
   platform: Platform;
   focus: FocusManager;
   epg: EpgService;
+  checker: Checker;
   settings: Store<AppSettings>;
   saveSettings(patch: Partial<AppSettings>): Promise<void>;
   go(route: Route, params?: Record<string, unknown>): void;
@@ -166,7 +168,7 @@ export async function startApp(platform: Platform, screens: Record<Route, Screen
   let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   const ctx: Ctx = {
-    db, vault, importer, playback, platform, focus, epg, settings,
+    db, vault, importer, playback, platform, focus, epg, settings, checker: new Checker(db),
     async saveSettings(patch) {
       const next = { ...settings.value, ...patch };
       settings.set(next);

@@ -5,6 +5,8 @@
  * films) and the content of the selected one. Side panels for account series, M3U shows and
  * public-domain items.
  */
+import { groupsFor, lineup } from '../lineup';
+import { regionStrip } from '../region';
 import type { Ctx, Screen } from '../app';
 import { groupLabel } from '../labels';
 import { h, img, logoHtml, onActivate } from '../dom';
@@ -56,13 +58,18 @@ export function vodScreen(shelf: Shelf) {
         <div class="row fx src hidden" data-k="src" style="height:auto;padding:8rem 14rem;flex-direction:column;align-items:flex-start;gap:0;margin-bottom:6rem"></div>
         <div class="secs" data-scroll="y" data-restore style="flex:1;overflow:hidden"></div>
       </aside>
-      <main class="content" style="flex:1;min-width:0;position:relative;padding:0 32rem 0 14rem"></main>
+      <main style="flex:1;min-width:0;display:flex;flex-direction:column;padding:0 32rem 0 14rem">
+        <div class="rstrip chips" data-scroll="x" data-restore style="flex:none"></div>
+        <div class="content" style="flex:1;min-height:0;position:relative;margin-top:8rem"></div>
+      </main>
       <div class="side hidden" data-scope style="position:absolute;inset-block:0;inset-inline-end:0;width:460rem;background:var(--graphite);display:flex;flex-direction:column;padding:24rem;gap:8rem;z-index:5"></div>
     </div>`);
     const src = el.querySelector<HTMLElement>('.src')!;
     const secs = el.querySelector<HTMLElement>('.secs')!;
     const content = el.querySelector<HTMLElement>('.content')!;
     const side = el.querySelector<HTMLElement>('.side')!;
+    const rstrip = el.querySelector<HTMLElement>('.rstrip')!;
+    let region: string | null = null;
 
     let playlists: Playlist[] = [];
     let p: Playlist | null = null;
@@ -78,7 +85,13 @@ export function vodScreen(shelf: Shelf) {
 
     // ---- sections ----------------------------------------------------------------------------
 
-    const groupsOf = (pl: Playlist) => kinds.flatMap((k) => (pl.groups[k] ?? []).filter(keep).map((g) => ({ kind: k, groupTitle: g.groupTitle, count: g.count })));
+    const groupsOf = (pl: Playlist, r: string | null = null) => kinds.flatMap((k) => groupsFor(pl, k, r, new Set()).filter(keep).map((g) => ({ kind: k, groupTitle: g.groupTitle, count: g.count })));
+    /** Countries and languages of the shelf (both sections for Animation), most represented first. */
+    const regionsOf = (pl: Playlist) => {
+      const m = new Map<string, number>();
+      for (const k of kinds) for (const r of pl.regions?.[k] ?? []) m.set(r.code, (m.get(r.code) ?? 0) + r.count);
+      return [...m].map(([code, count]) => ({ code, count })).sort((a, b) => b.count - a.count);
+    };
     const countOf = (pl: Playlist) => groupsOf(pl).reduce((s, g) => s + g.count, 0);
 
     function sectionLabel(s: Section): string {
@@ -93,7 +106,8 @@ export function vodScreen(shelf: Shelf) {
 
     async function buildSections() {
       const hidden = await ctx.hidden();
-      const groups = p ? groupsOf(p).filter((g) => !hidden.has(g.groupTitle)) : [];
+      const groups = p ? groupsOf(p, region).filter((g) => !hidden.has(g.groupTitle)) : [];
+      rstrip.innerHTML = p ? regionStrip(regionsOf(p), region) : '';
       const free = (await ctx.db.inCategory(category, 500)).filter((c) => c.kind === ContentKind.LIVE);
       sections = [{ t: 'featured' }];
       const header = (label: string) => `<div class="t-label faint" style="padding:16rem 14rem 4rem">${esc(label)}</div>`;
@@ -228,7 +242,7 @@ export function vodScreen(shelf: Shelf) {
 
       for (const [i, s] of sections.entries()) {
         if (s.t !== 'group' || !p || i > MAX_SOURCE_ROWS) continue;
-        const got = await ctx.db.channelsOf(p, s.kind, s.group, 0, ROW_ITEMS);
+        const got = await (await lineup(ctx.db, p, s.kind, s.group, region, hidden)).load(0, ROW_ITEMS);
         if (my !== token) return;
         if (!got.length) continue;
         const withLogo = got.find((c) => c.logo);
@@ -262,8 +276,9 @@ export function vodScreen(shelf: Shelf) {
       if (!p) return;
       const pl = p;
       // M3U series come one row per episode: grouped by show. Account series are one row per show.
+      const lu = await lineup(ctx.db, pl, s.kind, s.group, region, new Set());
       if (s.kind === ContentKind.SERIES) {
-        const sample = await ctx.db.channelsOf(pl, s.kind, s.group, 0, 50);
+        const sample = await lu.load(0, 50);
         if (sample.some((c) => !isXtreamSeries(c.url))) { await renderShows(pl, s, my); return; }
       }
       let sort = 0;
@@ -281,7 +296,7 @@ export function vodScreen(shelf: Shelf) {
       const drawGrid = async () => {
         list?.destroy();
         if (sort > 0) {
-          const all = await ctx.db.channelsOf(pl, s.kind, s.group, 0, SORT_MAX);
+          const all = await lu.load(0, SORT_MAX);
           const cmp: Record<number, (a: Channel, b: Channel) => number> = {
             1: (a, b) => a.nameNorm.localeCompare(b.nameNorm),
             2: (a, b) => b.addedAt - a.addedAt,
@@ -292,8 +307,8 @@ export function vodScreen(shelf: Shelf) {
         if (my !== token) return;
         // The virtual list owns focus and clicks of its cells: no data-k on them.
         list = new VirtualList<Channel>({
-          rowHeight: 168, columns: 4, gap: 14, total: s.count, pageSize: 120,
-          load: async (o, l) => (sorted ? sorted.slice(o, o + l) : ctx.db.channelsOf(pl, s.kind, s.group, o, l)),
+          rowHeight: 168, columns: 4, gap: 14, total: lu.total, pageSize: 120,
+          load: async (o, l) => (sorted ? sorted.slice(o, o + l) : lu.load(o, l)),
           render: (c) => chPoster(c, 'data-x').replace('style="background:var(--graphite);', 'style="height:100%;background:var(--graphite);'),
           onActivate: (c) => void open({ t: 'ch', ch: c }),
           onLong: (c) => void favoriteDialog(c),
@@ -316,7 +331,7 @@ export function vodScreen(shelf: Shelf) {
 
     async function renderShows(pl: Playlist, s: Extract<Section, { t: 'group' }>, my: number) {
       content.innerHTML = `<div data-scroll="y" data-restore style="height:100%;overflow:hidden">${gridHead(groupLabel(s.group), t('vod_loading'))}</div>`;
-      const all = await ctx.db.channelsOf(pl, s.kind, s.group, 0, MAX_EPISODES);
+      const all = await (await lineup(ctx.db, pl, s.kind, s.group, region, new Set())).load(0, MAX_EPISODES);
       if (my !== token) return;
       const shows = new Map<string, Show>();
       for (const c of all) {
@@ -503,6 +518,18 @@ export function vodScreen(shelf: Shelf) {
 
     // ---- events ------------------------------------------------------------------------------
 
+    onActivate(rstrip, async (k) => {
+      if (!k.startsWith('region:')) return;
+      region = k.length > 7 ? k.substring(7) : null;
+      const cur = sections[selected];
+      await buildSections();
+      // The selected group stays when the region still has it, else the start page (VodScreen.kt).
+      const same = cur.t === 'group' ? sections.findIndex((x) => x.t === 'group' && x.group === cur.group && x.kind === cur.kind) : selected;
+      selected = same >= 0 ? same : 0;
+      secs.querySelectorAll<HTMLElement>('[data-k^="sec:"]').forEach((r) => r.classList.toggle('selected', r.dataset.k === `sec:${selected}`));
+      await renderContent();
+      ctx.focus.focus(rstrip.querySelector<HTMLElement>(`[data-k="${CSS.escape(k)}"]`));
+    });
     onActivate(side, (k) => { if (k === 'close') closeSide(); else sideHandler?.(k); });
     onActivate(el.querySelector('aside')!, async (k) => {
       if (k === 'src') {
