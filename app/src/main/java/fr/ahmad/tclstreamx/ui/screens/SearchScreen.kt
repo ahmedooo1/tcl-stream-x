@@ -69,8 +69,7 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
     val type = LocalTallyType.current
     // Words spoken on Home (voice search) arrive here.
     var query by remember { mutableStateOf(SearchRequest.take() ?: "") }
-    val voicePrompt = stringResource(R.string.voice_prompt)
-    val voice = rememberVoiceSearch { query = it }
+    val voice = rememberVoice { query = it }
     // Filters: section (-1 = all), source playlist (0 = all), country or language, available channels only.
     var kind by remember { mutableIntStateOf(-1) }
     var source by remember { mutableLongStateOf(0L) }
@@ -134,8 +133,19 @@ fun SearchScreen(navigator: Navigator, playback: PlaybackController) {
                     rowModifier = Modifier.focusRequester(first),
                 )
                 Spacer(Modifier.height(8.dp))
-                TallyRow(onClick = { voice.listen(voicePrompt) {} }, modifier = Modifier.height(44.dp).widthIn(min = 200.dp)) {
-                    Text("🎤  " + stringResource(R.string.home_voice), style = type.title, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp))
+                androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+                    VoiceButton(voice, 48.dp)
+                    androidx.compose.foundation.layout.Spacer(Modifier.width(12.dp))
+                    val v = voice.state
+                    Text(
+                        when {
+                            v.listening -> v.partial.ifBlank { stringResource(R.string.voice_listening) }
+                            v.message != null -> v.message!!
+                            else -> stringResource(R.string.home_voice)
+                        },
+                        style = type.body.copy(color = if (v.message != null && !v.listening) Palette.Caution else Palette.TextDim),
+                        maxLines = 1,
+                    )
                 }
                 Spacer(Modifier.height(10.dp))
             }

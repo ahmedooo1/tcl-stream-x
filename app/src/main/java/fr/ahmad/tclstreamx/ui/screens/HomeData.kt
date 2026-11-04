@@ -80,28 +80,3 @@ object SearchRequest {
     val pending = MutableStateFlow<String?>(null)
     fun take(): String? = pending.value.also { pending.value = null }
 }
-
-/**
- * Voice search: the system speech screen listens through the remote's microphone and returns the
- * words. When the device has no speech service, [onUnavailable] runs (the typed search opens).
- */
-@Composable
-fun rememberVoiceSearch(onText: (String) -> Unit): ManagedActivityResultLauncher<Intent, ActivityResult> =
-    rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
-        if (r.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
-        val text = r.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim()
-        if (!text.isNullOrEmpty()) onText(text)
-    }
-
-fun voiceIntent(prompt: String): Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-    .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-    .putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)
-    .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-
-fun ManagedActivityResultLauncher<Intent, ActivityResult>.listen(prompt: String, onUnavailable: () -> Unit) {
-    try {
-        launch(voiceIntent(prompt))
-    } catch (e: ActivityNotFoundException) {
-        onUnavailable()
-    }
-}

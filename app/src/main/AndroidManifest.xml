@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Voice search: the speech service listens through the remote's microphone. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Keeps Wi-Fi and CPU awake while a channel plays (ExoPlayer wake mode). -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -18,6 +20,10 @@
 
     <!-- Official free services the app can open (package visibility, Android 11+). -->
     <queries>
+        <!-- Speech recognition service (voice search), visible to the app on Android 11+. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
         <package android:name="fr.francetv.pluzz" />
         <package android:name="tv.arte.plus7" />
         <package android:name="fr.tf1.mytf1" />

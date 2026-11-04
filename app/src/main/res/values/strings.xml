@@ -351,4 +351,9 @@
     <string name="about_made_by">Conçu et développé par</string>
     <string name="about_dev_role">Développeur full-stack · Rouen</string>
     <string name="about_site">Site</string>
+    <string name="voice_listening">Je vous écoute…</string>
+    <string name="voice_no_match">Je n\'ai pas compris, réessayez</string>
+    <string name="voice_denied">Autorisez le micro pour la recherche vocale</string>
+    <string name="voice_unavailable">Recherche vocale indisponible sur cet appareil</string>
+    <string name="voice_error">Aucun son reçu. Utilisez le micro du clavier (code %1$d)</string>
 </resources>

@@ -351,4 +351,9 @@
     <string name="about_made_by">تصميم وتطوير</string>
     <string name="about_dev_role">مطوّر Full-stack · روان</string>
     <string name="about_site">الموقع</string>
+    <string name="voice_listening">أستمع إليك…</string>
+    <string name="voice_no_match">لم أفهم، حاول مرة أخرى</string>
+    <string name="voice_denied">اسمح باستخدام الميكروفون للبحث الصوتي</string>
+    <string name="voice_unavailable">البحث الصوتي غير متوفر على هذا الجهاز</string>
+    <string name="voice_error">لم يصل أي صوت. استخدم ميكروفون لوحة المفاتيح (رمز %1$d)</string>
 </resources>

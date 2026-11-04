@@ -96,9 +96,31 @@ class AppContainer(private val context: Context) {
     @Volatile private var backgroundAt = 0L
     private val refreshing = java.util.concurrent.atomic.AtomicBoolean(false)
 
+    private var updateLoop: kotlinx.coroutines.Job? = null
+
     /** The app left the screen (home button, other app, TV standby). */
     fun onBackground() {
         backgroundAt = System.currentTimeMillis()
+        updateLoop?.cancel()
+        updateLoop = null
+    }
+
+    /**
+     * While the app is on screen it looks for a new build every half hour, so the update banner on
+     * Home appears by itself (a TV app can stay open for days). Two requests an hour stay far below
+     * GitHub's limit for unauthenticated clients.
+     */
+    private fun watchUpdates() {
+        if (updateLoop?.isActive == true) return
+        updateLoop = appScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(UPDATE_EVERY_MS)
+                val s = updater.state.value
+                if (s !is fr.ahmad.tclstreamx.data.update.UpdateState.Downloading && s !is fr.ahmad.tclstreamx.data.update.UpdateState.Ready) {
+                    runCatching { updater.check() }
+                }
+            }
+        }
     }
 
     /**
@@ -107,12 +129,13 @@ class AppContainer(private val context: Context) {
      * built-in checks are refreshed.
      */
     fun onForeground() {
+        watchUpdates()
         val left = backgroundAt
         if (left == 0L) return
         backgroundAt = 0L
         appScope.launch {
             if (settings.current().pinSet && System.currentTimeMillis() - left > RELOCK_AFTER_MS) db.locks().setHidden(1)
-            if (System.currentTimeMillis() - left > UPDATE_CHECK_AFTER_MS) runCatching { updater.check() }
+            if (System.currentTimeMillis() - left > UPDATE_EVERY_MS) runCatching { updater.check() }
             refreshStale()
         }
     }
@@ -147,6 +170,6 @@ class AppContainer(private val context: Context) {
         private const val EPG_EVERY_MS = 12 * 3600_000L
         private const val REFRESH_EVERY_MS = 24 * 3600_000L
         private const val RELOCK_AFTER_MS = 10 * 60_000L
-        private const val UPDATE_CHECK_AFTER_MS = 6 * 3600_000L
+        private const val UPDATE_EVERY_MS = 30 * 60_000L
     }
 }

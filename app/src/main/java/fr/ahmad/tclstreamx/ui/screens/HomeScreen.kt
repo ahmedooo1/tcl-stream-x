@@ -50,6 +50,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import fr.ahmad.tclstreamx.ui.components.AppIcons
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -159,16 +161,13 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     // Back on Home asks before leaving the app (a panel open on Home closes first: its own
     // back handler is registered later and wins).
     BackHandler { askExit = true }
-    val voicePrompt = stringResource(R.string.voice_prompt)
-    val voice = rememberVoiceSearch { text ->
-        SearchRequest.pending.value = text
-        navigator.go(Routes.SEARCH)
-    }
     fun searchFor(q: String) {
         SearchRequest.pending.value = q
         navigator.go(Routes.SEARCH)
     }
-    fun voiceSearch() = voice.listen(voicePrompt) { navigator.go(Routes.SEARCH) }
+    val voice = rememberVoice { text -> searchFor(text) }
+    // Up from the first row goes to the search bar, not to the side rail (which is closer on screen).
+    val searchFocus = remember { FocusRequester() }
     if (askExit) ExitDialog(onStay = { askExit = false })
 
     var series by remember { mutableStateOf<ChannelEntity?>(null) }
@@ -371,11 +370,11 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                 // scrolls with the page; without one, only the header.
                 item(key = "stage") {
                     if (featured == null) {
-                        HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::searchFor, onVoice = ::voiceSearch)
+                        HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::searchFor, voice = voice, searchFocus = searchFocus)
                     } else {
                         Box(Modifier.fillMaxWidth().height(stageHeight)) {
                             StageBackdrop(noFocus, featured, Modifier.fillMaxSize())
-                            HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::searchFor, onVoice = ::voiceSearch)
+                            HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::searchFor, voice = voice, searchFocus = searchFocus)
                             StageInfo(noFocus, featured, compact = true, refresh, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 16.dp))
                         }
                     }
@@ -385,7 +384,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
             }
         } else {
             Column(Modifier.fillMaxSize()) {
-                HomeHeader(compact = false, Modifier.padding(start = 36.dp, end = 40.dp, top = 20.dp), onSearch = ::searchFor, onVoice = ::voiceSearch)
+                HomeHeader(compact = false, Modifier.padding(start = 36.dp, end = 40.dp, top = 20.dp), onSearch = ::searchFor, voice = voice, searchFocus = searchFocus)
                 UpdateRow(compactBanner = true)
                 StageInfo(spot, featured, compact = false, refresh, Modifier.fillMaxWidth().height(stageHeight - 70.dp).padding(start = 36.dp, end = 40.dp))
                 // The focused row always comes to the top of the list, under the stage, instead
@@ -395,7 +394,11 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                 val toTop = remember(density) { RowToTop(with(density) { 40.dp.toPx() }) }
                 CompositionLocalProvider(LocalBringIntoViewSpec provides toTop) {
                     LazyColumn(
-                        Modifier.fillMaxWidth().weight(1f).focusRestorer(),
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .focusProperties { exit = { dir -> if (dir == androidx.compose.ui.focus.FocusDirection.Up) searchFocus else FocusRequester.Default } }
+                            .focusRestorer(),
                         contentPadding = PaddingValues(top = 6.dp, bottom = 400.dp),
                         verticalArrangement = Arrangement.spacedBy(18.dp),
                     ) {
@@ -421,7 +424,7 @@ private sealed interface HomeRow {
 }
 
 @Composable
-private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: (String) -> Unit, onVoice: () -> Unit) {
+private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: (String) -> Unit, voice: Voice, searchFocus: FocusRequester) {
     val type = LocalTallyType.current
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Image(painterResource(R.drawable.logo_mark), contentDescription = null, modifier = Modifier.size(if (compact) 34.dp else 38.dp))
@@ -429,7 +432,7 @@ private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: (String) 
         Text(stringResource(R.string.app_name), style = type.title, maxLines = 1)
         Spacer(Modifier.width(if (compact) 12.dp else 28.dp))
         // Search within reach: one press up from the first row on a TV.
-        SearchBar(compact, onSearch, onVoice)
+        SearchBar(compact, onSearch, voice, searchFocus)
         Spacer(Modifier.weight(1f))
         Clock()
     }
@@ -440,7 +443,7 @@ private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: (String) 
  * the microphone next to it searches by voice. The words go to the search screen.
  */
 @Composable
-private fun SearchBar(compact: Boolean, onSubmit: (String) -> Unit, onVoice: () -> Unit) {
+private fun SearchBar(compact: Boolean, onSubmit: (String) -> Unit, voice: Voice, searchFocus: FocusRequester) {
     val type = LocalTallyType.current
     var open by remember { mutableStateOf(false) }
     val h = if (compact) 40.dp else 46.dp
@@ -453,13 +456,26 @@ private fun SearchBar(compact: Boolean, onSubmit: (String) -> Unit, onVoice: () 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(width).height(h)) {
             if (!open) {
-                TallyRow(onClick = { open = true }, modifier = Modifier.fillMaxSize()) {
-                    Text(
-                        if (compact) "⌕" else "⌕   " + stringResource(R.string.home_search),
-                        style = type.title.copy(color = Palette.TextDim),
-                        maxLines = 1,
-                        modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 16.dp),
-                    )
+                val v = voice.state
+                // While listening the bar shows the words as they come; after a failure, why.
+                val label = when {
+                    v.listening -> v.partial.ifBlank { stringResource(R.string.voice_listening) }
+                    v.message != null -> v.message!!
+                    else -> stringResource(R.string.home_search)
+                }
+                TallyRow(onClick = { open = true }, modifier = Modifier.fillMaxSize().focusRequester(searchFocus)) {
+                    Row(Modifier.align(Alignment.CenterStart).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        AppIcon(AppIcons.Search, Palette.TextDim, size = 20.dp)
+                        if (!compact) {
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                label,
+                                style = type.title.copy(color = if (v.listening) Palette.Text else if (v.message != null) Palette.Caution else Palette.TextDim),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
                 }
             } else {
                 val focus = remember { FocusRequester() }
@@ -498,9 +514,7 @@ private fun SearchBar(compact: Boolean, onSubmit: (String) -> Unit, onVoice: () 
             }
         }
         Spacer(Modifier.width(8.dp))
-        TallyRow(onClick = onVoice, modifier = Modifier.size(h)) {
-            Text("🎤", style = type.title, modifier = Modifier.align(Alignment.Center))
-        }
+        VoiceButton(voice, h)
     }
 }
 
