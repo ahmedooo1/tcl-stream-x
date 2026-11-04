@@ -348,4 +348,7 @@
     <string name="home_search">Rechercher</string>
     <string name="home_voice">Recherche vocale</string>
     <string name="voice_prompt">Dites un film, une série ou une chaîne</string>
+    <string name="about_made_by">Conçu et développé par</string>
+    <string name="about_dev_role">Développeur full-stack · Rouen</string>
+    <string name="about_site">Site</string>
 </resources>

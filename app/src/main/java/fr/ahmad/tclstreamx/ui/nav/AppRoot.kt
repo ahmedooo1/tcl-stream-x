@@ -319,6 +319,14 @@ private fun Rail(current: String, onSelect: (String) -> Unit, onOpen: (Boolean) 
                 }
             }
         }
+        if (expanded) {
+            Spacer(Modifier.weight(1f))
+            Column(Modifier.padding(start = 24.dp, end = 12.dp)) {
+                Text(stringResource(R.string.about_made_by), style = type.label.copy(color = Palette.TextFaint), maxLines = 1)
+                Text(fr.ahmad.tclstreamx.ui.components.DEVELOPER_NAME, style = type.label.copy(color = Palette.TextDim), maxLines = 1)
+                Text("ahmadahmad.aaweb.fr", style = type.mono.copy(color = Palette.TextFaint), maxLines = 1)
+            }
+        }
     }
 }
 

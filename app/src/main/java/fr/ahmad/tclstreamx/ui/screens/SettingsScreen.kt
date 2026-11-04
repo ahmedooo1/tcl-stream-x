@@ -273,6 +273,7 @@ fun SettingsScreen() {
         item { UpdateRow() }
 
         item { Section(stringResource(R.string.settings_about)) }
+        item { fr.ahmad.tclstreamx.ui.components.DeveloperCard(Modifier.padding(bottom = 14.dp)) }
         item { Text(stringResource(R.string.settings_about_body), style = type.body.copy(color = Palette.TextDim)) }
         item { Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME), style = type.mono, modifier = Modifier.padding(top = 8.dp)) }
     }

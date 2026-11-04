@@ -348,4 +348,7 @@
     <string name="home_search">بحث</string>
     <string name="home_voice">بحث صوتي</string>
     <string name="voice_prompt">قل اسم فيلم أو مسلسل أو قناة</string>
+    <string name="about_made_by">تصميم وتطوير</string>
+    <string name="about_dev_role">مطوّر Full-stack · روان</string>
+    <string name="about_site">الموقع</string>
 </resources>
