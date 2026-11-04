@@ -191,7 +191,7 @@ fun ChannelLogo(url: String?, name: String, modifier: Modifier = Modifier) {
     if (url.isNullOrBlank() || failed) {
         Box(modifier.clip(RoundedCornerShape(8.dp)).background(Palette.Lift), contentAlignment = Alignment.Center) {
             Text(
-                name.trim().split(' ').filter { it.isNotEmpty() }.take(2).joinToString("") { it.take(1) }.uppercase(),
+                fr.ahmad.tclstreamx.ui.screens.initialsOf(name),
                 style = LocalTallyType.current.numeralSmall.copy(color = Palette.Text),
             )
         }

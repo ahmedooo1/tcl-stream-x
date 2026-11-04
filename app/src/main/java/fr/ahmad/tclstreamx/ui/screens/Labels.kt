@@ -99,3 +99,21 @@ fun regionLabel(code: String): String {
     val name = if (code.isNotEmpty() && code[0].isUpperCase()) Locale("", code).getDisplayCountry(ui) else Locale(code).getDisplayLanguage(ui)
     return name.ifBlank { code }.replaceFirstChar { it.titlecase(ui) }
 }
+
+/**
+ * Two letters for a missing picture. Sources put a language or quality tag before the title
+ * ("AR: ...", "DE-CAM: ...", "|FR| ...", "[AR] ..."): the tag is skipped, so cards show the title's letters.
+ */
+fun initialsOf(name: String): String {
+    val clean = name.trim()
+        .replace(Regex("^(\\|[^|]{1,12}\\||\\[[^\\]]{1,12}]|[A-Za-z0-9-]{2,10}\\s*[:|]+)\\s*"), "")
+        .replace(Regex("[^\\p{L}\\p{N} ]"), " ")
+        .trim()
+    val words = clean.split(' ').filter { it.isNotEmpty() }
+    val letters = when {
+        words.size >= 2 -> words.take(2).joinToString("") { it.take(1) }
+        words.size == 1 -> words[0].take(2)
+        else -> name.trim().take(2)
+    }
+    return letters.uppercase()
+}

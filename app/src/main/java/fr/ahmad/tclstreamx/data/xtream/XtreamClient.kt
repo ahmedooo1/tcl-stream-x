@@ -163,7 +163,7 @@ class XtreamClient(private val http: OkHttpClient, private val userAgent: String
         @Suppress("UNCHECKED_CAST")
         val info = (root as? Map<String, Any?>)?.obj("info") ?: throw XtreamException(XtreamError.FORMAT)
         return XtreamMovieInfo(
-            plot = info.text("plot") ?: info.text("description"),
+            plot = cleanPlot(info.text("plot") ?: info.text("description")),
             genre = info.text("genre"),
             releaseDate = info.text("releasedate") ?: info.text("release_date"),
             durationSecs = info.long("duration_secs"),
@@ -238,7 +238,7 @@ class XtreamClient(private val http: OkHttpClient, private val userAgent: String
                     number = e.long("episode_num")?.toInt() ?: 0,
                     title = e.text("title") ?: "",
                     extension = e.text("container_extension")?.lowercase()?.takeIf { x -> x.all { it.isLetterOrDigit() } } ?: "mp4",
-                    plot = einfo?.text("plot"),
+                    plot = cleanPlot(einfo?.text("plot")),
                     durationSecs = einfo?.long("duration_secs"),
                     image = einfo?.text("movie_image") ?: einfo?.text("cover_big"),
                 )
@@ -258,7 +258,7 @@ class XtreamClient(private val http: OkHttpClient, private val userAgent: String
             val seasons = (episodes.map { it.season }.toSortedSet()).map { it to seasonNames[it] }
             return XtreamSeriesInfo(
                 name = info?.text("name"),
-                plot = info?.text("plot"),
+                plot = cleanPlot(info?.text("plot")),
                 cover = info?.text("cover"),
                 genre = info?.text("genre"),
                 releaseDate = info?.text("releaseDate") ?: info?.text("release_date"),
@@ -269,4 +269,20 @@ class XtreamClient(private val http: OkHttpClient, private val userAgent: String
             )
         }
     }
+}
+
+/**
+ * Some panels escape their summaries twice or three times ("\\\\\"One Piece\\\\\"", "\\r\\n"):
+ * the escapes are undone and the spacing tidied, so the summary reads as text.
+ */
+internal fun cleanPlot(raw: String?): String? {
+    if (raw.isNullOrBlank()) return null
+    var t: String = raw
+    repeat(4) { t = t.replace("\\\\", "\\") }
+    t = t.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n").replace("\\t", " ")
+        .replace("\\\"", "\"").replace("\\'", "'").replace("\\/", "/")
+        .replace("\\", "")
+        .replace("\r", "")
+    t = t.replace(Regex("[ \\t]+"), " ").replace(Regex(" *\\n *"), "\n").replace(Regex("\\n{3,}"), "\n\n").trim()
+    return t.ifBlank { null }
 }

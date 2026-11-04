@@ -212,7 +212,11 @@ fun AppRoot(playback: PlaybackController) {
             // animates the rail alone instead of re-laying out the whole screen on every frame.
             Box(Modifier.fillMaxSize().then(if (route != Routes.PLAYER) Modifier.windowInsetsPadding(WindowInsets.safeDrawing) else Modifier)) {
                 host(Modifier.fillMaxSize().padding(start = if (route != Routes.PLAYER) RAIL_COLLAPSED else 0.dp))
-                if (route != Routes.PLAYER) Rail(current = route, onSelect = navigator::go, modifier = Modifier.align(Alignment.CenterStart).zIndex(1f))
+                // The open rail covers part of the screen: the content behind dims so the two never read as one.
+                var railOpen by remember { mutableStateOf(false) }
+                val dim by androidx.compose.animation.core.animateFloatAsState(if (railOpen) 0.72f else 0f, animationSpec = tween(140), label = "dim")
+                if (dim > 0f) Box(Modifier.fillMaxSize().zIndex(0.5f).background(androidx.compose.ui.graphics.Color.Black.copy(alpha = dim)))
+                if (route != Routes.PLAYER) Rail(current = route, onSelect = navigator::go, onOpen = { railOpen = it }, modifier = Modifier.align(Alignment.CenterStart).zIndex(1f))
             }
         }
         pairingCode?.let { code -> PairingCode(code, Modifier.align(Alignment.TopEnd)) }
@@ -267,7 +271,7 @@ private fun BottomBar(current: String, onSelect: (String) -> Unit) {
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun Rail(current: String, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun Rail(current: String, onSelect: (String) -> Unit, onOpen: (Boolean) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     val width by animateDpAsState(if (expanded) 240.dp else RAIL_COLLAPSED, animationSpec = tween(140), label = "rail")
     val type = LocalTallyType.current
@@ -278,7 +282,7 @@ private fun Rail(current: String, onSelect: (String) -> Unit, modifier: Modifier
             .width(width)
             .fillMaxHeight()
             .background(Palette.Graphite)
-            .onFocusChanged { expanded = it.hasFocus }
+            .onFocusChanged { expanded = it.hasFocus; onOpen(it.hasFocus) }
             .focusProperties { enter = { requesters[selectedIndex] } }
             .padding(vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),

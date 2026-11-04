@@ -5,6 +5,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -162,8 +164,11 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
         SearchRequest.pending.value = text
         navigator.go(Routes.SEARCH)
     }
-    fun openSearch() = navigator.go(Routes.SEARCH)
-    fun voiceSearch() = voice.listen(voicePrompt) { openSearch() }
+    fun searchFor(q: String) {
+        SearchRequest.pending.value = q
+        navigator.go(Routes.SEARCH)
+    }
+    fun voiceSearch() = voice.listen(voicePrompt) { navigator.go(Routes.SEARCH) }
     if (askExit) ExitDialog(onStay = { askExit = false })
 
     var series by remember { mutableStateOf<ChannelEntity?>(null) }
@@ -186,9 +191,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
     val resumeTag = stringResource(R.string.home_resume)
     val movieTag = stringResource(R.string.nav_movies)
     val seriesTag = stringResource(R.string.nav_series)
-    val groupNames = remember(newMovies, newSeries, topMovies, recent, favorites, news, sports) {
-        (newMovies + newSeries + topMovies + recent + favorites + news + sports).associate { it.groupTitle to groupLabel(it.groupTitle) }
-    }
+    val groupNames = (newMovies + newSeries + topMovies + recent + favorites + news + sports).associate { it.groupTitle to groupLabel(it.groupTitle) }
     fun channelSpot(ch: ChannelEntity): Spot {
         val group = groupNames[ch.groupTitle]?.takeIf { it.isNotBlank() }
         return when (ch.kind) {
@@ -368,11 +371,11 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
                 // scrolls with the page; without one, only the header.
                 item(key = "stage") {
                     if (featured == null) {
-                        HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::openSearch, onVoice = ::voiceSearch)
+                        HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::searchFor, onVoice = ::voiceSearch)
                     } else {
                         Box(Modifier.fillMaxWidth().height(stageHeight)) {
                             StageBackdrop(noFocus, featured, Modifier.fillMaxSize())
-                            HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::openSearch, onVoice = ::voiceSearch)
+                            HomeHeader(compact = true, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), onSearch = ::searchFor, onVoice = ::voiceSearch)
                             StageInfo(noFocus, featured, compact = true, refresh, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 16.dp))
                         }
                     }
@@ -382,7 +385,7 @@ fun HomeScreen(navigator: Navigator, playback: PlaybackController, live: LiveVie
             }
         } else {
             Column(Modifier.fillMaxSize()) {
-                HomeHeader(compact = false, Modifier.padding(start = 36.dp, end = 40.dp, top = 20.dp), onSearch = ::openSearch, onVoice = ::voiceSearch)
+                HomeHeader(compact = false, Modifier.padding(start = 36.dp, end = 40.dp, top = 20.dp), onSearch = ::searchFor, onVoice = ::voiceSearch)
                 UpdateRow(compactBanner = true)
                 StageInfo(spot, featured, compact = false, refresh, Modifier.fillMaxWidth().height(stageHeight - 70.dp).padding(start = 36.dp, end = 40.dp))
                 // The focused row always comes to the top of the list, under the stage, instead
@@ -418,7 +421,7 @@ private sealed interface HomeRow {
 }
 
 @Composable
-private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: () -> Unit, onVoice: () -> Unit) {
+private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: (String) -> Unit, onVoice: () -> Unit) {
     val type = LocalTallyType.current
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Image(painterResource(R.drawable.logo_mark), contentDescription = null, modifier = Modifier.size(if (compact) 34.dp else 38.dp))
@@ -426,25 +429,78 @@ private fun HomeHeader(compact: Boolean, modifier: Modifier, onSearch: () -> Uni
         Text(stringResource(R.string.app_name), style = type.title, maxLines = 1)
         Spacer(Modifier.width(if (compact) 12.dp else 28.dp))
         // Search within reach: one press up from the first row on a TV.
-        TallyRow(onClick = onSearch, modifier = Modifier.height(if (compact) 40.dp else 44.dp).widthIn(min = if (compact) 44.dp else 200.dp)) {
-            Text(
-                if (compact) "⌕" else "⌕   " + stringResource(R.string.home_search),
-                style = type.title,
-                maxLines = 1,
-                modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp),
-            )
-        }
-        Spacer(Modifier.width(10.dp))
-        TallyRow(onClick = onVoice, modifier = Modifier.height(if (compact) 40.dp else 44.dp).widthIn(min = 44.dp)) {
-            Text(
-                if (compact) "🎤" else "🎤  " + stringResource(R.string.home_voice),
-                style = type.title,
-                maxLines = 1,
-                modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp),
-            )
-        }
+        SearchBar(compact, onSearch, onVoice)
         Spacer(Modifier.weight(1f))
         Clock()
+    }
+}
+
+/**
+ * A search bar that opens in place: pressed, it widens into a text field (the TV keyboard opens);
+ * the microphone next to it searches by voice. The words go to the search screen.
+ */
+@Composable
+private fun SearchBar(compact: Boolean, onSubmit: (String) -> Unit, onVoice: () -> Unit) {
+    val type = LocalTallyType.current
+    var open by remember { mutableStateOf(false) }
+    val h = if (compact) 40.dp else 46.dp
+    val width by androidx.compose.animation.core.animateDpAsState(
+        if (open) (if (compact) 230.dp else 560.dp) else (if (compact) 44.dp else 300.dp),
+        animationSpec = tween(180),
+        label = "search",
+    )
+    val shape = RoundedCornerShape(h / 2)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.width(width).height(h)) {
+            if (!open) {
+                TallyRow(onClick = { open = true }, modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        if (compact) "⌕" else "⌕   " + stringResource(R.string.home_search),
+                        style = type.title.copy(color = Palette.TextDim),
+                        maxLines = 1,
+                        modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 16.dp),
+                    )
+                }
+            } else {
+                val focus = remember { FocusRequester() }
+                var text by remember { mutableStateOf("") }
+                var hadFocus by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+                fun done() {
+                    open = false
+                    if (text.isNotBlank()) onSubmit(text.trim())
+                }
+                androidx.compose.foundation.text.BasicTextField(
+                    value = text,
+                    onValueChange = { text = it.take(200) },
+                    singleLine = true,
+                    textStyle = type.body.copy(color = Palette.Text),
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(Palette.Tally),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { done() }, onDone = { done() }),
+                    decorationBox = { inner ->
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            if (text.isEmpty()) Text(stringResource(R.string.voice_prompt), style = type.body.copy(color = Palette.TextFaint), maxLines = 1)
+                            inner()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Palette.Raised, shape)
+                        .border(2.dp, Palette.Tally, shape)
+                        .padding(horizontal = 18.dp, vertical = 12.dp)
+                        .focusRequester(focus)
+                        .onFocusChanged {
+                            if (it.isFocused) hadFocus = true
+                            else if (hadFocus && open) done()
+                        },
+                )
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        TallyRow(onClick = onVoice, modifier = Modifier.size(h)) {
+            Text("🎤", style = type.title, modifier = Modifier.align(Alignment.Center))
+        }
     }
 }
 
@@ -622,7 +678,7 @@ private fun PosterCard(ch: ChannelEntity, modifier: Modifier, onFocus: () -> Uni
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         TallyCard(onClick = onClick, onFocus = onFocus, onLongClick = onLongClick, modifier = Modifier.fillMaxWidth().aspectRatio(2f / 3f)) {
             Box(Modifier.fillMaxSize().background(Palette.Raised)) {
-                Text(ch.name.take(2).uppercase(), style = type.numeral.copy(color = Palette.TextFaint), modifier = Modifier.align(Alignment.Center))
+                Text(initialsOf(ch.name), style = type.numeral.copy(color = Palette.TextFaint), modifier = Modifier.align(Alignment.Center))
                 if (ch.logo != null) {
                     AsyncImage(model = ch.logo, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 }

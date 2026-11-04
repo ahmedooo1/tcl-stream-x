@@ -661,7 +661,7 @@ private fun PosterTile(item: VodItem, modifier: Modifier = Modifier, onLongClick
         Column {
             Box(Modifier.fillMaxWidth().aspectRatio(16f / 10f).background(Palette.Raised)) {
                 Text(
-                    item.title.take(2).uppercase(),
+                    initialsOf(item.title),
                     style = type.numeral.copy(color = Palette.TextFaint),
                     modifier = Modifier.align(Alignment.Center),
                 )
