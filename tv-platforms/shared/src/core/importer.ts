@@ -239,8 +239,8 @@ export class Importer {
         logo: ch.logo ?? null, groupTitle: group, category: ch.category, tvgId: ch.id.split('@')[0],
         language: ch.language ?? null, country: ch.country ?? null, userAgent: best.userAgent ?? null, referrer: best.referrer ?? null,
         drm: false, kind: ContentKind.LIVE, channelKey: 'b:' + ch.id,
-        status: best.status === 'ok' ? StreamStatus.ONLINE : StreamStatus.UNKNOWN, statusCheckedAt: (best.checkedAt ?? 0) * 1000,
-        archiveDays: 0, addedAt: 0, rating: 0,
+        status: catalogStatus(best.status), statusCheckedAt: (best.checkedAt ?? 0) * 1000,
+        archiveDays: 0, addedAt: 0, rating: 0, geo: ch.geo ?? null,
       };
     });
     for (let i = 0; i < rows.length; i += BATCH) await this.db.putChannels(rows.slice(i, i + BATCH));
@@ -249,5 +249,19 @@ export class Importer {
 }
 
 export interface CatalogStream { url: string; userAgent?: string | null; referrer?: string | null; quality?: number; status?: string; checkedAt?: number }
-export interface CatalogChannel { id: string; name: string; logo?: string | null; category: string; language?: string | null; country?: string | null; streams: CatalogStream[] }
+export interface CatalogChannel { id: string; name: string; logo?: string | null; category: string; language?: string | null; country?: string | null; geo?: string | null; streams: CatalogStream[] }
+
+/** BuiltInCatalog.statusOf: the status the catalog check wrote for a stream. */
+export function catalogStatus(s: string | undefined): StreamStatus {
+  switch (s) {
+    case 'ok': return StreamStatus.ONLINE;
+    case 'forbidden_or_geo': return StreamStatus.FORBIDDEN;
+    case 'auth_required': return StreamStatus.AUTH;
+    case 'drm': return StreamStatus.DRM;
+    case 'timeout': return StreamStatus.TIMEOUT;
+    case 'invalid_manifest': case 'empty_segment': return StreamStatus.INVALID;
+    case 'unchecked': case undefined: return StreamStatus.UNKNOWN;
+    default: return StreamStatus.OFFLINE;
+  }
+}
 export interface CatalogFile { generatedAt: string; channels: CatalogChannel[] }

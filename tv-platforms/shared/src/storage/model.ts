@@ -37,6 +37,8 @@ export interface Channel {
   /** Seconds since epoch, 0 when unknown. */
   addedAt: number;
   rating: number;
+  /** Built-in catalog: where the channel can be watched ("FR", "restricted"). */
+  geo?: string | null;
 }
 
 export type PlaylistKind = 'builtin' | 'url' | 'file' | 'xtream';

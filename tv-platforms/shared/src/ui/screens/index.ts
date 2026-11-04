@@ -9,6 +9,7 @@ import { settingsScreen } from './settings';
 import { playerScreen } from './player';
 import { guideScreen } from './guide';
 import { notAvailable } from './notyet';
+import { sportsScreen } from './sports';
 
 export const SCREENS: Record<Route, ScreenFactory> = {
   home: homeScreen,
@@ -16,7 +17,7 @@ export const SCREENS: Record<Route, ScreenFactory> = {
   movies: vodScreen('movies'),
   series: vodScreen('series'),
   animation: vodScreen('animation'),
-  sports: notAvailable('nav_sports', 'tv_not_yet'),
+  sports: sportsScreen,
   local: notAvailable('nav_local', 'tv_blocked_local'),
   search: searchScreen,
   playlists: playlistsScreen,

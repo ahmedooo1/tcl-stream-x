@@ -55,6 +55,8 @@ export interface AppSettings {
   autoRefresh: boolean;
   lastEpgRefresh: number;
   subtitleScale: number;
+  /** Sports hub: whose rights holders are shown ("FR" or "MENA"). */
+  sportsRegion: 'FR' | 'MENA';
 }
 
 export type ScreenFactory = (ctx: Ctx, params: Record<string, unknown>) => Screen;
@@ -89,7 +91,7 @@ export interface DialogOptions {
   input?: { placeholder: string; value?: string; type?: 'text' | 'password' | 'number' };
 }
 
-const DEFAULTS: AppSettings = { lang: 'fr', previewOnFocus: true, epgUrl: '', autoRefresh: true, lastEpgRefresh: 0, subtitleScale: 1 };
+const DEFAULTS: AppSettings = { lang: 'fr', previewOnFocus: true, epgUrl: '', autoRefresh: true, lastEpgRefresh: 0, subtitleScale: 1, sportsRegion: 'FR' };
 
 export async function startApp(platform: Platform, screens: Record<Route, ScreenFactory>, catalog: CatalogFile | null): Promise<void> {
   const root = document.getElementById('app')!;

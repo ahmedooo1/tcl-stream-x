@@ -145,11 +145,9 @@ export function homeScreen(ctx: Ctx): Screen {
     const last = lastKey ? await db.byKey(lastKey) : undefined;
     const subtitle: Record<string, string> = {
       live: t('home_tile_channels', liveCount),
-      // The public-domain shelves and the sports hub of the Android app are not in this edition yet
-      // (docs/AUDIT.md): the tiles only say what is really there.
-      movies: t('home_tile_titles', movieCount),
-      series: t('home_tile_titles', seriesCount),
-      sports: t('tv_not_yet'), animation: t('nav_animation'), local: t('tv_blocked_local'),
+      movies: movieCount > 0 ? t('home_tile_titles', movieCount) : t('home_tile_public'),
+      series: seriesCount > 0 ? t('home_tile_titles', seriesCount) : t('home_tile_public'),
+      sports: t('home_tile_matches'), animation: t('home_tile_public'), local: t('tv_blocked_local'),
       search: t('home_tile_search'), playlists: t('home_tile_playlists', playlists.length), settings: t('home_tile_settings'),
     };
     const tiles = SECTIONS.filter((s) => s.route !== 'home').map((s) => {

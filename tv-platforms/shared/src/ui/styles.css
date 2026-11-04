@@ -84,7 +84,7 @@ body.video-on, body.video-on #app { background: transparent; }
 .dot { width: 8rem; height: 8rem; border-radius: 50%; flex: none; background: var(--text-faint); }
 .dot.s1 { background: var(--signal); } .dot.s3, .dot.s6 { background: var(--caution); } .dot.s2, .dot.s5, .dot.s7, .dot.s8 { background: var(--dead); }
 .tag { display: inline-block; background: var(--raised); padding: 2rem 6rem; font-family: 'Mono', monospace; font-size: 12rem; line-height: 16rem; color: var(--text-dim); white-space: nowrap; }
-.live-badge { display: inline-flex; align-items: center; gap: 5rem; background: var(--tally); color: var(--ink); padding: 2rem 6rem; font-family: 'Mono', monospace; font-size: 12rem; line-height: 16rem; }
+.live-badge { display: inline-flex; align-items: center; gap: 5rem; background: var(--tally); color: var(--ink); padding: 2rem 6rem; font-family: 'Mono', monospace; font-size: 12rem; line-height: 16rem; white-space: nowrap; }
 .live-badge::before { content: ''; width: 6rem; height: 6rem; border-radius: 50%; background: var(--ink); }
 .progress { height: 3rem; background: var(--hairline); position: relative; }
 .progress > i { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--tally); }
@@ -94,6 +94,7 @@ body.video-on, body.video-on #app { background: transparent; }
 .logo .ini { font-family: 'Condensed', sans-serif; font-weight: 600; font-size: 18rem; color: var(--text); background: var(--lift); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .poster-ini { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Condensed', sans-serif; font-weight: 700; font-size: 30rem; color: var(--text-faint); }
 img.fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+img.fill.contain { object-fit: contain; }
 .hidden { display: none !important; }
 
 /* ---- shell: rail (collapsed icons, opens over the content with a dimmed screen) ---- */
