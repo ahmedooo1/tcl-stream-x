@@ -110,7 +110,8 @@ jobs:
           # Pasted secrets may carry spaces or line breaks.
           NEW_PASS=$(printf '%s' "$NEW_PASS" | tr -d '\r\n')
           export NEW_PASS
-          printf '%s' "$NEW_KS" | tr -d ' \r\n' | base64 -d > "$RUNNER_TEMP/new.jks" || { echo "::error::STREAMX_KEYSTORE_B64 is not valid base64"; exit 1; }
+          NEW_KS=$(printf '%s' "$NEW_KS" | tr -d ' \r\n')
+          printf '%s' "$NEW_KS" | base64 -d > "$RUNNER_TEMP/new.jks" 2>/dev/null || true
           run() {
             if ! "$@" > "$RUNNER_TEMP/sign.log" 2>&1; then
               echo "::error::$(basename "$1") failed: $(tail -c 1500 "$RUNNER_TEMP/sign.log" | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')"
@@ -118,7 +119,11 @@ jobs:
             fi
             cat "$RUNNER_TEMP/sign.log"
           }
-          run keytool -list -keystore "$RUNNER_TEMP/new.jks" -storepass "$NEW_PASS"
+          # A wrong or truncated secret must not stop the releases: the APK keeps the old key and the run says why.
+          if ! keytool -list -keystore "$RUNNER_TEMP/new.jks" -storepass "$NEW_PASS" > /dev/null 2>&1; then
+            echo "::warning::release key not usable (keystore secret ${#NEW_KS} characters, expected 1352; password ${#NEW_PASS}, expected 24): APK signed with the old key"
+            exit 0
+          fi
           OLD="--ks app/debug.keystore --ks-pass pass:android --ks-key-alias androiddebugkey --key-pass pass:android"
           NEW="--ks $RUNNER_TEMP/new.jks --ks-pass env:NEW_PASS --ks-key-alias streamx --key-pass env:NEW_PASS"
           run "$BT/apksigner" rotate --out "$RUNNER_TEMP/lineage.bin" --old-signer $OLD --new-signer $NEW
