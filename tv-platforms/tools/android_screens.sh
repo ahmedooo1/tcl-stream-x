@@ -27,7 +27,7 @@ f = os.path.join(out, "UiTourTest.txt")
 for line in open(f, errors="replace"):
     if line.startswith("INSTRUMENTATION_STATUS: cireport:"):
         name, _, data = line[len("INSTRUMENTATION_STATUS: cireport:"):].strip().partition("=")
-        if "/" in name or name.startswith(".") or not name.endswith(".png"):
+        if "/" in name or name.startswith(".") or not name.endswith((".png", ".jpg")):
             continue
         open(os.path.join(out, name), "wb").write(base64.b64decode(data)); n += 1
 lines = [l if not l.startswith("INSTRUMENTATION_STATUS: cireport:") else l.split("=", 1)[0] + "=<decoded>\n" for l in open(f, errors="replace")]

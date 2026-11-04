@@ -49,7 +49,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash tv-platforms/tools/android_screens.sh
       - name: Retry on the Google APIs image
-        if: steps.tv.outcome == 'failure' && hashFiles('android-shots/*.png') == ''
+        if: steps.tv.outcome == 'failure' && hashFiles('android-shots/*.jpg') == ''
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
@@ -67,11 +67,11 @@ jobs:
           path: android-shots
           retention-days: 30
       - name: Pictures to the comparison pre-release
-        if: always() && hashFiles('android-shots/*.png') != ''
+        if: always() && hashFiles('android-shots/*.jpg') != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view tv-comparison-screens --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 || \
             gh release create tv-comparison-screens --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --latest=false \
               --title "Android screenshots for the TV comparison" --notes "Android TV emulator screenshots of the unchanged Android app (UiTourTest), compared with StreamX Samsung and LG in tv-platforms/docs/SCREENSHOTS.md. Pictures only, no app."
-          gh release upload tv-comparison-screens android-shots/*.png --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload tv-comparison-screens android-shots/*.jpg --repo "$GITHUB_REPOSITORY" --clobber
