@@ -54,6 +54,8 @@ const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, by
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 
+// Playwright tries the most recently added route first: the catch-all goes in first.
+await page.route('https://**', (r) => r.abort());
 const body = playlist(N);
 metrics.playlistBytes = body.length;
 await page.route('http://big.example/**', (r) => r.fulfill({ status: 200, contentType: 'audio/x-mpegurl', body, headers: { 'access-control-allow-origin': '*' } }));
@@ -77,7 +79,6 @@ await page.route('https://site.api.espn.com/**', (r) => {
     competitors: [{ homeAway: 'home', score: '2', team: { shortDisplayName: 'Paris SG' } }, { homeAway: 'away', score: '1', team: { shortDisplayName: 'Marseille' } }] }] };
   return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ leagues: [{ name: 'Ligue 1 (simulation)' }], events: [ev] }), headers: { 'access-control-allow-origin': '*' } });
 });
-await page.route('https://**', (r) => r.abort());
 
 const key = async (k, n = 1, wait = 120) => { for (let i = 0; i < n; i++) { await page.keyboard.press(k); await page.waitForTimeout(wait); } };
 const T0 = Date.now();
@@ -160,6 +161,8 @@ await shot('06-movies');
 // Series: M3U episodes grouped by show.
 await goSection('series');
 await page.waitForTimeout(800);
+await page.waitForTimeout(1500);
+await shot('07a-series-start');
 metrics.seriesFocusBefore = await page.evaluate(() => { const f = document.querySelector('.focused'); return f ? `${f.closest('#rail') ? 'rail' : f.closest('.secs') ? 'secs' : f.closest('.content') ? 'content' : 'other'}: ${f.textContent.trim().slice(0, 40)}` : null; });
 for (let i = 0; i < 4 && !(await page.evaluate(() => !!document.querySelector('.secs .focused'))); i++) await key('ArrowLeft');
 for (let i = 0; i < 20 && !(await focusedText())?.includes('Drame'); i++) await key('ArrowDown');
@@ -202,6 +205,22 @@ await key('Escape', 2, 600);
 await goSection('sports');
 await page.waitForTimeout(2500);
 await shot('12-sports');
+
+// Animation: the kids groups of the playlist and the public-domain cartoons.
+await goSection('animation');
+await page.waitForTimeout(2500);
+await shot('12a-animation');
+
+// Mes fichiers, then the exit question from the start page (Back), answered "stay".
+await goSection('local');
+await page.waitForTimeout(800);
+await shot('15-local');
+await goSection('home');
+await page.waitForTimeout(800);
+await key('Escape', 1, 600);
+await shot('16-exit');
+metrics.exitFocused = await focusedText();
+await key('Enter', 1, 600);
 
 // Arabic, right to left.
 await goSection('settings');

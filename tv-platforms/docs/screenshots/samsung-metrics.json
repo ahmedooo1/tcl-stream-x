@@ -5,8 +5,8 @@
   "sampleVideo": "ffmpeg testsrc2 (VP9)",
   "playlistBytes": 254777,
   "importStatus": "Grande liste : 2000 chaînes importées (0 entrées ignorées)",
-  "importMs": 681,
-  "scroll60RowsMs": 1035,
+  "importMs": 704,
+  "scroll60RowsMs": 1051,
   "liveFocused": "95\n        C9\n        Chaîne 95 HD",
   "regions": [
     "Tous pays et langues",
@@ -25,7 +25,7 @@
   "regionTitle": "Toutes les chaînes300 Guide TV 0 en ligne sur 62 vérifiées",
   "seriesFocusBefore": "content: Tout voir  ›",
   "seriesSection": "Séries | Drame200",
-  "searchMs": 334,
+  "searchMs": 323,
   "searchResults": 1,
   "filmFocused": "F7\n        Film 7 (1957)",
   "playerState": {
@@ -33,6 +33,7 @@
     "paused": false,
     "w": 960
   },
+  "exitFocused": "Rester",
   "dir": "rtl",
   "pageErrors": [],
   "heapMB": 10
