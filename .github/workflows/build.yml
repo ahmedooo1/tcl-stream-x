@@ -113,7 +113,9 @@ jobs:
           "$BT/apksigner" rotate --out "$RUNNER_TEMP/lineage.bin" --old-signer $OLD --new-signer $NEW
           "$BT/apksigner" sign $OLD --next-signer $NEW --lineage "$RUNNER_TEMP/lineage.bin" --rotation-min-sdk-version 28 \
             --out StreamX.apk app/build/outputs/apk/release/app-release.apk
-          "$BT/apksigner" verify -v --print-certs StreamX.apk | grep -E "Verified using|Signer|SHA-256" | head -12
+          V=$("$BT/apksigner" verify -v --print-certs StreamX.apk)
+          echo "$V" | grep -E "Verified using|Signer|SHA-256" | head -12
+          echo "::notice::signing: $(echo "$V" | grep -E 'Verified using v3|certificate SHA-256' | tr '\n' ' ' | cut -c1-900)"
           # The emulator tests install these two files: the test APK must carry the app's current key.
           cp StreamX.apk app/build/outputs/apk/release/app-release.apk
           cp StreamX.apk TCLStreamX-debug.apk
