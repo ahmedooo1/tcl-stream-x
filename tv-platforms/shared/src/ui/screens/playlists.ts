@@ -51,6 +51,7 @@ export function playlistsScreen(ctx: Ctx): Screen {
       <div class="t-small" style="padding:6rem 14rem 14rem">${esc(t('playlists_legal'))}</div>
       ${lists.map(item).join('')}
       <div class="t-small" style="padding:14rem">${esc(t('tv_xtream_note'))}</div>
+      <div class="t-small" style="padding:0 14rem 6rem">${esc(t('tv_lan_import'))}</div>
       <div class="t-small" style="padding:0 14rem 24rem">${esc(t('tv_lan_unavailable'))}</div>`;
   }
 

@@ -8,7 +8,8 @@
  * This is not a test on a TV: the TV engine, its memory and its video decoder are not involved.
  */
 import { chromium } from 'playwright-core';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -37,6 +38,16 @@ function playlist(n) {
 }
 
 const metrics = { edition, entries: N, engine: 'Chrome (file://), not a TV' };
+
+// A short test picture for the films (VP9 in WebM, which every Chrome build decodes), made with
+// ffmpeg when it is installed; without it the player screenshot shows the playback error panel.
+let sample = null;
+try {
+  const f = resolve(out, '.sample.webm');
+  if (!existsSync(f)) execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=960x540:rate=25', '-t', '12', '-c:v', 'libvpx-vp9', '-deadline', 'realtime', '-b:v', '800k', '-y', f]);
+  sample = readFileSync(f);
+} catch { sample = null; }
+metrics.sampleVideo = sample ? 'ffmpeg testsrc2 (VP9)' : 'none';
 const browser = await chromium.launch({ executablePath: process.env.CHROME ?? '/usr/bin/google-chrome', args: ['--allow-file-access-from-files'] });
 // bypassCSP only lets the harness evaluate its own checks; the app itself runs under its CSP.
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, bypassCSP: true });
@@ -47,7 +58,9 @@ const body = playlist(N);
 metrics.playlistBytes = body.length;
 await page.route('http://big.example/**', (r) => r.fulfill({ status: 200, contentType: 'audio/x-mpegurl', body, headers: { 'access-control-allow-origin': '*' } }));
 await page.route('http://img.example/**', (r) => r.abort());
-await page.route('http://cdn.example/**', (r) => r.abort());
+await page.route('http://cdn.example/**', (r) => (sample && r.request().url().includes('/movie/')
+  ? r.fulfill({ status: 200, contentType: 'video/webm', body: sample, headers: { 'access-control-allow-origin': '*', 'accept-ranges': 'none' } })
+  : r.abort()));
 await page.route('https://archive.org/**', (r) => {
   const u = r.request().url();
   const json = u.includes('advancedsearch')
@@ -55,7 +68,15 @@ await page.route('https://archive.org/**', (r) => {
     : { files: [{ name: 'film.mp4', format: 'h.264', original: 'film.mpeg', length: '4200' }, { name: 'film.fr.srt' }] };
   return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(json), headers: { 'access-control-allow-origin': '*' } });
 });
-await page.route('https://site.api.espn.com/**', (r) => r.fulfill({ status: 500, body: 'mock' }));
+await page.route('https://site.api.espn.com/**', (r) => {
+  const u = r.request().url();
+  if (!u.includes('/fra.1/')) return r.fulfill({ status: 500, body: 'mock' });
+  const d = u.split('dates=')[1];
+  const today = new Date(); const td = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+  const ev = { id: d + '1', date: `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}T20:00Z`, competitions: [{ status: { type: { state: d === td ? 'in' : 'pre', shortDetail: "62'" } }, venue: { fullName: 'Parc des Princes' },
+    competitors: [{ homeAway: 'home', score: '2', team: { shortDisplayName: 'Paris SG' } }, { homeAway: 'away', score: '1', team: { shortDisplayName: 'Marseille' } }] }] };
+  return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ leagues: [{ name: 'Ligue 1 (simulation)' }], events: [ev] }), headers: { 'access-control-allow-origin': '*' } });
+});
 await page.route('https://**', (r) => r.abort());
 
 const key = async (k, n = 1, wait = 120) => { for (let i = 0; i < n; i++) { await page.keyboard.press(k); await page.waitForTimeout(wait); } };
@@ -66,12 +87,14 @@ const focusedText = () => page.evaluate(() => document.querySelector('.focused')
 /** Opens a section from the rail: Left until the rail has the focus, then Up / Down to the entry. */
 const SECTIONS = ['home', 'live', 'movies', 'series', 'sports', 'animation', 'local', 'search', 'playlists', 'settings'];
 async function goSection(route) {
+  // The rail is on the leading side: left in French, right in Arabic.
+  const toRail = (await page.evaluate(() => document.documentElement.dir)) === 'rtl' ? 'ArrowRight' : 'ArrowLeft';
   for (let i = 0; i < 8; i++) {
     if (await page.evaluate(() => !!document.querySelector('#rail .focused'))) break;
-    await key('ArrowLeft');
+    await key(toRail);
   }
   const at = await page.evaluate(() => document.querySelector('#rail .focused')?.getAttribute('data-k'));
-  if (at == null) throw new Error('rail not reached');
+  if (at == null) throw new Error(`rail not reached (focus: ${await focusedText()}, active: ${await page.evaluate(() => document.activeElement?.tagName)})`);
   for (let i = 0; i < 12; i++) {
     const cur = await page.evaluate(() => document.querySelector('#rail .focused')?.getAttribute('data-k'));
     if (cur === route) break;
@@ -159,6 +182,39 @@ await key('Escape');
 await goSection('settings');
 await page.waitForTimeout(600);
 await shot('09-settings');
+
+// Player: a film of the playlist, its bar, then the options panel (▲ on films).
+await goSection('movies');
+await page.waitForTimeout(800);
+for (let i = 0; i < 4 && !(await page.evaluate(() => !!document.querySelector('.secs .focused'))); i++) await key('ArrowLeft');
+for (let i = 0; i < 6 && !(await focusedText())?.includes('Action'); i++) await key('ArrowDown');
+await key('Enter', 1, 1200);
+await key('ArrowDown', 1, 300); // sort chips first (as on Android), then the first title
+metrics.filmFocused = await focusedText();
+await key('Enter', 1, 4000);
+metrics.playerState = await page.evaluate(() => { const v = document.querySelector('#video video'); return v ? { time: Math.round(v.currentTime), paused: v.paused, w: v.videoWidth } : null; });
+await shot('10-player');
+await key('ArrowUp', 1, 800);
+await shot('11-player-options');
+await key('Escape', 2, 600);
+
+// Sports hub with a simulated schedule.
+await goSection('sports');
+await page.waitForTimeout(2500);
+await shot('12-sports');
+
+// Arabic, right to left.
+await goSection('settings');
+await page.waitForTimeout(500);
+for (let i = 0; i < 4 && !(await focusedText())?.includes('العربية'); i++) await key('ArrowDown');
+await key('Enter', 1, 1200);
+metrics.dir = await page.evaluate(() => document.documentElement.dir);
+await goSection('home');
+await page.waitForTimeout(1500);
+await shot('13-home-ar');
+await goSection('live');
+await page.waitForTimeout(1500);
+await shot('14-live-ar');
 
 metrics.pageErrors = errors;
 metrics.heapMB = await page.evaluate(() => Math.round(((performance).memory?.usedJSHeapSize ?? 0) / 1048576));

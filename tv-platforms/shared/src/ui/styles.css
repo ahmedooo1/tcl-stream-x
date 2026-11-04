@@ -53,7 +53,9 @@ video::cue { font-size: calc(22rem * var(--sub-scale, 1)); color: var(--sub-colo
 .clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .clamp6 { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
 /* Each text takes its direction from its content (Latin names stay in order in Arabic). */
-.auto { unicode-bidi: plaintext; }
+.auto { unicode-bidi: plaintext; text-align: start; }
+/* A Latin name in the Arabic interface still lines up with the page (right), not with its own start. */
+[dir='rtl'] .auto { text-align: right; }
 
 /* ---- TallyRow: lighter graphite + tally bar on the leading edge ---- */
 .row {
