@@ -89,6 +89,7 @@ jobs:
           chmod +x "$RUNNER_TEMP/cli.bin"
           "$RUNNER_TEMP/cli.bin" --accept-license "$HOME/tizen-studio"
           echo "$HOME/tizen-studio/tools/ide/bin" >> "$GITHUB_PATH"
+          sudo apt-get install -y -qq --no-install-recommends gnome-keyring dbus-x11 libsecret-1-0 > /dev/null
       - name: Sign StreamX-Samsung.wgt and encrypt it
         if: env.HAS_CERTS == 'true'
         env:
@@ -105,6 +106,9 @@ jobs:
             echo "::error::TIZEN_ARTIFACT_PASSPHRASE is not set: refusing to sign, the package must not be uploaded in clear."
             exit 1
           fi
+          # On Linux the Tizen CLI reads profile passwords from a keyring: one in memory, for this step.
+          eval "$(dbus-launch --sh-syntax)"
+          printf '\n' | gnome-keyring-daemon --unlock --components=secrets > /dev/null
           K="$RUNNER_TEMP/keys"; mkdir -p "$K"; chmod 700 "$K"
           printf '%s' "$AUTHOR_P12" | base64 -d > "$K/author.p12"
           printf '%s' "$DISTRIBUTOR_P12" | base64 -d > "$K/distributor.p12"
@@ -171,9 +175,13 @@ jobs:
           chmod +x "$RUNNER_TEMP/cli.bin"
           "$RUNNER_TEMP/cli.bin" --accept-license "$HOME/tizen-studio"
           echo "$HOME/tizen-studio/tools/ide/bin" >> "$GITHUB_PATH"
+          sudo apt-get install -y -qq --no-install-recommends gnome-keyring dbus-x11 libsecret-1-0 > /dev/null
       - name: Sign with a throwaway key, seal, unseal
         run: |
           set -e
+          # On Linux the Tizen CLI reads profile passwords from a keyring: one in memory, for this step.
+          eval "$(dbus-launch --sh-syntax)"
+          printf '\n' | gnome-keyring-daemon --unlock --components=secrets > /dev/null
           T="$RUNNER_TEMP/check"; mkdir -p "$T/keys"
           PW=$(openssl rand -hex 16); echo "::add-mask::$PW"
           tizen certificate -a StreamXCheck -p "$PW" -f check -- "$T/keys"
