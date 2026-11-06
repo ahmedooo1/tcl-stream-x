@@ -87,7 +87,10 @@ téléphone. Dans Tools → Certificate Manager, garde le certificat auteur exis
 
 ## Signer et installer
 
-Depuis `tv-platforms`, sur le PC :
+Le profil local s'appelle `streamX`. Si la CI échoue, signe sur le PC, le paquet n'en sort pas :
+`tizen package -t wgt -s streamX -o wgt -- <dossier de StreamX-Samsung-unsigned.zip décompressé>`.
+
+Avec la CI, depuis `tv-platforms`, sur le PC :
 
 ```powershell
 pwsh tools/tizen-secrets.ps1 gh-set ahmedooo1/tcl-stream-x "$HOME\SamsungCertificate\StreamX"
