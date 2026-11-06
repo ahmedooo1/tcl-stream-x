@@ -100,7 +100,7 @@ Samsung 55" 2025 (`INSTALL-SAMSUNG.md`) et, si tu en as une, sur une TV LG.
 |---|---|---|---|
 | `StreamX-LG.ipk` | oui (CI, `ares-package`) | non requis en mode développeur | oui sur une TV LG en mode développeur (non essayé sur TV) |
 | `StreamX-Samsung-unsigned.zip` | oui (CI) | **non** | **non** : la TV refuse un paquet non signé |
-| `StreamX-Samsung.wgt` | produit dès que les secrets `TIZEN_*` existent | oui (auteur + distributeur Samsung avec le DUID) | oui sur **ta** TV uniquement (celle du DUID) |
+| `StreamX-Samsung.wgt` | produit dès que les secrets `TIZEN_*` existent, jamais publié : artefact `StreamX-Samsung-signed` chiffré en AES-256-GCM | oui (auteur + distributeur Samsung avec le DUID) | oui sur **ta** TV uniquement (celle du DUID), après déchiffrement |
 
 ## Résultats des tests (dernier passage)
 

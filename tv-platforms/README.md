@@ -20,8 +20,8 @@ npm run strings        # régénère les textes FR/AR depuis app/src/main/res
 
 La CI (`.github/workflows/tv-platforms.yml`) teste, construit, parcourt les deux éditions dans
 Chrome à la télécommande (50 000 entrées) et publie une pré-release `tv-build-N` :
-`StreamX-LG.ipk`, `StreamX-Samsung-unsigned.zip`, et `StreamX-Samsung.wgt` signé quand les
-certificats Samsung sont dans les secrets. Téléchargement sans compte :
+`StreamX-LG.ipk` et `StreamX-Samsung-unsigned.zip`. Le `.wgt` Samsung signé n'est jamais publié :
+il reste un artefact chiffré (`docs/INSTALL-SAMSUNG.md`). Téléchargement sans compte :
 <https://github.com/ahmedooo1/tcl-stream-x/releases>.
 
 ```bash

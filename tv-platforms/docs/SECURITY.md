@@ -44,7 +44,9 @@ IP de la box, comme toute requête web.
 - **Samsung** : le `.wgt` est signé avec un certificat auteur et un certificat distributeur Samsung
   (lié au DUID de la TV en mode développeur). Les fichiers `.p12` et leurs mots de passe ne sont
   jamais dans le dépôt : uniquement dans les secrets GitHub (`TIZEN_*`), décodés dans un dossier
-  temporaire du runner, effacé en fin de travail.
+  temporaire du runner, effacé en fin de travail. Le `.wgt` signé n'est jamais publié : la CI ne
+  l'envoie que chiffré en AES-256-GCM (`tools/wgt-seal.mjs`), car les artefacts d'un dépôt public
+  sont téléchargeables par tout compte GitHub.
 - **LG** : l'`.ipk` installé en mode développeur n'a pas de signature d'auteur ; la publication sur
   le LG Content Store passe par la signature de LG.
 - L'application Android, son keystore (`app/debug.keystore`), sa clé de rotation et ses secrets

@@ -61,6 +61,9 @@ jobs:
         with:
           name: tv-dist
           path: tv-platforms/dist
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       # Says which certificate secrets this run can read (yes / no only, never a value).
       - name: Certificate secrets visible to this run
         env:
@@ -95,10 +98,10 @@ jobs:
           DISTRIBUTOR_P12: ${{ secrets.TIZEN_DISTRIBUTOR_P12 }}
           DISTRIBUTOR_PASSWORD: ${{ secrets.TIZEN_DISTRIBUTOR_PASSWORD }}
           DISTRIBUTOR_CA: ${{ secrets.TIZEN_DISTRIBUTOR_CA }}
-          ARTIFACT_PASSPHRASE: ${{ secrets.TIZEN_ARTIFACT_PASSPHRASE }}
+          WGT_PASSPHRASE: ${{ secrets.TIZEN_ARTIFACT_PASSPHRASE }}
         run: |
           set -e
-          if [ -z "$ARTIFACT_PASSPHRASE" ]; then
+          if [ -z "$WGT_PASSPHRASE" ]; then
             echo "::error::TIZEN_ARTIFACT_PASSPHRASE is not set: refusing to sign, the package must not be uploaded in clear."
             exit 1
           fi
@@ -115,13 +118,22 @@ jobs:
           S="$RUNNER_TEMP/signed"; mkdir -p "$S" signed
           mv "$RUNNER_TEMP"/wgt/*.wgt "$S/StreamX-Samsung.wgt"
           unzip -l "$S/StreamX-Samsung.wgt" | grep -E 'author-signature.xml|signature1.xml'
-          printf '%s' "$ARTIFACT_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --symmetric --cipher-algo AES256 -o signed/StreamX-Samsung.wgt.gpg "$S/StreamX-Samsung.wgt"
+          # AES-256-GCM (tools/wgt-seal.mjs), proved decryptable here before anything is uploaded.
+          node tools/wgt-seal.mjs seal "$S/StreamX-Samsung.wgt" signed/StreamX-Samsung.wgt.enc
+          node tools/wgt-seal.mjs unseal signed/StreamX-Samsung.wgt.enc "$S/check.wgt"
+          cmp "$S/StreamX-Samsung.wgt" "$S/check.wgt"
           rm -rf "$S" "$K" "$HOME/tizen-studio-data/profile"
           ls -la signed
       - name: No certificates yet
         if: env.HAS_CERTS != 'true'
         run: |
           echo "::warning::TIZEN_AUTHOR_P12 / TIZEN_DISTRIBUTOR_P12 are not set: only StreamX-Samsung-unsigned.zip is built. A Samsung TV installs signed packages only (docs/INSTALL-SAMSUNG.md)."
+      - name: No signed package in clear
+        run: |
+          if find out signed -iname '*.wgt' 2>/dev/null | grep .; then
+            echo "::error::a clear .wgt would be uploaded"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: StreamX-Samsung
@@ -132,7 +144,7 @@ jobs:
         if: env.HAS_CERTS == 'true'
         with:
           name: StreamX-Samsung-signed
-          path: tv-platforms/signed/StreamX-Samsung.wgt.gpg
+          path: tv-platforms/signed/StreamX-Samsung.wgt.enc
           if-no-files-found: error
           retention-days: 30
 
@@ -208,7 +220,11 @@ jobs:
           TAG: tv-build-${{ github.run_number }}
         run: |
           set -e
+          # Named folders only: never the StreamX-Samsung-signed artifact.
           files=(art/StreamX-LG/StreamX-LG.ipk art/StreamX-Samsung/*)
+          for f in "${files[@]}"; do
+            case "$f" in *.ipk|*-unsigned.zip) ;; *) echo "::error::refusing to publish $f"; exit 1 ;; esac
+          done
           {
             echo "StreamX TV, build ${{ github.run_number }} (branch ${{ github.ref_name }}, ${GITHUB_SHA::7})."
             echo
