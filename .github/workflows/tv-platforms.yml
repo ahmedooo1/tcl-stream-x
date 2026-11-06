@@ -1,5 +1,7 @@
 # StreamX for Samsung (Tizen) and LG (webOS). Independent from build.yml: it never touches the
 # Android app, its signing or its update releases (TV packages are workflow artifacts only).
+# The repository is public, so anyone signed in to GitHub can download its workflow artifacts: the
+# signed Samsung package is only ever uploaded encrypted, and never goes into a public release.
 name: StreamX TV (Samsung, LG)
 
 on:
@@ -66,8 +68,9 @@ jobs:
           AP: ${{ secrets.TIZEN_AUTHOR_PASSWORD }}
           D: ${{ secrets.TIZEN_DISTRIBUTOR_P12 }}
           DP: ${{ secrets.TIZEN_DISTRIBUTOR_PASSWORD }}
+          K: ${{ secrets.TIZEN_ARTIFACT_PASSPHRASE }}
         run: |
-          for v in A:TIZEN_AUTHOR_P12 AP:TIZEN_AUTHOR_PASSWORD D:TIZEN_DISTRIBUTOR_P12 DP:TIZEN_DISTRIBUTOR_PASSWORD; do
+          for v in A:TIZEN_AUTHOR_P12 AP:TIZEN_AUTHOR_PASSWORD D:TIZEN_DISTRIBUTOR_P12 DP:TIZEN_DISTRIBUTOR_PASSWORD K:TIZEN_ARTIFACT_PASSPHRASE; do
             n=${v%%:*}; [ -n "${!n}" ] && echo "::notice::${v#*:}: present" || echo "::warning::${v#*:}: missing for this run"
           done
       - name: Unsigned package (always)
@@ -78,12 +81,12 @@ jobs:
         if: env.HAS_CERTS == 'true'
         run: |
           set -e
-          V=5.6
+          V=6.1
           curl -fsSL -o "$RUNNER_TEMP/cli.bin" "https://download.tizen.org/sdk/Installer/tizen-studio_${V}/web-cli_Tizen_Studio_${V}_ubuntu-64.bin"
           chmod +x "$RUNNER_TEMP/cli.bin"
           "$RUNNER_TEMP/cli.bin" --accept-license "$HOME/tizen-studio"
           echo "$HOME/tizen-studio/tools/ide/bin" >> "$GITHUB_PATH"
-      - name: Sign StreamX-Samsung.wgt
+      - name: Sign StreamX-Samsung.wgt and encrypt it
         if: env.HAS_CERTS == 'true'
         env:
           AUTHOR_P12: ${{ secrets.TIZEN_AUTHOR_P12 }}
@@ -92,8 +95,13 @@ jobs:
           DISTRIBUTOR_P12: ${{ secrets.TIZEN_DISTRIBUTOR_P12 }}
           DISTRIBUTOR_PASSWORD: ${{ secrets.TIZEN_DISTRIBUTOR_PASSWORD }}
           DISTRIBUTOR_CA: ${{ secrets.TIZEN_DISTRIBUTOR_CA }}
+          ARTIFACT_PASSPHRASE: ${{ secrets.TIZEN_ARTIFACT_PASSPHRASE }}
         run: |
           set -e
+          if [ -z "$ARTIFACT_PASSPHRASE" ]; then
+            echo "::error::TIZEN_ARTIFACT_PASSPHRASE is not set: refusing to sign, the package must not be uploaded in clear."
+            exit 1
+          fi
           K="$RUNNER_TEMP/keys"; mkdir -p "$K"; chmod 700 "$K"
           printf '%s' "$AUTHOR_P12" | base64 -d > "$K/author.p12"
           printf '%s' "$DISTRIBUTOR_P12" | base64 -d > "$K/distributor.p12"
@@ -104,9 +112,12 @@ jobs:
             -d "$K/distributor.p12" -dp "$DISTRIBUTOR_PASSWORD" "${EXTRA[@]}" > /dev/null
           rm -rf "$RUNNER_TEMP/pkg"; cp -r dist/samsung "$RUNNER_TEMP/pkg"
           tizen package -t wgt -s StreamXCI -o "$RUNNER_TEMP/wgt" -- "$RUNNER_TEMP/pkg"
-          mv "$RUNNER_TEMP"/wgt/*.wgt out/StreamX-Samsung.wgt
-          unzip -l out/StreamX-Samsung.wgt | grep -E 'author-signature.xml|signature1.xml'
-          rm -rf "$K" "$HOME/tizen-studio-data/profile"
+          S="$RUNNER_TEMP/signed"; mkdir -p "$S" signed
+          mv "$RUNNER_TEMP"/wgt/*.wgt "$S/StreamX-Samsung.wgt"
+          unzip -l "$S/StreamX-Samsung.wgt" | grep -E 'author-signature.xml|signature1.xml'
+          printf '%s' "$ARTIFACT_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --symmetric --cipher-algo AES256 -o signed/StreamX-Samsung.wgt.gpg "$S/StreamX-Samsung.wgt"
+          rm -rf "$S" "$K" "$HOME/tizen-studio-data/profile"
+          ls -la signed
       - name: No certificates yet
         if: env.HAS_CERTS != 'true'
         run: |
@@ -115,6 +126,14 @@ jobs:
         with:
           name: StreamX-Samsung
           path: tv-platforms/out/*
+          retention-days: 30
+      # Encrypted with TIZEN_ARTIFACT_PASSPHRASE. The release job below never publishes it.
+      - uses: actions/upload-artifact@v4
+        if: env.HAS_CERTS == 'true'
+        with:
+          name: StreamX-Samsung-signed
+          path: tv-platforms/signed/StreamX-Samsung.wgt.gpg
+          if-no-files-found: error
           retention-days: 30
 
   lg:
@@ -190,16 +209,11 @@ jobs:
         run: |
           set -e
           files=(art/StreamX-LG/StreamX-LG.ipk art/StreamX-Samsung/*)
-          signed=no; [ -f art/StreamX-Samsung/StreamX-Samsung.wgt ] && signed=yes
           {
             echo "StreamX TV, build ${{ github.run_number }} (branch ${{ github.ref_name }}, ${GITHUB_SHA::7})."
             echo
             echo "- StreamX-LG.ipk: installable on an LG TV in developer mode (docs/INSTALL-LG.md)."
-            if [ "$signed" = yes ]; then
-              echo "- StreamX-Samsung.wgt: signed with the Samsung profile from the repository secrets (author + distributor with the TV's DUID)."
-            else
-              echo "- StreamX-Samsung-unsigned.zip: NOT installable as is. Sign it with your Samsung certificate profile (docs/INSTALL-SAMSUNG.md)."
-            fi
+            echo "- StreamX-Samsung-unsigned.zip: NOT installable as is. Sign it with your Samsung certificate profile (docs/INSTALL-SAMSUNG.md)."
             echo
             echo "Tested automatically (unit tests, Chrome from file://). Not yet tested on a real TV."
           } > NOTES.md
