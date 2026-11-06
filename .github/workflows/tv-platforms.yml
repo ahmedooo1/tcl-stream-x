@@ -148,6 +148,46 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  # Manual run only. Proves the Linux CLI, signing and sealing without any secret or real
+  # certificate: a throwaway author key, the public Tizen distributor. Uploads nothing.
+  samsung-signing-check:
+    if: github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: tv-dist
+          path: tv-platforms/dist
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tizen CLI
+        run: |
+          set -e
+          V=6.1
+          curl -fsSL -o "$RUNNER_TEMP/cli.bin" "https://download.tizen.org/sdk/Installer/tizen-studio_${V}/web-cli_Tizen_Studio_${V}_ubuntu-64.bin"
+          chmod +x "$RUNNER_TEMP/cli.bin"
+          "$RUNNER_TEMP/cli.bin" --accept-license "$HOME/tizen-studio"
+          echo "$HOME/tizen-studio/tools/ide/bin" >> "$GITHUB_PATH"
+      - name: Sign with a throwaway key, seal, unseal
+        run: |
+          set -e
+          T="$RUNNER_TEMP/check"; mkdir -p "$T/keys"
+          PW=$(openssl rand -hex 16); echo "::add-mask::$PW"
+          tizen certificate -a StreamXCheck -p "$PW" -f check -- "$T/keys" > /dev/null
+          tizen security-profiles add -n StreamXCheck -a "$T/keys/check.p12" -p "$PW" > /dev/null
+          cp -r dist/samsung "$T/pkg"
+          tizen package -t wgt -s StreamXCheck -o "$T/wgt" -- "$T/pkg"
+          W=$(ls "$T"/wgt/*.wgt)
+          unzip -l "$W" | grep -E 'author-signature.xml|signature1.xml'
+          export WGT_PASSPHRASE="$PW"
+          node tools/wgt-seal.mjs seal "$W" "$T/p.enc"
+          node tools/wgt-seal.mjs unseal "$T/p.enc" "$T/p.wgt"
+          cmp "$W" "$T/p.wgt"
+          echo "signing and sealing ok"
+
   lg:
     needs: test
     runs-on: ubuntu-24.04

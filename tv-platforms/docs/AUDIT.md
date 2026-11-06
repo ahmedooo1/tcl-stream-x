@@ -105,7 +105,7 @@ Samsung 55" 2025 (`INSTALL-SAMSUNG.md`) et, si tu en as une, sur une TV LG.
 ## Résultats des tests (dernier passage)
 
 - `npm run typecheck` : TypeScript strict, 0 erreur.
-- `npm test` : 13 fichiers, 71 tests, tous réussis (dont 300 000 entrées lues en 0,7 s).
+- `npm test` : 14 fichiers, 75 tests, tous réussis (dont 300 000 entrées lues en 0,7 s).
 - `tools/e2e.mjs` dans Chrome depuis `file://`, à la télécommande seulement : Samsung et LG,
   14 écrans chacun, aucune erreur JavaScript. À 200 000 entrées (édition Samsung) : import 51 s,
   recherche 4 s, mémoire JavaScript 20 Mo. Chiffres et captures : `docs/screenshots/`.
