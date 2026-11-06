@@ -65,6 +65,14 @@ branché. Dans Termux, lance `termux-wake-lock`.
 
 ## Depuis le PC, à distance
 
+Diagnostic guidé, qui indique où le chemin s'arrête et lit le DUID, depuis `tv-platforms` :
+
+```powershell
+pwsh tools/tv-relay-check.ps1 -Phone <IP_TAILSCALE_TEL>
+```
+
+Les mêmes étapes à la main :
+
 ```powershell
 $env:Path += ';C:\tizen-studio\tools;C:\tizen-studio\tools\ide\bin'
 sdb connect <IP_TAILSCALE_TEL>:26101
