@@ -176,8 +176,8 @@ jobs:
           set -e
           T="$RUNNER_TEMP/check"; mkdir -p "$T/keys"
           PW=$(openssl rand -hex 16); echo "::add-mask::$PW"
-          tizen certificate -a StreamXCheck -p "$PW" -f check -- "$T/keys" > /dev/null
-          tizen security-profiles add -n StreamXCheck -a "$T/keys/check.p12" -p "$PW" > /dev/null
+          tizen certificate -a StreamXCheck -p "$PW" -f check -- "$T/keys"
+          tizen security-profiles add -n StreamXCheck -a "$T/keys/check.p12" -p "$PW"
           cp -r dist/samsung "$T/pkg"
           tizen package -t wgt -s StreamXCheck -o "$T/wgt" -- "$T/pkg"
           W=$(ls "$T"/wgt/*.wgt)
@@ -187,6 +187,9 @@ jobs:
           node tools/wgt-seal.mjs unseal "$T/p.enc" "$T/p.wgt"
           cmp "$W" "$T/p.wgt"
           echo "signing and sealing ok"
+      - name: Tizen CLI log (throwaway key only)
+        if: failure()
+        run: tail -n 60 "$HOME/tizen-studio-data/cli/logs/cli.log" || true
 
   lg:
     needs: test
